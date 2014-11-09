@@ -1,10 +1,3 @@
-/*
-** server.c -- a stream socket server demo
-*/
-
-//Client == the user
-//self == proxy server
-//fileServer == google drive
 //todo: handle cases where send doesn't send the all the bytes we asked it to
 //todo: write packet logger !!!
 
@@ -31,7 +24,6 @@
 #define BACKLOG 10
 
 char file_request_headers[] = " HTTP/1.1\r\nHost: www.googleapis.com\r\nContent-length: 0\r\n\r\n"
-
 void flipBits(void* packetData, int size){
     char* b = packetData;
     int i;
@@ -40,12 +32,8 @@ void flipBits(void* packetData, int size){
     }
 }
 
+//TODO: can handle all packets, with/without headers, chunked or not
 void decryptPacketData(void* packetData, int size){
-    flipBits(packetData, size);
-}
-
-void decryptFirstPacketData(void* packetData, int size){
-    //remove the header stuff
     flipBits(packetData, size);
 }
 
@@ -488,37 +476,6 @@ void sslDisconnect (connection *c)
 
 int main(void)
 {
-    int sockfd = get_listening_socket(SERVER_LISTEN_PORT);
-    int client_fd;
-    socklen_t sin_size;
-    struct sockaddr_storage their_addr;
-    char s[INET6_ADDRSTRLEN];
-
-    printf("server: waiting for connections...\n");
-
-    while(1) {  // main accept() loop
-        sin_size = sizeof their_addr;
-        client_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-        if (client_fd == -1) {
-            perror("accept");
-            continue;
-        }
-
-        inet_ntop(their_addr.ss_family,
-            get_in_addr((struct sockaddr *)&their_addr),
-            s, sizeof s);
-        printf("server: got connection from %s\n", s);
-
-        if (!fork()) { // this is the child process
-            close(sockfd); // child doesn't need the listener
-            
-            handle_client( client_fd );
-            
-            close(client_fd);
-            exit(0);
-        }
-        close(client_fd);  // parent doesn't need this
-    }
 
     return 0;
 }

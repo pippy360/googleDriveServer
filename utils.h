@@ -1,0 +1,1 @@
+char* strstrn(char* const haystack, const char* needle, const int haystackSize);

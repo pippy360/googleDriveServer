@@ -15,6 +15,16 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+#define BACKLOG 10
+
+// Simple structure to keep track of the handle, and
+// of what needs to be freed later.
+typedef struct {
+    int socket;
+    SSL *sslHandle;
+    SSL_CTX *sslContext;
+} connection;
+
 void sigchld_handler(int s)
 {
     while(waitpid(-1, NULL, WNOHANG) > 0);
@@ -207,3 +217,9 @@ void sslDisconnect (connection *c)
 //
 // /-- opensll stuff
 //
+
+int main(int argc, char const *argv[])
+{
+  /* code */
+  return 0;
+}

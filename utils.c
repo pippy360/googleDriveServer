@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 char* strstrn(char* const haystack, const char* needle, const int haystackSize){
     int i;
     for (i = 0; i < (haystackSize - (strlen(needle) - 1)); i++){
@@ -13,4 +14,10 @@ char* strstrn(char* const haystack, const char* needle, const int haystackSize){
             return haystack + i;
     }
     return NULL;
+}
+
+//TODO:
+//calcs the content length
+void setContentLength(){
+
 }

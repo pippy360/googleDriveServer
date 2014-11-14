@@ -217,9 +217,3 @@ void sslDisconnect (connection *c)
 //
 // /-- opensll stuff
 //
-
-int main(int argc, char const *argv[])
-{
-  /* code */
-  return 0;
-}

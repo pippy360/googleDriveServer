@@ -17,7 +17,7 @@
 typedef struct {
     int socket;
     SSL *sslHandle;
-    SSL_CTX *sslContext;
+    SSL_CTX *sslContext;gc
 } connection;
 
 // For this example, we'll be testing on openssl.org

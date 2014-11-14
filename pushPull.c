@@ -20,9 +20,16 @@
 #define MAXDATASIZE 2000
 #define SERVER_LISTEN_PORT "25001"
 #define FILE_SERVER_URL "localhost"
-#define BACKLOG 10
+
 
 char file_request_headers[] = " HTTP/1.1\r\nHost: www.googleapis.com\r\nContent-length: 0\r\n\r\n";
+
+typedef struct {
+    char* filename;
+    char* directFileUrl;
+    int   downloadType;//chuncked or content-length
+} fileDownload;
+
 
 void flipBits(void* packetData, int size){
     char* b = packetData;
@@ -35,19 +42,6 @@ void flipBits(void* packetData, int size){
 //TODO: can handle all packets, with/without headers, chunked or not
 void decryptPacketData(void* packetData, int size){
     flipBits(packetData, size);
-}
-
-char* strstrn(char* const haystack, const char* needle, const int haystackSize){
-    int i;
-    for (i = 0; i < (haystackSize - (strlen(needle) - 1)); i++){
-        int j;
-        for (j = 0; j < strlen(needle); j++)
-            if(needle[j] != haystack[i+j])
-                break;        
-        if (j == strlen(needle))
-            return haystack + i;
-    }
-    return NULL;
 }
 
 char* head_request(char* filePath){
@@ -134,7 +128,7 @@ void handle_file_request(char* clientGetRequest, int clientGetRequestLength, int
                     &data, &dataSize);
 
     //decrypt it
-    decryptFirstPacketData(data, dataSize);
+    flipBits(data, dataSize);
     
     //send the first response packet to the client
     if( send(client_fd, tempBuf, tempByteCount, 0) == -1 )
@@ -145,7 +139,7 @@ void handle_file_request(char* clientGetRequest, int clientGetRequestLength, int
     for ( ;remaining != 0; remaining -= dataSize){
         
         dataSize = recv(fileServer_fd, tempBuf, MAXDATASIZE-1, 0);
-        decryptPacketData(data, dataSize);
+        flipBits(data, dataSize);
 
         if( send(client_fd, tempBuf, dataSize, 0) == -1 ){
             printf("failed to proxy file piece to client \n");
@@ -245,36 +239,50 @@ int changeFileRequest(char *buf, int inputPacketLength, char *newFilePath,
     }
 }
 
-int proxyGetRequest(void *inputPacket, const int inputPacketLength, 
-                    const char *fileServer, void **output, int *outputLength){
-    
-    //FIXME: WASTED BUFFER
-    char *tempPacket;
-    char *finalPacket;
-    int tempPacketLength, finalPacketLength;
-    //copy the old Packet
-    char* buffer = malloc( MAXDATASIZE );
-    memcpy(buffer, inputPacket, inputPacketLength);
-
-    //change the host
-    if( changeHost(buffer, inputPacketLength, FILE_SERVER_URL, &tempPacket, &tempPacketLength) == -1 ){
-        printf("Get packet did not contain Host...weird...\n");
-    }
-
-    //remove
-    //change the file request
-    char *requestedFile;
-    get_requsted_file_string(tempPacket, tempPacketLength, &requestedFile);
-    changeFileRequest(tempPacket, tempPacketLength, requestedFile, &finalPacket, &finalPacketLength);
-
-    *output = finalPacket;
-    *outputLength = finalPacketLength;
+// a space is automatically set between the id and new value, so don't inlude it
+int set_header_value(char *inputPacket, int inputPacketLength, char *identifier, char *newValue, 
+                        char **outputPacket, int* outputPacketLength)
+{
+//TODO:
 }
 
+//TODO: enum for http/https/ftp
+int parseUrl(char* inputUrl, int* type, char** domain, char** fileUrl){
+    //break at '://' and check if it matches http/https
+    //strstrn
+}
 
+//return the first packet of a file download
+//it returns the html error code, returns 200 if OK
+int start_file_download(char* fileUrl, fileDownload* fd, 
+                            char* firstPacket, int firstPacketLength)
+{
+    //parseUrl();
+    //connect
+    //get first packet
+    if( /*200*/ )
+        //don't do anything because this needs to be the same as if it's moved
+    else if( /*error code, handle it*/ )
+    else if( /*moved*/ )
+        while(/*we're still looking for the file*/)
+            ;
+    else
+        //bad packet
+
+    //set the details from a good packet
+
+    //set the file url
+
+    //return the struct
+}
+
+int get_next_packet_file_download()
+{
+
+}
 
 int main(void)
 {
-
+    //fetch a file, 
     return 0;
 }

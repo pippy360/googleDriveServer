@@ -9,7 +9,7 @@
 
 //todo:
 void isFormatChar(){
-	
+
 }
 
 int isJsonChar( char inputChar ){
@@ -60,4 +60,31 @@ char* get_json_value(char* inputName, char* jsonData, int jsonDataSize){
 	memcpy(output, ptr, outputLength );
 	output[ outputLength ] = '\0';
 	return output;
+}
+
+//TODO: enum for http/https/ftp
+//this will break a lot, "example.com" breaks it
+int parseUrl(char* inputUrl, int* type, char** domain, char** fileUrl){
+    //break at '://' and check if it matches http/https
+    //strstrn
+    char *ptr = strstrn(inputUrl, "://", strlen(inputUrl));
+    //get the type by cmping
+
+    int protoSize = ptr - inputUrl;
+
+    if( strncmp( inputUrl, "https", protoSize) == 0 ){
+    	*type = 1;
+    }else{
+    	*type = -1;
+    }
+
+    //get the url (until we hit "/" )
+    char* newPtr = strstrn(ptr+3, "/", strlen(inputUrl) - protoSize - 3);
+    *domain = malloc( (newPtr - (ptr+3)) + 1 );
+    (*domain)[ (newPtr - (ptr+3)) ] = '\0';
+    memcpy( *domain, ptr+3, (newPtr - (ptr+3)) );
+
+    *fileUrl = malloc( (strlen(inputUrl) - (newPtr - inputUrl)) + 1 );
+    (*fileUrl)[ (strlen(inputUrl) - (newPtr - inputUrl)) + 1 ] = '\0';
+    memcpy( *fileUrl, newPtr, (strlen(inputUrl) - (newPtr - inputUrl)) );
 }

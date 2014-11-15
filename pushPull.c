@@ -16,13 +16,15 @@
 #include <signal.h>
 #include "networking.h"
 #include "utils.h"
+#include "google.h"
+#include "parser.h"
 
 #define MAXDATASIZE 2000
 #define SERVER_LISTEN_PORT "25001"
 #define FILE_SERVER_URL "localhost"
-
-
-char file_request_headers[] = " HTTP/1.1\r\nHost: www.googleapis.com\r\nContent-length: 0\r\n\r\n";
+#define GET_HEADER_FORMAT "GET %s HTTP/1.1\r\nHost: %s\r\n%s"\
+                    ""\
+                    "Content-length: %d\r\n\r\n%s"
 
 typedef struct {
     char* filename;
@@ -42,37 +44,6 @@ void flipBits(void* packetData, int size){
 //TODO: can handle all packets, with/without headers, chunked or not
 void decryptPacketData(void* packetData, int size){
     flipBits(packetData, size);
-}
-
-char* head_request(char* filePath){
-    char* output = malloc( strlen("HEAD ") + strlen(filePath) + strlen(file_request_headers) + 1 );
-    output[0] = '\0';
-    strcat(output, "HEAD ");
-    strcat(output, filePath);
-    strcat(output, file_request_headers);
-}
-
-//handles 'moved permanently'/'404'/http->https
-//given a url it will "follow" it to the file's direct download link
-char* get_file_url(char* proto, char* host, char* fileUrl){
-    //connect to the server
-    if ( strcmp(proto, "https") == 0 ){
-        sslConnect( host, "443" );
-    }else if( strcmp(proto, "http") == 0 ){
-        set_up_tcp_connection( host, "80" );
-    }else{
-        perror("bad proto");
-    }
-    //and head it for the file
-    //handle the head
-    //if 200
-        //return the filw 
-    //if moved {temp or perm}
-        //return get_file_url
-    //if 404
-        //return null
-    //else 
-        //return null
 }
 
 long get_content_length(char* buf, int bufSize){
@@ -110,7 +81,7 @@ void handle_file_request(char* clientGetRequest, int clientGetRequestLength, int
 
     char*   proxiedRequestData;
     int     proxiedRequestDataLength;
-    proxyGetRequest(clientGetRequest, clientGetRequestLength, FILE_SERVER_URL, &proxiedRequestData, &proxiedRequestDataLength);
+    //proxyGetRequest(clientGetRequest, clientGetRequestLength, FILE_SERVER_URL, &proxiedRequestData, &proxiedRequestDataLength);
 
     //set up a connection to fileServer
     int fileServer_fd = set_up_tcp_connection(FILE_SERVER_URL, "80");
@@ -246,34 +217,60 @@ int set_header_value(char *inputPacket, int inputPacketLength, char *identifier,
 //TODO:
 }
 
-//TODO: enum for http/https/ftp
-int parseUrl(char* inputUrl, int* type, char** domain, char** fileUrl){
-    //break at '://' and check if it matches http/https
-    //strstrn
+/*
+
+"POST %s HTTP/1.1\r\nHost: %s\r\n"\
+                    "Content-Type: application/x-www-form-urlencoded\r\n"\
+                    "Content-length: %d%s\r\n\r\n%s"
+
+*/
+
+
+char *getRequestData(char *fileUrl, char *domain, char *content, char *addedHeaders ){
+    char *output = malloc( strlen(GET_HEADER_FORMAT) + strlen(fileUrl) + strlen(domain) + strlen(content) 
+        + strlen(addedHeaders) );
+    sprintf( output, GET_HEADER_FORMAT, fileUrl, domain, addedHeaders, (int)strlen(content), content );
+
+    return output;    
 }
 
 //return the first packet of a file download
 //it returns the html error code, returns 200 if OK
-int start_file_download(char* fileUrl, fileDownload* fd, 
-                            char* firstPacket, int firstPacketLength)
+int start_file_download(char* inputUrl, char* addedHeaders, fileDownload** fd, 
+                            char** firstPacket, int* firstPacketLength)
 {
-    //parseUrl();
-    //connect
+    int type;
+    char *domain, *fileUrl;
+    parseUrl(inputUrl, &type, &domain, &fileUrl);
+
     //get first packet
-    if( /*200*/ )
-        //don't do anything because this needs to be the same as if it's moved
-    else if( /*error code, handle it*/ )
-    else if( /*moved*/ )
-        while(/*we're still looking for the file*/)
-            ;
-    else
-        //bad packet
+    char *getData = getRequestData( fileUrl, domain, "", addedHeaders );
+    printf("%s\n", getData);
 
-    //set the details from a good packet
+    //connect
+    connection *c;
+    if (type == 1){
+        c = sslConnect( domain, "443" );
+    }else{
+        printf("non https protocol used....hm.....\n");
+    }
 
-    //set the file url
+    //send it
+    SSL_write (c->sslHandle, getData, strlen (getData));
 
-    //return the struct
+    char buffer[MAXDATASIZE+1];
+    int received = SSL_read (c->sslHandle, buffer, MAXDATASIZE-1);
+
+    buffer[received] = '\0';
+    printf("%s\n", buffer);
+
+    received = SSL_read (c->sslHandle, buffer, MAXDATASIZE-1);
+
+    buffer[received] = '\0';
+    printf("%s\n", buffer);
+
+    //set the struct
+    //set the datails and return the error code
 }
 
 int get_next_packet_file_download()
@@ -283,6 +280,21 @@ int get_next_packet_file_download()
 
 int main(void)
 {
-    //fetch a file, 
+    //fetch a file,
+    int type;
+    char *domain, *fileUrl;
+    char inputUrl[] = "https://www.googleapis.com/drive/v2/files/";
+    parseUrl(inputUrl, &type, &domain, &fileUrl);
+
+    char* accessToken = getAccessToken();
+    char headerStub[] = "Authorization: Bearer ";
+    char addedHeader[strlen(headerStub) + strlen(accessToken) + 1 + 2];
+    addedHeader[0] = '\0';
+    strcat(addedHeader, headerStub);
+    strcat(addedHeader, accessToken);
+    strcat(addedHeader, "\r\n");
+
+    start_file_download(inputUrl, addedHeader, NULL, NULL, NULL);
+    //now create the get request
     return 0;
 }

@@ -22,6 +22,7 @@
 #include "parser.h"
 
 #define MAXDATASIZE 2000
+#define MAX_CHUNK_ARRAY_LENGTH 100
 #define SERVER_LISTEN_PORT "25001"
 #define FILE_SERVER_URL "localhost"
 #define GET_HEADER_FORMAT "GET %s HTTP/1.1\r\nHost: %s\r\n%s"\
@@ -42,6 +43,11 @@ typedef struct {
     long  currChunkRemaining;
 } fileDownload;
 
+typedef struct {
+    long chunkSize;
+    long dataInPacket;
+    char* data;
+} chunk;
 
 void free_fileDownload(fileDownload *fd){
     free( fd->directFileUrl );
@@ -71,8 +77,8 @@ long get_content_length(char* buf, int bufSize){
     return -1;
 }
 
-int strip_packet(char* const buf, const int bufSize, void** header, int* headerSize,
-                    void** data, int* dataSize){
+int strip_packet(char* const buf, const int bufSize, char** header, int* headerSize,
+                    char** data, int* dataSize){
     if ((*data = strstrn( buf, "\r\n\r\n", bufSize )) != NULL ){
         *data += 4;
         *header = buf;
@@ -194,59 +200,129 @@ int is_chunked(char* packet, int packetLength){
     return strstrn(packet, "Transfer-Encoding: chunked", packetLength) != NULL;
 }
 
-void get_packet_data(packet, packetSize, isChunked, datav, datac, datavSize){
+//offset should point to the start of the chunk
+void get_next_chunk(char *chunkStart, int packetLength, char** endPtr, chunk **resultChunk){
+    char *tempPtr;
+    *resultChunk = malloc( sizeof(chunk) );
+    (*resultChunk)->chunkSize = strtol(chunkStart, &tempPtr, 16);
+    tempPtr += strlen("\r\n");
+    (*resultChunk)->data = tempPtr;
+    (*resultChunk)->dataInPacket = packetLength - (tempPtr - chunkStart);
+    *endPtr = tempPtr + (*resultChunk)->dataInPacket;
+}
 
+//remove the http headers before passing a packet into this
+void get_all_chunks_in_packet(char* packet, int packetLength, chunk*** chunkv, int* chunkc){
+    int offset = 0;
+    int arrayLength = 1;
+    char *ptr = packet;
+    char *endPtr;
+    chunk **arr = malloc( MAX_CHUNK_ARRAY_LENGTH*sizeof( chunk* ) );
+    while(1){
+        chunk *c;
+        get_next_chunk(ptr, packetLength, &endPtr, &c);
+        printf("ptr: %s\n---ptr/\n", ptr);
+        ptr = endPtr;
+        printf("val of data in packet: %d\n", (int)c->dataInPacket );
+        arr[arrayLength] = c;
+        if ( c->dataInPacket != c->chunkSize )
+            break;        
+        arrayLength++;
+    }
+    *chunkc = arrayLength;
+    *chunkv = arr;
+}
+
+//REMOVE HEADER BEFORE PASSING PACKET IN
+//todo: this may not be need, just get all the chunks in a packet and check the last one for 0 length
+int is_final_chunked_packet(char *packet, int packetLength){
+    chunk **chunkv;
+    int  chunkc, i;
+    get_all_chunks_in_packet(packet, packetLength, &chunkv, &chunkc);
+    for (i = 0; i < chunkc; ++i)
+        if (chunkv[i]->chunkSize == 0)
+            return 1;
+
+    return 0;
+}
+
+void fill_fileDownload(fileDownload *fd, char *packet, int packetSize, char *inputUrl ){
+    int isChunked = is_chunked( packet, packetSize );
+    fd->isChunked            = isChunked;
+    fd->directFileUrl        = inputUrl;
+    fd->firstPacket          = packet;
+    fd->currentPacket        = packet;
+    fd->currentPacketNo      = 0;
+
+    //strip the packet
+    char *header, *data;
+    int headerSize, dataSize;
+    strip_packet(packet, packetSize, &header, &headerSize, &data, &dataSize);
+
+    printf("packet --\n%s---packet/\n", packet );
+
+    if ( isChunked )
+    {
+        chunk **chunkv;
+        int chunkc;
+        get_all_chunks_in_packet(data, dataSize, &chunkv, &chunkc);
+
+        fd->currChunkSize = chunkv[chunkc-1]->chunkSize;
+        fd->currChunkRemaining = (chunkv[chunkc-1]->chunkSize) - (chunkv[chunkc-1]->dataInPacket);
+        if ((chunkv[chunkc-1]->chunkSize) == 0)
+            fd->state = 0;//finished download
+        else
+            fd->state = 1;//still downloading
+        long final = 0, i;
+        for (i = 0; i < chunkc; ++i)
+            final += chunkv[i]->dataInPacket;
+
+        fd->amountDownloaded = final;
+    }else{
+        long len = get_content_length(packet, packetSize);
+        fd->fileSize = len;
+        if (len == dataSize)
+            fd->state = 0;//finished download
+        else
+            fd->state = 1;//still downloading
+
+        fd->amountDownloaded = dataSize;
+    }
 }
 
 //return the first packet of a file download
 //it returns the html error code, returns 200 if OK
+//TODO: this function is too long
 int start_file_download(char* inputUrl, char* addedHeaders, fileDownload** fd)
 {
     int type;
     char *domain, *fileUrl;
     parseUrl(inputUrl, &type, &domain, &fileUrl);
-
     //get first packet
     char *getData = getRequestData( fileUrl, domain, "", addedHeaders );
     
     //connect
     connection *c;
-    if (type == 1){
+    if (type == 1)
         c = sslConnect( domain, "443" );
-    }else{
+    else
         printf("non https protocol used....hm.....\n");
-    }
-    //send it
+
     SSL_write (c->sslHandle, getData, strlen (getData));
 
-    char* buffer = malloc(MAXDATASIZE);
-    int received = SSL_read (c->sslHandle, buffer, MAXDATASIZE-1);
-    buffer[received] = '\0';
+    //get reply
+    char* response = malloc(MAXDATASIZE);
+    int received = SSL_read (c->sslHandle, response, MAXDATASIZE-1);
+    response[received] = '\0';
 
-    int code = get_http_response_code( buffer, received );
-
+    int code = get_http_response_code( response, received );
     if (code >= 300 || code < 200)
-    {
-        printf("get: \n\n%s\n\n", getData );
-        printf("packet: \n\n%s\n\n", buffer );
         return code;
-    }
 
-    int isChunked = is_chunked( buffer, received );
-
-    //get_packet_data(packet, packetSize, isChunked, datav, datac, datavSize);
-    
     *fd = malloc( sizeof( fileDownload ) );
-    (*fd)->isChunked          = isChunked; 
-    (*fd)->directFileUrl      = inputUrl;
-    (*fd)->firstPacket        = buffer;
-    (*fd)->currentPacket      = buffer;
-    (*fd)->currentPacketNo    = 0;
-    (*fd)->amountDownloaded   = 0;//TODO: check the amount of data downloaded
-    (*fd)->fileSize           = 0;//check if this can be set or not
-    (*fd)->currConnection     = c;
-    (*fd)->state              = 1;//TODO: enum this
-    //SET THE CHUNKING STUFF AND THE STATE
+    fill_fileDownload( *fd, response, received, inputUrl );
+
+
     return code;
 }
 

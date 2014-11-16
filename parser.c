@@ -78,13 +78,22 @@ int parseUrl(char* inputUrl, int* type, char** domain, char** fileUrl){
     	*type = -1;
     }
 
-    //get the url (until we hit "/" )
-    char* newPtr = strstrn(ptr+3, "/", strlen(inputUrl) - protoSize - 3);
-    *domain = malloc( (newPtr - (ptr+3)) + 1 );
-    (*domain)[ (newPtr - (ptr+3)) ] = '\0';
-    memcpy( *domain, ptr+3, (newPtr - (ptr+3)) );
 
-    *fileUrl = malloc( (strlen(inputUrl) - (newPtr - inputUrl)) + 1 );
-    (*fileUrl)[ (strlen(inputUrl) - (newPtr - inputUrl)) + 1 ] = '\0';
-    memcpy( *fileUrl, newPtr, (strlen(inputUrl) - (newPtr - inputUrl)) );
+    ptr += strlen("://");
+    int remaining = strlen(inputUrl) - (ptr - inputUrl);
+
+    //FIXME: THIS IS WAY TOO HARD TO READ ! HAVE A BETTER WAY OF GETTING STRING SIZE !
+    //get the url (until we hit "/" )
+    char* newPtr = strstrn(ptr, "/", remaining);
+    int domainLen = (newPtr - ptr);
+    *domain = malloc( domainLen + 1 );
+    (*domain)[ domainLen ] = '\0';
+    
+    memcpy( *domain, ptr, domainLen );
+
+    remaining = strlen(inputUrl) - (newPtr - inputUrl);
+
+    *fileUrl = malloc( remaining + 1 );
+    (*fileUrl)[ remaining ] = '\0';
+    memcpy( *fileUrl, newPtr, remaining);
 }

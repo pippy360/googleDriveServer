@@ -1,3 +1,5 @@
+//this file is spaghetti
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "networking.h"
@@ -27,9 +29,30 @@ char* 		currentAccessToken 		= NULL;
 unsigned   	ATExpireTime 			= 0;
 char* 		currentRefreshToken 	= NULL;
 
-//the initial stuff, load the files, set the global vars
-void init(){
+void loadFromFile(){
+	char * line = NULL;
+	size_t zero = 0;
+	FILE *f = fopen("refresh.token", "r");
+	if (f == NULL)
+		exit(EXIT_FAILURE);
+	
+	rewind(f);
+	int length = getline(&line, &zero, f);
+	currentRefreshToken = line;
+	//todo: handle windows line ending!!!
+	currentRefreshToken[length-1] = '\0';
 
+	fclose(f);
+}
+
+void saveToFile(){
+	FILE *f = fopen("refresh.token", "w");
+	fprintf(f, "%s\n", currentRefreshToken);
+	fclose(f);
+}
+
+void google_init(){
+	loadFromFile();
 }
 
 char* getAccessTokenHTTPHeaders( char* code ){
@@ -85,6 +108,8 @@ void send_to_google(char* data, char** access_token, char** refresh_token,
 
 	if (timeStr != NULL)
 		*expire_time = time(NULL) + (int) strtol(timeStr, NULL, 10);
+
+	sslDisconnect (c);
 }
 
 //also sets the global vars
@@ -96,9 +121,16 @@ char *getAccessTokenWithRefreshToken(char *input_refresh_token){
 	sprintf( data, REFRESH_TOKEN_DATA, input_refresh_token );
 	send_to_google(data, &access_token, &refresh_token, &expires_in, &error, &error_description);
 
+	if (access_token == NULL)
+	{
+		printf("ERROR %s\n", error);
+		if( error_description != NULL )
+			printf("%s\n", error_description);
+
+		return NULL;
+	}
 	currentAccessToken 		= access_token;
 	ATExpireTime 			= expires_in;
-	currentRefreshToken 	= refresh_token;
 
 	return access_token;
 }
@@ -129,13 +161,22 @@ char* getNewAccessTokenWithLink(){
 
 //todo: explain
 char* getAccessToken(){
+
 	//check if the access token is valid
 	if ( ATExpireTime > (unsigned)time(NULL) ){
 		return currentAccessToken;
 	}else if( currentRefreshToken != NULL ){
-		return getAccessTokenWithRefreshToken( currentRefreshToken );
+		char* output = getAccessTokenWithRefreshToken( currentRefreshToken );
+		//if there's a bad refresh token
+		if( output == NULL )
+			output = getNewAccessTokenWithLink();
+
+		saveToFile();
+		return output;
 	}else{
 		//else ask for the user to get one
-		return getNewAccessTokenWithLink();
+		char* output = getNewAccessTokenWithLink();
+		saveToFile();
+		return output;
 	}
 }

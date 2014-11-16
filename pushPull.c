@@ -2,6 +2,8 @@
 //todo: write packet logger !!!
 //TODO: who closes the connection ?
 //TODO: learn error handling
+//"Note that the major and minor numbers MUST be treated as"
+//"separate integers and that each MAY be incremented higher than a single digit."
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,11 +29,26 @@
                     "Content-length: %d\r\n\r\n%s"
 
 typedef struct {
-    char* filename;
+    connection *currConnection;//chuncked or content-length 
+    int   isChunked;//chuncked or content-length 
     char* directFileUrl;
-    int   downloadType;//chuncked or content-length
+    char* firstPacket;
+    char* currentPacket;
+    int   currentPacketNo;//0 = first packet
+    long  amountDownloaded;
+    long  fileSize;//not set if chuncked
+    int   state;
+    long  currChunkSize;
+    long  currChunkRemaining;
 } fileDownload;
 
+
+void free_fileDownload(fileDownload *fd){
+    free( fd->directFileUrl );
+    free( fd->firstPacket );
+    free( fd->currentPacket );
+    free( fd );
+}
 
 void flipBits(void* packetData, int size){
     char* b = packetData;
@@ -47,7 +64,6 @@ void decryptPacketData(void* packetData, int size){
 }
 
 long get_content_length(char* buf, int bufSize){
-    
     char* ptr;
     if ((ptr = strstrn( buf, "Content-Length: ", bufSize )) != NULL ){
         return strtol( ptr + strlen("Content-Length: "), '\0', 10 );
@@ -67,79 +83,9 @@ int strip_packet(char* const buf, const int bufSize, void** header, int* headerS
     return -1;
 }
 
-void handle_file_request(char* clientGetRequest, int clientGetRequestLength, int client_fd){
-
-    //process the clients get request
-    char    tempBuf[MAXDATASIZE];
-
-    //get the file the client requested from the packet
-    char*   filePath;
-    if(get_requsted_file_string(clientGetRequest, clientGetRequestLength, &filePath) == -1)
-        printf("failed to extract the file from clients get request\n");
-
-    printf("get request: %s\n", filePath);
-
-    char*   proxiedRequestData;
-    int     proxiedRequestDataLength;
-    //proxyGetRequest(clientGetRequest, clientGetRequestLength, FILE_SERVER_URL, &proxiedRequestData, &proxiedRequestDataLength);
-
-    //set up a connection to fileServer
-    int fileServer_fd = set_up_tcp_connection(FILE_SERVER_URL, "80");
-    if( send(fileServer_fd, proxiedRequestData, proxiedRequestDataLength, 0) == -1 )
-        printf("get request to fileServer failed to send\n");
-
-    //get the first packet from the fileServer
-    int tempByteCount = recv(fileServer_fd, tempBuf, MAXDATASIZE-1, 0);
-
-    long fileSize = get_content_length(tempBuf, tempByteCount);//get the file length
-    //seperate the header and the data
-    int headerSize, dataSize;
-    void *data, *header;
-    strip_packet( tempBuf, tempByteCount, &header, &headerSize,
-                    &data, &dataSize);
-
-    //decrypt it
-    flipBits(data, dataSize);
-    
-    //send the first response packet to the client
-    if( send(client_fd, tempBuf, tempByteCount, 0) == -1 )
-        printf("send failed\n");
-
-    //then handle the remaining bytes
-    long remaining = fileSize - dataSize;
-    for ( ;remaining != 0; remaining -= dataSize){
-        
-        dataSize = recv(fileServer_fd, tempBuf, MAXDATASIZE-1, 0);
-        flipBits(data, dataSize);
-
-        if( send(client_fd, tempBuf, dataSize, 0) == -1 ){
-            printf("failed to proxy file piece to client \n");
-            //logPacket( )
-        }
-    }
-
-    printf("file sent: %s : %lu B \n", filePath, fileSize);
-    //TODO: FREE EVERYTHING !!!
-    close(fileServer_fd);
-}
-
 int is_get( char *packet, int packetLength ){
     return (packetLength > 2 && strstrn(packet, "GET", 3) != NULL);
 }
-
-void handle_client( int client_fd )
-{
-    //see what the client wants
-    char* firstClientPacket = malloc( MAXDATASIZE );
-    int firstClientPacketLength = recv(client_fd, firstClientPacket, MAXDATASIZE-1, 0);
-
-    if( is_get(firstClientPacket, firstClientPacketLength) ){    
-        handle_file_request(firstClientPacket, firstClientPacketLength, client_fd);
-    }else{
-        printf("non get packet received\n");
-    }    
-}
-
 
 int get_requsted_file_string(char* buf, int inputPacketLength, char** outputStr){
 
@@ -210,22 +156,18 @@ int changeFileRequest(char *buf, int inputPacketLength, char *newFilePath,
     }
 }
 
+//NOTE: this probably won't be needed
 // a space is automatically set between the id and new value, so don't inlude it
 int set_header_value(char *inputPacket, int inputPacketLength, char *identifier, char *newValue, 
                         char **outputPacket, int* outputPacketLength)
 {
-//TODO:
 }
 
 /*
-
 "POST %s HTTP/1.1\r\nHost: %s\r\n"\
                     "Content-Type: application/x-www-form-urlencoded\r\n"\
                     "Content-length: %d%s\r\n\r\n%s"
-
 */
-
-
 char *getRequestData(char *fileUrl, char *domain, char *content, char *addedHeaders ){
     char *output = malloc( strlen(GET_HEADER_FORMAT) + strlen(fileUrl) + strlen(domain) + strlen(content) 
         + strlen(addedHeaders) );
@@ -234,10 +176,31 @@ char *getRequestData(char *fileUrl, char *domain, char *content, char *addedHead
     return output;    
 }
 
+int get_http_response_code(char* packet, int packetLength){
+    char *ptr;
+    for (ptr = packet; *ptr != ' '; ptr++)
+        ;
+    
+    char buffer[4];
+    int i;
+    for ( i=0, ptr += 1; *ptr != ' ' ; ptr++, i++)
+        buffer[i] = *ptr;
+
+    buffer[3] = '\0';
+    return (int)strtol( buffer, '\0', 10 );
+}
+
+int is_chunked(char* packet, int packetLength){
+    return strstrn(packet, "Transfer-Encoding: chunked", packetLength) != NULL;
+}
+
+void get_packet_data(packet, packetSize, isChunked, datav, datac, datavSize){
+
+}
+
 //return the first packet of a file download
 //it returns the html error code, returns 200 if OK
-int start_file_download(char* inputUrl, char* addedHeaders, fileDownload** fd, 
-                            char** firstPacket, int* firstPacketLength)
+int start_file_download(char* inputUrl, char* addedHeaders, fileDownload** fd)
 {
     int type;
     char *domain, *fileUrl;
@@ -245,8 +208,7 @@ int start_file_download(char* inputUrl, char* addedHeaders, fileDownload** fd,
 
     //get first packet
     char *getData = getRequestData( fileUrl, domain, "", addedHeaders );
-    printf("%s\n", getData);
-
+    
     //connect
     connection *c;
     if (type == 1){
@@ -254,32 +216,57 @@ int start_file_download(char* inputUrl, char* addedHeaders, fileDownload** fd,
     }else{
         printf("non https protocol used....hm.....\n");
     }
-
     //send it
     SSL_write (c->sslHandle, getData, strlen (getData));
 
-    char buffer[MAXDATASIZE+1];
+    char* buffer = malloc(MAXDATASIZE);
     int received = SSL_read (c->sslHandle, buffer, MAXDATASIZE-1);
-
     buffer[received] = '\0';
-    printf("%s\n", buffer);
 
-    received = SSL_read (c->sslHandle, buffer, MAXDATASIZE-1);
+    int code = get_http_response_code( buffer, received );
 
-    buffer[received] = '\0';
-    printf("%s\n", buffer);
+    if (code >= 300 || code < 200)
+    {
+        printf("get: \n\n%s\n\n", getData );
+        printf("packet: \n\n%s\n\n", buffer );
+        return code;
+    }
 
-    //set the struct
-    //set the datails and return the error code
+    int isChunked = is_chunked( buffer, received );
+
+    //get_packet_data(packet, packetSize, isChunked, datav, datac, datavSize);
+    
+    *fd = malloc( sizeof( fileDownload ) );
+    (*fd)->isChunked          = isChunked; 
+    (*fd)->directFileUrl      = inputUrl;
+    (*fd)->firstPacket        = buffer;
+    (*fd)->currentPacket      = buffer;
+    (*fd)->currentPacketNo    = 0;
+    (*fd)->amountDownloaded   = 0;//TODO: check the amount of data downloaded
+    (*fd)->fileSize           = 0;//check if this can be set or not
+    (*fd)->currConnection     = c;
+    (*fd)->state              = 1;//TODO: enum this
+    //SET THE CHUNKING STUFF AND THE STATE
+    return code;
 }
 
-int get_next_packet_file_download()
+//remember this is a file download, not just a get next packet
+//returns null when the file download is done
+//download is done when 0 chunk or when size complete
+int get_next_packet_file_download(fileDownload *fd)
 {
-
+    //get the open socket from the filedownload
+    //if it's closed fix it somehow 
+    //free the previous packet
+    char* buffer = malloc(MAXDATASIZE);
+    int received = SSL_read (fd->currConnection->sslHandle, buffer, MAXDATASIZE-1);
+    buffer[received] = '\0';
+    fd->currentPacket = buffer;
 }
 
 int main(void)
 {
+    google_init();
     //fetch a file,
     int type;
     char *domain, *fileUrl;
@@ -294,7 +281,17 @@ int main(void)
     strcat(addedHeader, accessToken);
     strcat(addedHeader, "\r\n");
 
-    start_file_download(inputUrl, addedHeader, NULL, NULL, NULL);
+    fileDownload *fd;
+    int code = start_file_download(inputUrl, addedHeader, &fd);
+    printf("code: %d\n", code);
+    printf("firstPacket: %s\n", fd->firstPacket);
+
+    while ( fd->state != 0 )
+    {
+        get_next_packet_file_download(fd);
+        printf("packet: \n\n%s\n", fd->currentPacket );
+    }
+
     //now create the get request
     return 0;
 }

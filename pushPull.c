@@ -23,6 +23,7 @@
 
 #define MAXDATASIZE 2000
 #define MAX_CHUNK_ARRAY_LENGTH 100
+#define MAX_CHUNK_SIZE_BUFFER 100
 #define SERVER_LISTEN_PORT "25001"
 #define FILE_SERVER_URL "localhost"
 #define GET_HEADER_FORMAT "GET %s HTTP/1.1\r\nHost: %s\r\n%s"\
@@ -30,18 +31,32 @@
                     "Content-length: %d\r\n\r\n%s"
 
 typedef struct {
-    connection *currConnection;//chuncked or content-length 
+    int   state;//0-download finished, 1-downloading the header, 2-downloading data
     int   isChunked;//chuncked or content-length 
-    char* directFileUrl;
-    char* firstPacket;
-    char* currentPacket;
-    int   currentPacketNo;//0 = first packet
-    long  amountDownloaded;
+    long  amount_of_file_downloaded;
     long  fileSize;//not set if chuncked
-    int   state;
-    long  currChunkSize;
-    long  currChunkRemaining;
+    long  current_chunk_size;
+    long  current_chunk_remaining;
+    char  current_chunk_size_buffer[ MAX_CHUNK_SIZE_BUFFER ];//a buff
+    int   chunk_state;//0-waiting for length, 1-waiting for chunk start, 2-active download
+    char* directFileUrl;
+    char* headers;
+    int   headers_length;
+    int   headers_buffer_size;//the actual allocated size of the header buffer
+    char* current_data_buffer;
+    int   http_code;
 } fileDownload;
+
+typedef struct
+{
+    connection *currConnection;//chuncked or content-length 
+    char* firstPacket;
+    char* current_packet;
+    int   current_packet_length;
+    char* directFileUrl;
+    long  amount_of_data_downloaded;
+    int   current_packet_no;//0 = first packet
+} packet_organiser;
 
 typedef struct {
     long chunkSize;
@@ -49,10 +64,16 @@ typedef struct {
     char* data;
 } chunk;
 
+fileDownload* create_fileDownload(){
+    fileDownload *fd = malloc( sizeof(fileDownload) );
+    fd->state = 1;
+    fd->headers = NULL;
+    fd->chunkState = 1;//0-waiting for length, 1-waiting for chunk start, 2-active download
+    fd->current_chunk_size_buffer[0] = '\0';
+}
+
 void free_fileDownload(fileDownload *fd){
-    free( fd->directFileUrl );
-    free( fd->firstPacket );
-    free( fd->currentPacket );
+    //TODO:
     free( fd );
 }
 
@@ -72,7 +93,7 @@ void decryptPacketData(void* packetData, int size){
 long get_content_length(char* buf, int bufSize){
     char* ptr;
     if ((ptr = strstrn( buf, "Content-Length: ", bufSize )) != NULL ){
-        return strtol( ptr + strlen("Content-Length: "), '\0', 10 );
+        return strtol( ptr + strlen("Content-Length: "), NULL, 10 );
     }
     return -1;
 }
@@ -193,7 +214,7 @@ int get_http_response_code(char* packet, int packetLength){
         buffer[i] = *ptr;
 
     buffer[3] = '\0';
-    return (int)strtol( buffer, '\0', 10 );
+    return (int)strtol( buffer, NULL, 10 );
 }
 
 int is_chunked(char* packet, int packetLength){
@@ -224,6 +245,7 @@ void get_all_chunks_in_packet(char* packet, int packetLength, chunk*** chunkv, i
         printf("ptr: %s\n---ptr/\n", ptr);
         ptr = endPtr;
         printf("val of data in packet: %d\n", (int)c->dataInPacket );
+        printf("val of chunk size    : %d\n", (int)c->chunkSize );
         arr[arrayLength] = c;
         if ( c->dataInPacket != c->chunkSize )
             break;        
@@ -234,7 +256,7 @@ void get_all_chunks_in_packet(char* packet, int packetLength, chunk*** chunkv, i
 }
 
 //REMOVE HEADER BEFORE PASSING PACKET IN
-//todo: this may not be need, just get all the chunks in a packet and check the last one for 0 length
+//todo: this may not be needed, just get all the chunks in a packet and check the last one for 0 length
 int is_final_chunked_packet(char *packet, int packetLength){
     chunk **chunkv;
     int  chunkc, i;
@@ -246,61 +268,29 @@ int is_final_chunked_packet(char *packet, int packetLength){
     return 0;
 }
 
-void fill_fileDownload(fileDownload *fd, char *packet, int packetSize, char *inputUrl ){
-    int isChunked = is_chunked( packet, packetSize );
-    fd->isChunked            = isChunked;
-    fd->directFileUrl        = inputUrl;
-    fd->firstPacket          = packet;
-    fd->currentPacket        = packet;
-    fd->currentPacketNo      = 0;
-
-    //strip the packet
-    char *header, *data;
-    int headerSize, dataSize;
-    strip_packet(packet, packetSize, &header, &headerSize, &data, &dataSize);
-
-    printf("packet --\n%s---packet/\n", packet );
-
-    if ( isChunked )
-    {
-        chunk **chunkv;
-        int chunkc;
-        get_all_chunks_in_packet(data, dataSize, &chunkv, &chunkc);
-
-        fd->currChunkSize = chunkv[chunkc-1]->chunkSize;
-        fd->currChunkRemaining = (chunkv[chunkc-1]->chunkSize) - (chunkv[chunkc-1]->dataInPacket);
-        if ((chunkv[chunkc-1]->chunkSize) == 0)
-            fd->state = 0;//finished download
-        else
-            fd->state = 1;//still downloading
-        long final = 0, i;
-        for (i = 0; i < chunkc; ++i)
-            final += chunkv[i]->dataInPacket;
-
-        fd->amountDownloaded = final;
-    }else{
-        long len = get_content_length(packet, packetSize);
-        fd->fileSize = len;
-        if (len == dataSize)
-            fd->state = 0;//finished download
-        else
-            fd->state = 1;//still downloading
-
-        fd->amountDownloaded = dataSize;
-    }
+void fill_packet_organiser(packet_organiser *po, char *packet, int packetSize, 
+                        char *inputUrl, connection *c )
+{
+    po->currConnection  = c;//chuncked or content-length 
+    po->firstPacket     = packet;
+    po->current_packet  = packet;
+    po->current_packet_length = packetSize;
+    po->directFileUrl   = inputUrl;
+    po->amount_of_data_downloaded += packetSize;
+    po->current_packet_no = 0;
 }
 
 //return the first packet of a file download
-//it returns the html error code, returns 200 if OK
 //TODO: this function is too long
-int start_file_download(char* inputUrl, char* addedHeaders, fileDownload** fd)
+//ONLY HANDLES PACKET ORGANISATION
+int start_file_download(char* inputUrl, char* addedHeaders, packet_organiser **po)
 {
     int type;
     char *domain, *fileUrl;
     parseUrl(inputUrl, &type, &domain, &fileUrl);
     //get first packet
     char *getData = getRequestData( fileUrl, domain, "", addedHeaders );
-    
+
     //connect
     connection *c;
     if (type == 1)
@@ -315,59 +305,195 @@ int start_file_download(char* inputUrl, char* addedHeaders, fileDownload** fd)
     int received = SSL_read (c->sslHandle, response, MAXDATASIZE-1);
     response[received] = '\0';
 
-    int code = get_http_response_code( response, received );
-    if (code >= 300 || code < 200)
-        return code;
+    *po = malloc( sizeof( packet_organiser ) );
+    fill_packet_organiser( *po, response, received, inputUrl, c );
 
-    *fd = malloc( sizeof( fileDownload ) );
-    fill_fileDownload( *fd, response, received, inputUrl );
-
-
-    return code;
+    return 0;//TODO: why ?
 }
 
 //remember this is a file download, not just a get next packet
-//returns null when the file download is done
+//returns NULL when the file download is done
 //download is done when 0 chunk or when size complete
-int get_next_packet_file_download(fileDownload *fd)
+int get_next_packet_file_download(packet_organiser *po)
 {
-    //get the open socket from the filedownload
+    //get the open socket from the fileDownload
     //if it's closed fix it somehow 
     //free the previous packet
+    //if it's chunked check set the chunk state
     char* buffer = malloc(MAXDATASIZE);
-    int received = SSL_read (fd->currConnection->sslHandle, buffer, MAXDATASIZE-1);
+    int received = SSL_read (po->currConnection->sslHandle, buffer, MAXDATASIZE-1);
     buffer[received] = '\0';
-    fd->currentPacket = buffer;
+    po->current_packet = buffer;
+}
+
+
+//TODO: this can be cleaned up
+void add_to_header_buffer(fileDownload *fd, char *data, int dataLength){
+    //set the headers_length
+    if ( fd->headers == NULL )
+    {
+        fd->headers = malloc( dataLength + 1 );
+        fd->headers_buffer_size = dataLength + 1;
+        memcpy( fd->headers, data, dataLength );
+        fd->headers[dataLength] = '\0';
+        fd->headers_length = dataLength;
+    
+    }else{
+        fd->headers = realloc(fd->headers, fd->headers_length + dataLength + 1);
+        fd->headers_buffer_size = fd->headers_length + dataLength + 1;
+        memcpy( (fd->headers + fd->headers_length), data, dataLength );
+        fd->headers_length = fd->headers_length + dataLength;  
+        fd->headers[fd->headers_length] = '\0';
+    }
+}
+
+int process_packet_header(packet_organiser *po, fileDownload *fd){
+    
+    //check for end in this packet
+    char *ptr;
+    int offset;
+    if( (ptr = strstrn(po->current_packet, "\r\n\r\n", po->current_packet_length)) != NULL ){
+        ptr += 4;
+        fd->state = 2;
+        add_to_header_buffer(fd, po->current_packet, (ptr - po->current_packet));
+        offset = (ptr - po->current_packet);
+    }else{
+        add_to_header_buffer(fd, po->current_packet, po->current_packet_length);
+    }
+
+    //FIXME: THIS SHOULD BE ALLOWED TO FAIL !
+    fd->http_code = get_http_response_code( fd->headers, fd->headers_length );
+
+    if( 0/*the packet contains content-lenght*/ ){
+        //todo: actually implement this 
+    
+    }else if ( strstrn(fd->headers, "Transfer-Encoding: chunked", fd->headers_length) != NULL ){
+        fd->isChunked = 1;
+    }
+
+    return offset;
+}
+
+//TODO:
+void add_to_data_buffer(fileDownload *fd, char *data, int dataLength){
+    if ( fd->headers == NULL )
+    {
+        fd->headers = malloc( dataLength + 1 );
+        fd->headers_buffer_size = dataLength + 1;
+        memcpy( fd->headers, data, dataLength );
+        fd->headers[dataLength] = '\0';
+        fd->headers_length = dataLength;
+    
+    }else{
+        fd->headers = realloc(fd->headers, fd->headers_length + dataLength + 1);
+        fd->headers_buffer_size = fd->headers_length + dataLength + 1;
+        memcpy( (fd->headers + fd->headers_length), data, dataLength );
+        fd->headers_length = fd->headers_length + dataLength;  
+        fd->headers[fd->headers_length] = '\0';
+    }
+}
+
+//FIXME: this is really messy and poorly tested
+void process_packet_data_chunks(packet_organiser *po, fileDownload *fd, int offset){
+    //get all the chunks in a packet
+    //all set the state and load the size buffer/data buffer
+    //set the packet stats
+    //LOOK OUT FOR 0 BYTE CHUNK
+    char *data = po->current_packet + offset;
+    char *pos = data;
+
+    while(1){
+
+        if( fd->chunkState == 1 ){
+            char *ptr;
+            //check we can read the whole length
+            if ( (ptr = strstrn(data, "\r\n", po->current_packet_length - offset)) != NULL )
+            {
+                pos = ptr + strlen("\r\n");
+                fd->current_chunk_size_buffer[0] = '\0'; //wipe the length buffer
+                fd->current_chunk_size = strtol( fd->current_chunk_size_buffer, NULL, 10);
+                fd->chunkState = 2;
+                //FIXME: bug here, if the zero chunk spans over two packets then the last packet will be ignored
+                if ( fd->current_chunk_size == 0 ){
+                    fd->state = 0;
+                    //set everything else that should be set
+                    return;
+                }
+            }else{
+                int dataSize = po->current_packet_length - (data - po->current_packet);
+                sprintf( fd->current_chunk_size_buffer, "%s%.*s", fd->current_chunk_size_buffer, dataSize, data;
+            }
+        }
+
+        if( fd->chunkState == 2 || fd->chunkState == 3 ){
+            int remainingPacketSize =
+            if ( /*the data goes to the next packet*/ ){
+                //add_to_data_buffer(fd, data, dataLength);
+                fd->chunkState = 3;
+                break;
+            }else{
+                //pump everythign 
+                printf("DATA: %.*s",  )//add_to_data_buffer(fd, data, dataLength);
+                fd->chunkState = 1;
+            }
+        }
+    }
+}
+
+//TODO: MAKE SURE IT CAN HANDLE MULTIPLE CHUNKS IN ONE PACKET
+void process_packet_data(packet_organiser *po, fileDownload *fd, int offset){
+    char* data = po->current_packet + offset;
+    printf("processing the data, offset...data...: %s\n", po->current_packet + offset);
+    //set if the download if finished or not
+    if ( fd->isChunked ){
+        process_packet_data_chunks(po, fd, offset);
+    }else{
+        /*handle non chunked data*/
+    }
+}
+
+//remember this is per packet
+void process_packet(packet_organiser *po, fileDownload *fd){
+
+    int offset = 0;
+    if (fd->state == 1)
+    {
+        offset = process_packet_header(po, fd);
+    }
+
+    if (fd->state == 2)
+    {
+        /* TODO SOME WAY OF PASSING ON THE OFFSET */
+        process_packet_data(po, fd, offset);
+    }
 }
 
 int main(void)
 {
     google_init();
+    
     //fetch a file,
     int type;
     char *domain, *fileUrl;
     char inputUrl[] = "https://www.googleapis.com/drive/v2/files/";
-    parseUrl(inputUrl, &type, &domain, &fileUrl);
+    
+    //create the access token
+    //TODO: write get access token header
+    char *accessTokenHeader = getAccessTokenHeader();
 
-    char* accessToken = getAccessToken();
-    char headerStub[] = "Authorization: Bearer ";
-    char addedHeader[strlen(headerStub) + strlen(accessToken) + 1 + 2];
-    addedHeader[0] = '\0';
-    strcat(addedHeader, headerStub);
-    strcat(addedHeader, accessToken);
-    strcat(addedHeader, "\r\n");
+    packet_organiser *po;
+    start_file_download(inputUrl, accessTokenHeader, &po);
 
-    fileDownload *fd;
-    int code = start_file_download(inputUrl, addedHeader, &fd);
-    printf("code: %d\n", code);
-    printf("firstPacket: %s\n", fd->firstPacket);
+    //todo: !!
+    fileDownload *fd = create_fileDownload();
+    process_packet( po, fd );
 
-    while ( fd->state != 0 )
-    {
-        get_next_packet_file_download(fd);
-        printf("packet: \n\n%s\n", fd->currentPacket );
-    }
+    //while ( fd->state != 0 )
+    //{
+    //    get_next_packet_file_download(po);
+    //    printf("packet: \n\n%s\n", po->current_packet );
+    //}
 
-    //now create the get request
+    
     return 0;
 }

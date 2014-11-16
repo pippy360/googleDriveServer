@@ -180,3 +180,15 @@ char* getAccessToken(){
 		return output;
 	}
 }
+
+char* getAccessTokenHeader(){
+
+    char *accessToken = getAccessToken();
+    char headerStub[]  = "Authorization: Bearer ";
+
+    char* tokenHeader = malloc( strlen(headerStub) + strlen(accessToken) + 1 + 2 );
+    sprintf( tokenHeader, "%s%s%s", headerStub, accessToken, "\r\n");
+    
+    free(accessToken);
+    return tokenHeader;
+}

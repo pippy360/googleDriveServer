@@ -68,7 +68,7 @@ fileDownload* create_fileDownload(){
     fileDownload *fd = malloc( sizeof(fileDownload) );
     fd->state = 1;
     fd->headers = NULL;
-    fd->chunkState = 1;//0-waiting for length, 1-waiting for chunk start, 2-active download
+    fd->chunk_state = 1;//0-waiting for length, 1-waiting for chunk start, 2-active download
     fd->current_chunk_size_buffer[0] = '\0';
 }
 
@@ -320,10 +320,15 @@ int get_next_packet_file_download(packet_organiser *po)
     //if it's closed fix it somehow 
     //free the previous packet
     //if it's chunked check set the chunk state
+    //TODO: you can save on the malloc by just overwriting the previous current packet buffer
     char* buffer = malloc(MAXDATASIZE);
     int received = SSL_read (po->currConnection->sslHandle, buffer, MAXDATASIZE-1);
     buffer[received] = '\0';
+    char *ptr = po->current_packet;
     po->current_packet = buffer;
+    po->current_packet_length = received;
+
+    free(ptr);
 }
 
 
@@ -404,37 +409,64 @@ void process_packet_data_chunks(packet_organiser *po, fileDownload *fd, int offs
 
     while(1){
 
-        if( fd->chunkState == 1 ){
+        printf("in the processor: offset: %d\n", offset );
+        if( fd->chunk_state == 1 ){
+            printf("name processor hit \n");
+            //attempt to grab the length of the chunk
             char *ptr;
-            //check we can read the whole length
-            if ( (ptr = strstrn(data, "\r\n", po->current_packet_length - offset)) != NULL )
+
+            //FIXME: \r\n could be split accros 2 packets, hence this doesn't work all of the time
+            if ( (ptr = strstrn(pos, "\r\n", po->current_packet_length - offset)) != NULL )
             {
-                pos = ptr + strlen("\r\n");
-                fd->current_chunk_size_buffer[0] = '\0'; //wipe the length buffer
-                fd->current_chunk_size = strtol( fd->current_chunk_size_buffer, NULL, 10);
-                fd->chunkState = 2;
+                //if success
+
+                int dataSize = ptr - pos;
+                printf("the buffer atm is: %s\n", fd->current_chunk_size_buffer);
+                sprintf( fd->current_chunk_size_buffer, "%s%.*s", fd->current_chunk_size_buffer, dataSize, pos);
+
+                fd->current_chunk_size = strtol( fd->current_chunk_size_buffer, NULL, 16);
+                fd->current_chunk_remaining = fd->current_chunk_size;
+
+                printf("processing a chunk of size: %lu\n", fd->current_chunk_size);
+
+                fd->chunk_state = 2;
                 //FIXME: bug here, if the zero chunk spans over two packets then the last packet will be ignored
                 if ( fd->current_chunk_size == 0 ){
                     fd->state = 0;
+                    printf("\n\n---HIT---\n\n");
                     //set everything else that should be set
                     return;
                 }
+                pos = ptr + strlen("\r\n");
+                fd->current_chunk_size_buffer[0] = '\0';//wipe the buffer
             }else{
+                //if fail
                 int dataSize = po->current_packet_length - (data - po->current_packet);
-                sprintf( fd->current_chunk_size_buffer, "%s%.*s", fd->current_chunk_size_buffer, dataSize, data;
+                sprintf( fd->current_chunk_size_buffer, "%s%.*s", fd->current_chunk_size_buffer, dataSize, data);
+                pos = po->current_packet + po->current_packet_length;//end of packet
             }
         }
 
-        if( fd->chunkState == 2 || fd->chunkState == 3 ){
-            int remainingPacketSize =
-            if ( /*the data goes to the next packet*/ ){
-                //add_to_data_buffer(fd, data, dataLength);
-                fd->chunkState = 3;
+        if( fd->chunk_state == 2 || fd->chunk_state == 3 ){
+            int remainingPacketSize = (po->current_packet + po->current_packet_length) - pos;
+            if ( fd->current_chunk_remaining > remainingPacketSize ){
+                //add_to_data_buffer(fd, data, remainingPacketSize);
+                printf("DATA1:\n--%.*s--\n", (int) remainingPacketSize, pos);//add_to_data_buffer(fd, data, dataLength);
+                printf("current chunk remaining: %lu\n", fd->current_chunk_remaining);
+                printf("remaining Packet Size:   %d\n", remainingPacketSize);
+                fd->chunk_state = 3;
+                fd->current_chunk_remaining -= remainingPacketSize;
+
+                printf("\n\n--end--\n\n");
+
                 break;
             }else{
                 //pump everythign 
-                printf("DATA: %.*s",  )//add_to_data_buffer(fd, data, dataLength);
-                fd->chunkState = 1;
+                printf("DATA2:--%.*s--", (int) fd->current_chunk_remaining, pos);//add_to_data_buffer(fd, data, dataLength);
+                fd->chunk_state = 1;
+                fd->current_chunk_remaining = 0;
+                pos += fd->current_chunk_remaining + strlen("\r\n");
+                break;
             }
         }
     }
@@ -443,7 +475,7 @@ void process_packet_data_chunks(packet_organiser *po, fileDownload *fd, int offs
 //TODO: MAKE SURE IT CAN HANDLE MULTIPLE CHUNKS IN ONE PACKET
 void process_packet_data(packet_organiser *po, fileDownload *fd, int offset){
     char* data = po->current_packet + offset;
-    printf("processing the data, offset...data...: %s\n", po->current_packet + offset);
+//    printf("processing the data, offset...data...: %s\n", po->current_packet + offset);
     //set if the download if finished or not
     if ( fd->isChunked ){
         process_packet_data_chunks(po, fd, offset);
@@ -458,6 +490,7 @@ void process_packet(packet_organiser *po, fileDownload *fd){
     int offset = 0;
     if (fd->state == 1)
     {
+        printf("\n\n\n\nwe're still dumping the header\n\n\n");
         offset = process_packet_header(po, fd);
     }
 
@@ -475,7 +508,7 @@ int main(void)
     //fetch a file,
     int type;
     char *domain, *fileUrl;
-    char inputUrl[] = "https://www.googleapis.com/drive/v2/files/";
+    char inputUrl[] = "https://www.googleapis.com/drive/v2/files/root/children";
     
     //create the access token
     //TODO: write get access token header
@@ -484,16 +517,17 @@ int main(void)
     packet_organiser *po;
     start_file_download(inputUrl, accessTokenHeader, &po);
 
+    printf("\n\n\npacket:\n--%s--\n\n\n\n", po->current_packet );
     //todo: !!
     fileDownload *fd = create_fileDownload();
     process_packet( po, fd );
 
-    //while ( fd->state != 0 )
-    //{
-    //    get_next_packet_file_download(po);
-    //    printf("packet: \n\n%s\n", po->current_packet );
-    //}
-
+    while ( fd->state != 0 )
+    {
+        get_next_packet_file_download(po);
+        printf("packet:\n--%s--\n", po->current_packet );    
+        process_packet( po, fd );
+    }
     
     return 0;
 }

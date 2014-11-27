@@ -4,6 +4,9 @@
 
 
 char* strstrn(char* const haystack, const char* needle, const int haystackSize){
+    if (haystackSize < strlen(needle))
+        return NULL;
+
     int i;
     for (i = 0; i < (haystackSize - (strlen(needle) - 1)); i++){
         int j;

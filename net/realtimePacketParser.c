@@ -32,7 +32,6 @@ typedef struct {
 	int stateEndIdentifier;
 	int fullLength;
 	int remainingLength;
-	char *endToken;
 	char *currentTokenPos;
 	/*lengthBuffer used to buffer lengths, because the declared 
 	length could be stretched across multiple packets*/
@@ -90,7 +89,8 @@ void setState(parserStateStuct *state, state_t nextState){
 //0 == finished getting a valid token, 1 == still going through it, -1 == nope, failed
 void token_check(parserStateStuct *state, char *outputBuffer, char *token){
 	if( state->currentPacketPtr[0] == state->endToken[ state->currentTokenPos ] ){
-		if ( currentTokenPos == strlen( state->endToken ) - 1 )
+		state->currentTokenPos++;
+		if ( state->currentTokenPos == strlen( state->endToken ) - 1 )
 			return 0;
 		else
 			return 1;

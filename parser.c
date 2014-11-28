@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "utils.h"
+#include "parser.h"
+
 
 #define MAX_STRING_SIZE 2000
 #define FORMAT "\"%s\" : "
@@ -62,22 +64,23 @@ char* get_json_value(char* inputName, char* jsonData, int jsonDataSize){
 	return output;
 }
 
+//FIXME:
 //TODO: enum for http/https/ftp
+//TODO: should work with lower case too and there shouldn't be so much hardcoded stuff
 //this will break a lot, "example.com" breaks it
-int parseUrl(char* inputUrl, int* type, char** domain, char** fileUrl){
+int parseUrl(char* inputUrl, protocol_t* type, char** domain, char** fileUrl){
     //break at '://' and check if it matches http/https
-    //strstrn
     char *ptr = strstrn(inputUrl, "://", strlen(inputUrl));
-    //get the type by cmping
 
     int protoSize = ptr - inputUrl;
-
-    if( strncmp( inputUrl, "https", protoSize) == 0 ){
-    	*type = 1;
+    if( strncmp( inputUrl, "https", (protoSize > strlen("https"))? protoSize: strlen("https") ) == 0 ){
+    	*type = https;
+    }else if( strncmp( inputUrl, "http", (protoSize > strlen("http"))? protoSize: strlen("http")) == 0 ){
+    	*type = http;
     }else{
-    	*type = -1;
+    	printf("ERROR: BAD PROTOCOL\n");
+    	*type = http;
     }
-
 
     ptr += strlen("://");
     int remaining = strlen(inputUrl) - (ptr - inputUrl);

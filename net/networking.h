@@ -34,3 +34,5 @@ int set_up_tcp_connection(const char* hostname, const char* port);
 connection *sslConnect (char* host, char* port);
 
 void sslDisconnect (connection *c);
+
+connection *set_up_tcp_connection_struct(const char* hostname, const char* port);

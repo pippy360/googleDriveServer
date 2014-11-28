@@ -151,6 +151,15 @@ int set_up_tcp_connection(const char* hostname, const char* port){
     return sockfd;
 }
 
+connection *set_up_tcp_connection_struct (const char* hostname, const char* port){
+  connection *c;
+  c = malloc (sizeof (connection));
+  c->sslHandle = NULL;
+  c->sslContext = NULL;
+  c->socket = set_up_tcp_connection(hostname, port);
+  return c;
+}
+
 //
 // opensll stuff
 //

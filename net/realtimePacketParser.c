@@ -1,144 +1,97 @@
 //parses the header and chunked packets and content-length packets
-
 //RENAME TO HTTP PACKET PARSER
-
 //NOTE: this doesn't EVER buffer anything !!!
-
 //TODO: STATE ENUM
-
 //TODO: create an option to quit once we get to a state
- 
-typedef enum {
-	getHeaderFirstLine,//next state -> finishHeaderValue
-	getHeaderName,
-	finishedHeaderName,//expecting ':' 
-	getHeaderValue,
-	finishedHeaderValue,//expeccting '\r\n' or '\r\n\r\n'
-	getChunkLength,
-	finishedChunkLength,//expecting '\r\n'
-	getChunkData,
-	finishedChunkData,//expecting '\r\n' followed by new chunk or zero chunk
-	getContentLengthData,
-	packetEnd,
-	BAD_PACKET
-} state_t;
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "realtimePacketParser.h"
 
-//state of the parser
-typedef struct {
-	state_t currentState;
-	state_t nextState;
-	char *currentPacketPtr;
-	headerInfo *header;
-	int stateEndIdentifier;
-	int fullLength;
-	int remainingLength;
-	char *currentTokenPos;
-	/*lengthBuffer used to buffer lengths, because the declared 
-	length could be stretched across multiple packets*/
-	char *lengthBuffer;
-	char *nameBuffer;
-} parserStateStuct;
+#define MAX_LEN 10000
+#define MAX_BUFFER 1000//FIXME: do something to prevent bufferoverflows
 
-typedef enum {
-	chunked,
-	contentLength
-} packetDataTypes_t;
+//FIXME: THE BUFFERS SHOULDN'T BE MALLOC'D HERE
+parserStateStuct* get_start_state_struct(){
+	parserStateStuct *state = calloc( sizeof( parserStateStuct ), 1 );
+	state->currentState = 0;
+	state->currentPacketPtr = NULL;
+	state->lengthBuffer 	= malloc(MAX_BUFFER+1);
+	state->lengthBuffer[0] 	= '\0';
+	state->nameBuffer 		= malloc(MAX_BUFFER+1);
+	state->nameBuffer[0] 	= '\0';
+	state->valueBuffer 		= malloc(MAX_BUFFER+1);
+	state->valueBuffer[0] 	= '\0';
 
-typedef struct {
-	packetDataTypes_t type;// 1 - content-length, 2 - chunked
-	unsigned long contentLength;
-} headerInfo;
-
-
-char* get_start_state_struct(){
-
+	return state;
 }
 
 void setState(parserStateStuct *state, state_t nextState){
-	//on state change
-	//set the tokens and stuff
-
-	switch ( nextState ){
-		case getHeaderFirstLine:
-			state->currentState = nextState;
-			break;
-		case getHeaderName:
-			state->currentState = nextState;
-			break;
-		case getHeaderValue:
-			state->currentState = nextState;
-			break;
-		case finishedHeaderValue:
-			state->currentState = nextState;
-			break;
-		case finishedHeaderValue_2:
-			state->currentState = nextState;
-			break;
-		case getChunkLength: getChunkLength_firstNumber ){
-			state->currentState = nextState;
-			break;
-		case getChunkData:
-			state->currentState = nextState;
-			break;
-		case getContentLengthData:
-			state->currentState = nextState;
-			break;
-	}
+	state->currentTokenPos = 0;
+	state->currentState = nextState;
 }
 
 //0 == finished getting a valid token, 1 == still going through it, -1 == nope, failed
-void token_check(parserStateStuct *state, char *outputBuffer, char *token){
-	if( state->currentPacketPtr[0] == state->endToken[ state->currentTokenPos ] ){
-		state->currentTokenPos++;
-		if ( state->currentTokenPos == strlen( state->endToken ) - 1 )
-			return 0;
+int token_check(parserStateStuct *state, char *outputBuffer, char *token){
+	int result;
+	if( state->currentPacketPtr[0] == token[ state->currentTokenPos ] ){
+		if ( state->currentTokenPos == strlen( token ) - 1 )
+			result = 0;
 		else
-			return 1;
+			result = 1;
+		state->currentTokenPos++;
 	}else{
-		return -1;
+		result = -1;
+		state->currentTokenPos = 0;
 	}
+	return result;
 }
 
 //this can only get hardcoded headers, to get more headers use a getHeader function on the fully downloaded header
-void process_byte(char byte, packetStateStuct* state, 
-				char *outputData, int *outputDataMaxLength, int *outputDataLength){
-	//grab any info about the things
-	//add to header name buffer, once a name has finished
+void process_byte(char byte, parserStateStuct* state, 
+				char *outputData, int outputDataMaxLength, int *outputDataLength){
 
-	//TODO: use a switch statement
-
-	int retVal;
+	int retVal, length;
 	char currByte = state->currentPacketPtr[0];
 	switch ( state->currentState ){
 
 		case getHeaderFirstLine:
 			if( (retVal = token_check(state, NULL, "\r\n")) == 0 ){
-				setState( finishedHeaderValue, state );
+				//YOU NEED TO POP THE \R
+				setState( state, finishedHeaderValue );
 			}else{
-				
 			}
 			break;
 		case getHeaderName:
 			if( (retVal = token_check(state, NULL, ":")) == 0 ){
-				setState( getHeaderValue, state );
+				setState( state, getHeaderValue );
 			}else{
-				//add to the header buffer
+				//FIXME: CHECK FOR BUFFER OVERFLOW
+				length = strlen( state->nameBuffer );
+				state->nameBuffer[length] = currByte;
+				state->nameBuffer[length+1] = '\0';
 			}
 			break;
 		case getHeaderValue:
 			if( (retVal = token_check(state, NULL, "\r\n")) == 0 ){				
-				setState( finishedHeaderValue, state );
-				//pop the chars off the buffer !!
+				length = strlen( state->valueBuffer );
+				state->valueBuffer[length-1] = '\0';
+				setState( state, finishedHeaderValue );
+			}else{
+				length = strlen( state->valueBuffer );
+				state->valueBuffer[length] = currByte;
+				state->valueBuffer[length+1] = '\0';
 			}
-			//add the char to the buffer
 			break;
 		case finishedHeaderValue:
 			if( currByte == '\r' ){
-				setState( finishedHeaderValue_2, state );
+				setState( state, finishedHeaderValue_2 );
 			}else if( 1/*it's a vaild character*/ ){	
-				//add to the buffer
-				//set state
-				setState( getHeaderName, state );
+				//FIXME: this is kind of dodgy clearing the buffers here
+				state->nameBuffer[0] = currByte;
+				state->nameBuffer[1] = '\0';
+				state->valueBuffer[0] = '\0';
+				setState( state, getHeaderName );
 			}else{
 				//fail
 			}
@@ -146,38 +99,102 @@ void process_byte(char byte, packetStateStuct* state,
 		case finishedHeaderValue_2:
 			if( currByte == '\n' ){
 				//check if it's chunked 
-				setState( getChunkLength, state );
+				if (state->transferEncoding == chunked)
+				{
+					setState( state, getChunkLength );
+				}else if (state->transferEncoding == contentLength){
+					setState( state, getContentLengthData );
+				}else{
+					//fail
+				}
 			}else{
 				//fail
 			}
 			break;
-		case getChunkLength: getChunkLength_firstNumber ){
-			if( (retVal = token_check("\r\n")) == 0 ){
-				
+		case getChunkLength:
+			if( (retVal = token_check(state, NULL, "\r\n")) == 0 ){
+				state->remainingLength = strtol(state->lengthBuffer, NULL, 16);
+				if( state->remainingLength == 0 ){	
+					setState( state, packetEnd );
+				}else{
+					setState( state, getChunkData );
+				}
+			}else if(retVal == 1){
+			}else{
+				length = strlen( state->lengthBuffer );
+				state->lengthBuffer[length] = currByte;
+				state->lengthBuffer[length+1] = '\0';
 			}
 			break;
 		case getChunkData:
-			//length check and if we've reached the length then token check until we reach the end
+			outputData[*outputDataLength] = currByte;
+			outputData[*outputDataLength+1] = '\0';
+			(*outputDataLength)++;
+			if ( state->remainingLength == 1 )
+			{
+				setState( state, finishedChunkData );
+				state->lengthBuffer[0] = '\0';
+			}
+			state->remainingLength--;
 			break;
-		case getContentLengthData:
-			if(/* the length */){
-				///add to buffer
+		case finishedChunkData:
+			if( (retVal = token_check(state, NULL, "\r\n")) == 0 ){				
+				setState( state, getChunkLength );
+			}else if(retVal != 1){
+				//fail
 			}
 			break;
+		case getContentLengthData:
+			outputData[*outputDataLength] = currByte;
+			outputData[*outputDataLength+1] = '\0';
+			(*outputDataLength)++;
+			if( state->remainingLength == 1 ){
+				setState( state, packetEnd );
+			}
+			state->remainingLength--;
+			break;
+		case packetEnd:
+			printf("hm.....hit packet end\n");
+			break;
 	}
-
-	state->currentPacketPtr++;
 }
 
 //call this when ever we get a new packet
 //TODO: ADD A FUNCTION TO EXIT ON STATE
-int process_data(char *inputData, int dataLength, int offset, packetStateStuct* state, 
-				char *outputData, int *outputDataMaxLength, int *outputDataLength){
+int process_data(char *inputData, int dataLength, int offset, parserStateStuct* state, 
+				char *outputData, int outputDataMaxLength, int *outputDataLength, state_t exitState){
+
+	state_t prevState;
+	*outputDataLength = 0;
 	while( state->currentPacketPtr != inputData+dataLength ){
-		processByte(inputData, dataLength, offset, state, 
-					outputData, outputDataMaxLength, outputDataLength);
-		//everytime we hit
-		if( state->currentState == getChunkLength )
+		prevState = state->currentState;
+		
+		process_byte( state->currentPacketPtr[0], state, outputData,
+					 outputDataMaxLength, outputDataLength);
+
+		//printf("state: %d\n", state->currentState);
+
+		if (state->currentState != prevState && state->currentState == finishedHeaderValue){
+			if(strcmp("Transfer-Encoding",state->nameBuffer) == 0 
+				&& strcmp(" chunked",state->valueBuffer) == 0){
+				printf("it's chunked\n");
+				state->transferEncoding = chunked;
+			}else if(strcmp("Content-Length",state->nameBuffer) == 0){
+				state->transferEncoding = contentLength;
+				state->remainingLength = strtol(state->valueBuffer, NULL, 10);
+				printf("content length : %lu\n", state->remainingLength);
+			}
+		}
+		//TODO: have an error if it's not content-length, chunked
+
+		if (state->currentState != prevState){
+			printf("state changed: %d -> %d\n", prevState, state->currentState );
+		}
+
+		if( state->currentState == exitState )
 			break;
+
+		state->currentPacketPtr++;
 	}
 }
+

@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "networking.h"
+#include "net/networking.h"
 #include "parser.h"
 
 #define MAX_RETURN_CODE_LENGTH 1600

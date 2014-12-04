@@ -1,0 +1,37 @@
+/--POST /upload/drive/v--/
+/--2/files?uploadType=m--/
+/--ultipart HTTP/1.1
+H--/
+/--ost: www.googleapis.--/
+/--com
+Authorization: --/
+/--Bearer your_auth_tok--/
+/--en
+Content-Type: mu--/
+/--ltipart/related; bou--/
+/--ndary="foo_bar_baz"--/
+/--
+Content-Length: 11--/
+/--
+
+--foo_bar_baz
+Con--/
+/--tent-Type: applicati--/
+/--on/json; charset=UTF--/
+/---8
+
+{
+  "title": "My--/
+/-- File"
+}
+
+--foo_bar_--/
+/--baz
+Content-Type: im--/
+/--age/jpeg
+
+kicked out--/
+/--kicked out
+--foo_bar--/
+/--_baz--
+--/

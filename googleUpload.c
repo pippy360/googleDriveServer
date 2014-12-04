@@ -17,14 +17,12 @@
 	"--foo_bar_baz\n"\
 	"Content-Type: application/json; charset=UTF-8\n"\
 	"\n"\
-	"{\n"\
-	"  \"title\": \"testUPload\"\n"\
-	"}\n"\
+	"%s"\
 	"\n"
 
 #define PACKET_DATA	\
 	"--foo_bar_baz\n"\
-	"Content-Type: multipart/encrypted\n\n"
+	"Content-Type: image/jpeg\n\n"
 
 #define PACKET_END \
 	"--foo_bar_baz--\n"
@@ -40,56 +38,54 @@ googleUploadStruct* getGoogleUploadStruct_struct(){
 	return r;
 }
 
-//todo: i don't like how hardcoded this is
-//returns the amount of bytes not stored
-int addHeader(long fileSize, char *outputData, int maxSize, int *addedLength, googleUploadStruct *stateStruct){
+//EXPLAIN HOW THE STRING OFFSET WORKS
+//returns the amount of bytes not copied to the packet
+int copy_sting_to_packet(char *inputString, char *outputBuffer, int outputBufferSize, int *addedLength, 
+						googleUploadStruct *stateStruct){
 	int result;
-	char headerBuffer[ HEADER_MAX_LENGTH ];
-
-	sprintf( headerBuffer, HEADER, fileSize );
-	
-	int tempSize = strlen(headerBuffer) - stateStruct->stringOffset;
-	if( tempSize > maxSize ){
-		memcpy( outputData, headerBuffer + stateStruct->stringOffset, maxSize);
-		stateStruct->stringOffset += maxSize;
-		result = tempSize - maxSize;
+		
+	int tempSize = strlen(inputString) - stateStruct->stringOffset;
+	if( tempSize > outputBufferSize ){
+		memcpy( outputBuffer, inputString + stateStruct->stringOffset, outputBufferSize);
+		stateStruct->stringOffset += outputBufferSize;
+		*addedLength = outputBufferSize;
+		result = tempSize - outputBufferSize;
 	}else{
-		memcpy( outputData, headerBuffer + stateStruct->stringOffset, tempSize);
+		memcpy( outputBuffer, inputString + stateStruct->stringOffset, tempSize);
 		stateStruct->stringOffset = 0;
+		*addedLength = tempSize;
 		result = 0;
 	}
 
 	return result;
 }
 
-//returns the amount of bytes not stored
-int addMetaData(char *metaData, char *outputData, int maxSize, int *addedLength, googleUploadStruct *stateStruct){
-	return 0;
-}
-
-//noChange is true if the outputData is going to be identical to the input, 
-//in this case the function doesn't bother to copy the data to the outputData
-int getNextUploadPacket(char *data, int dataLenght, unsigned long fileSize, googleUploadStruct *stateStruct,
-						char *outputData, int outputDataLength, int *noChange){
-	int result;
-	char *dataPtr = data;
+//returns the size of the packet
+//noChange is true if the outputBuffer is going to be identical to the input, 
+//in this case the function doesn't bother to copy the data to the outputBuffer
+int getNextUploadPacket(char *metadata, char *data, int dataLength, unsigned long filesize, 
+			googleUploadStruct *stateStruct, char *outputBuffer, int outputBufferSize, int *noChange){
+	
+	int result = 0;
 	int packetSize = 0;
 	int addedLength;
-
+	char stringBuffer[ HEADER_MAX_LENGTH ];//todo: HEADER_MAX_LENGTH isn't the constant we should be using
+	char *dataPtr;
 	*noChange = 0;//default it to 0
 
-	int maxSize = (MAX_PACKET_SIZE > outputDataLength)? outputDataLength : MAX_PACKET_SIZE;
+	int maxSize = (MAX_PACKET_SIZE > outputBufferSize)? outputBufferSize : MAX_PACKET_SIZE;
 	//FIXME, SHOULDN'T BE USING OUPUTDATA!!!!
 
-	while( dataPtr != data + dataLenght && packetSize < maxSize){
+	while( stateStruct->state != finished && packetSize < maxSize){
 		switch( stateStruct->state ){
 			case start:
-				stateStruct->fileRemainingData = fileSize;
+				stateStruct->fileRemainingData = filesize;
 				stateStruct->state = sendingHeader;
 				break;
 			case sendingHeader:
-				if( addHeader( fileSize, outputData+packetSize, (maxSize-packetSize), 
-								&addedLength, stateStruct ) == 0 ){
+				sprintf( stringBuffer, HEADER, filesize );//FIXME: it's not the filesize !!
+				if( copy_sting_to_packet( stringBuffer, outputBuffer+packetSize, (maxSize-packetSize), 
+									&addedLength, stateStruct ) == 0 ){
 					
 					stateStruct->state 		  = sendingMetaData;
 					stateStruct->stringOffset = 0;
@@ -97,9 +93,8 @@ int getNextUploadPacket(char *data, int dataLenght, unsigned long fileSize, goog
 				packetSize += addedLength;
 				break;
 			case sendingMetaData:
-				//send as much of the header as we can
-				//check if we can send the whole header
-				if( addMetaData( "something", outputData+packetSize, (maxSize-packetSize), 
+				sprintf( stringBuffer, PACKET_METADATA, metadata );
+				if( copy_sting_to_packet( stringBuffer, outputBuffer+packetSize, (maxSize-packetSize),  
 									&addedLength, stateStruct ) == 0 ){
 					
 					stateStruct->state 		  = sendingFileDataDelimiter;
@@ -108,27 +103,45 @@ int getNextUploadPacket(char *data, int dataLenght, unsigned long fileSize, goog
 				packetSize += addedLength;
 				break;
 			case sendingFileDataDelimiter:
+				if( copy_sting_to_packet( PACKET_DATA, outputBuffer+packetSize, (maxSize-packetSize), 
+									&addedLength, stateStruct ) == 0 ){
+
+					stateStruct->state 		  = sendingFileData;
+					stateStruct->stringOffset = 0;
+				}
+				packetSize += addedLength;
 				break;
 			case sendingFileData:
-				if ( data == dataPtr /* && the packet will be only ! data */)
-				{
-					result = 0;
-					*noChange = 1;
+				dataPtr = data + ( filesize - stateStruct->fileRemainingData );
+
+				if ( stateStruct->fileRemainingData + packetSize > maxSize ){
+					//we can't fit all the data in, put as much as we can in
+					memcpy( outputBuffer+packetSize, dataPtr, maxSize - packetSize);
+					packetSize += maxSize - packetSize;
+					stateStruct->fileRemainingData -= maxSize - packetSize;
 				}else{
-					/*append as much data as we can*/
+					//we can fit all the remaining data into the packet
+					memcpy( outputBuffer+packetSize, dataPtr, stateStruct->fileRemainingData);
+					packetSize += stateStruct->fileRemainingData;
+					stateStruct->fileRemainingData = 0;
+					stateStruct->state = sendingEndDelimiter;	
 				}
 				break;
 			case sendingEndDelimiter:
+				if( copy_sting_to_packet( PACKET_END, outputBuffer+packetSize, (maxSize-packetSize), 
+									&addedLength, stateStruct ) == 0 ){
 
+					stateStruct->state 		  = finished;
+					stateStruct->stringOffset = 0;
+					//todo: test to make sure that this null terminator will always fit
+					outputBuffer[packetSize + addedLength] = '\0';
+				}
+				packetSize += addedLength;
 				break;
-			case finished:
-				// -1 can be taken as an error or used to tell when the file is finished
-				result = -1;
-				break;	
 		}
 	}
 
-	return result;
+	return packetSize;
 }
 
 int main(int argc, char const *argv[])
@@ -137,8 +150,13 @@ int main(int argc, char const *argv[])
 	googleUploadStruct *result = getGoogleUploadStruct_struct();
 	char buffer[2000];
 	int addedLength;
-	result->stringOffset = 100;
-	addHeader(12345, buffer, 100, &addedLength, result);
-	printf("%s", buffer);
+	int noChange;
+	int packetSize;
+	while( result->state != finished ){	
+		packetSize = getNextUploadPacket("{\n  \"title\": \"My File\"\n}\n", "kicked out\n", strlen("kicked out\n"), 
+							(long)strlen("kicked out\n"), result, buffer, 20, &noChange);
+		printf("/--%.*s--/\n", packetSize, buffer);
+	}
+
 	return 0;
 }

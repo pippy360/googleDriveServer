@@ -8,7 +8,7 @@
 #include <string.h>
 #include "realtimePacketParser.h"
 
-#define MAX_LEN 10000
+#define MAX_LEN 10000//FIXME: this seems really big...
 #define MAX_BUFFER 1000//FIXME: do something to prevent bufferoverflows
 
 //FIXME: THE BUFFERS SHOULDN'T BE MALLOC'D HERE

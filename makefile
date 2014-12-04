@@ -1,7 +1,7 @@
 all: server.out
 
-server.out: networking.o utils.o pushPull.o googleAccessToken.o parser.o realtimePacketParser.o
-	gcc realtimePacketParser.o pushPull.o parser.o utils.o networking.o googleAccessToken.o -lssl -lcrypto -g -o server.out
+server.out: networking.o utils.o pushPull.o googleAccessToken.o parser.o googleUpload.o realtimePacketParser.o
+	gcc realtimePacketParser.o pushPull.o parser.o utils.o networking.o googleUpload.o googleAccessToken.o -lssl -lcrypto -g -o server.out
 
 networking.o: net/networking.c
 	gcc -c net/networking.c
@@ -14,6 +14,9 @@ utils.o: utils.c
 
 googleAccessToken.o: googleAccessToken.c
 	gcc -c googleAccessToken.c
+
+googleUpload.o: googleUpload.c
+	gcc -c googleUpload.c
 
 parser.o: parser.c
 	gcc -c parser.c

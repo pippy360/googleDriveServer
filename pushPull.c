@@ -20,6 +20,7 @@
 #include "net/realtimePacketParser.h"//TODO: parser states
 #include "utils.h"
 #include "googleAccessToken.h"
+#include "googleUpload.h"
 #include "parser.h"
 
 #define MAXDATASIZE 2000//FIXME: this should only need to be the max size of one packet !!!
@@ -285,6 +286,29 @@ int get_next_packet_file_download(packet_organiser *po)
 
 int main(void)
 {
+    //time for pull
+    google_init();
+    
+    //fetch a file,
+    int type;
+    char *domain, *fileUrl;
+    char *accessTokenHeader = getAccessTokenHeader();
+
+    char fileData[] = "firstline tea;flkjadsf;lkjasfd;lkjsaasf;lkkjas;lfj;sakdjf ;lsakdjf;lksadjf;lasdkjf;lsadkjf;lsadkjf;lsadkjf;lasdkjf;lasdkjf;lsadkjf;sdakjf;sadlkjf;lsadkjfawjept2 dsf aslkdfj a;sdflk asdf a kf;ldsa l;asd j;lfjals dfen asdlfkjs;adlkfj sadf dsalkjf ;ldsa k d -----------------------------------end";
+    int length = strlen( fileData );
+    //get a file and load it 
+    char *outputBuffer = malloc(MAXDATASIZE);
+    int outputBufferLength;
+    googleUpload_firstPacket( fileData, length, length, accessTokenHeader, 
+                                "123456", outputBuffer, &outputBufferLength );
+
+    printf("%s\n", outputBuffer);
+
+    return 0;
+}
+
+/*
+
     google_init();
     
     //fetch a file,
@@ -323,4 +347,5 @@ int main(void)
         outputDataBuffer[0] = '\0';
     }
     return 0;
-}
+
+*/

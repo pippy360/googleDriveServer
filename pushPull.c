@@ -289,21 +289,50 @@ int main(void)
     //time for pull
     google_init();
     
+    char fileBuffer[2000];
+
+    int counter;
+    FILE *fp;
+    fp = fopen("big_text.txt","r");
+    
+    fseek(fp, 0L, SEEK_END);
+    long filesize = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+    
     //fetch a file,
     int type;
     char *domain, *fileUrl;
     char *accessTokenHeader = getAccessTokenHeader();
+    char buffer[20000];
 
+    int noChange, packetSize, dataSent;
     char fileData[] = "firstline tea;flkjadsf;lkjasfd;lkjsaasf;lkkjas;lfj;sakdjf ;lsakdjf;lksadjf;lasdkjf;lsadkjf;lsadkjf;lsadkjf;lasdkjf;lasdkjf;lsadkjf;sdakjf;sadlkjf;lsadkjfawjept2 dsf aslkdfj a;sdflk asdf a kf;ldsa l;asd j;lfjals dfen asdlfkjs;adlkfj sadf dsalkjf ;ldsa k d -----------------------------------end";
     int length = strlen( fileData );
     //get a file and load it 
-    char *outputBuffer = malloc(MAXDATASIZE);
-    int outputBufferLength;
-    googleUpload_firstPacket( fileData, length, length, accessTokenHeader, 
-                                "123456", outputBuffer, &outputBufferLength );
+    googleUploadStruct *stateStruct = getGoogleUploadStruct_struct();
+    char *metadata = "{\n  \"title\": \"My File2\"\n}\n";
 
-    printf("%s\n", outputBuffer);
+    connection *c;
+    c = sslConnect( "www.googleapis.com", "443" );
 
+
+    while( stateStruct->state != finished ){ 
+        int read = fread( fileBuffer, 1, 300, fp);
+        packetSize = getNextUploadPacket(fileBuffer, read, &dataSent, filesize, metadata, accessTokenHeader, 
+                                        stateStruct, buffer, 2000, &noChange);
+        SSL_write(c->sslHandle, buffer, packetSize);
+        if ( dataSent != read )
+        {
+            printf("BAD FILE SEND\n");
+        }
+    }
+
+    printf("sent:\n");
+
+    int received = SSL_read(c->sslHandle, buffer, MAXDATASIZE-1);
+    printf("%s\n", buffer);
+
+    fclose(fp);
     return 0;
 }
 

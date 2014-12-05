@@ -16,5 +16,7 @@ typedef struct {
 	googleUploadState state;
 } googleUploadStruct;
 
+int getNextUploadPacket(char *data, int dataLength, int *dataSent, unsigned long filesize, char *metadata, char *addedHeaders,
+			googleUploadStruct *stateStruct, char *outputBuffer, int outputBufferSize, int *noChange);
 
-
+googleUploadStruct* getGoogleUploadStruct_struct();

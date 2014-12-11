@@ -23,7 +23,7 @@
 #include "googleUpload.h"
 #include "parser.h"
 
-#define MAXDATASIZE 2000//FIXME: this should only need to be the max size of one packet !!!
+#define MAXDATASIZE 200000//FIXME: this should only need to be the max size of one packet !!!
 #define MAX_CHUNK_ARRAY_LENGTH 100
 #define MAX_CHUNK_SIZE_BUFFER 100
 #define SERVER_LISTEN_PORT "25001"
@@ -284,8 +284,127 @@ int get_next_packet_file_download(packet_organiser *po)
     po->current_packet_length = received;
 }
 
-int main(void)
+char *download_google_json_file(char *inputUrl){
+
+    char *accessTokenHeader = getAccessTokenHeader();
+    printf("done\n");
+    accessTokenHeader = getAccessTokenHeader();
+    packet_organiser *po;
+    start_file_download(inputUrl, accessTokenHeader, &po);
+    
+    int outputDataLength;
+    char *start = malloc(MAXDATASIZE+1);
+    char *outputDataBuffer = start;
+    
+    parserStateStuct *state = get_start_state_struct();
+    
+    state->currentPacketPtr = po->current_packet;
+
+    process_data( po->current_packet, po->current_packet_length, 0, state, 
+                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd);
+    
+    outputDataBuffer += outputDataLength;
+
+    while ( state->currentState != packetEnd ){
+        get_next_packet_file_download(po);
+        state->currentPacketPtr = po->current_packet;
+        process_data( po->current_packet, po->current_packet_length, 0, state, 
+                      outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd);
+        outputDataBuffer += outputDataLength;
+    }
+
+    return start;
+}
+
+void getDownloadUrlAndSize(char *file, char **url, char **size){
+    char inputUrl[2000];
+    sprintf( inputUrl, "https://www.googleapis.com/drive/v2/files?q=title='%s'&fields=items(downloadUrl,fileSize)", file);
+    //char inputUrl[5000] = "https://www.googleapis.com/drive/v2/files?q=title='upload8.jpg'&fields=items(downloadUrl,fileSize)";
+    //char inputUrl[] = "https://doc-14-as-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/in4i4ddgph7ut164onm5k83v87ek74e8/1417190400000/13058876669334088843/00377112155790015384/0B7_KKsaOads4aE5wTUZRTmFEa28?e=download&gd=true";
+    char *str = download_google_json_file( inputUrl );
+    *url  = get_json_value("downloadUrl", str, strlen(str));
+    *size = get_json_value("fileSize", str, strlen(str));
+}
+
+void handle_client( int client_fd ){
+
+    //recv: and get the filename
+
+    char buffer[2000];
+    int recvd = recv( client_fd, buffer, 2000, 0);
+    buffer[ recvd ] = '\0';
+
+    //get the file from the get
+    int i = 4;
+    for (; buffer[i] != ' ' ; i++)
+        ;
+    buffer[i] = '\0';
+
+    printf("fileurl: --%s--\n", buffer + 4);
+
+    char *url, *size;
+    getDownloadUrlAndSize("upload8.jpg", &url, &size);
+    printf("now printing url and size:\n");
+    printf("%s\n", size);
+    printf("%s\n", url);
+
+
+    //because we need to send some sort of response 
+
+    //start downloading the url
+
+    //download the file and send to the client
+
+}
+
+int main(int argc, char *argv[])
 {
+    if(argc != 2){
+        printf("error, bad argc\n");
+        return -1;
+    }
+
+    google_init();
+
+    int sockfd = get_listening_socket(SERVER_LISTEN_PORT);
+    int client_fd;
+    socklen_t sin_size;
+    struct sockaddr_storage their_addr;
+    char s[INET6_ADDRSTRLEN];
+
+    printf("server: waiting for connections...\n");
+
+    while(1) {  // main accept() loop
+        sin_size = sizeof their_addr;
+        client_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+        if (client_fd == -1) {
+            perror("accept");
+            continue;
+        }
+
+        inet_ntop(their_addr.ss_family,
+            get_in_addr((struct sockaddr *)&their_addr),
+            s, sizeof s);
+        printf("server: got connection from %s\n", s);
+
+        if (!fork()) { // this is the child process
+            close(sockfd); // child doesn't need the listener
+            
+            handle_client( client_fd );
+            
+            close(client_fd);
+           //recv from client, now get a file from google
+
+            exit(0);
+        }
+        close(client_fd);  // parent doesn't need this
+    }
+
+
+    return 0;
+}
+
+    /*
     //time for pull
     google_init();
     
@@ -334,47 +453,4 @@ int main(void)
 
     fclose(fp);
     return 0;
-}
-
-/*
-
-    google_init();
-    
-    //fetch a file,
-    int type;
-    char *domain, *fileUrl;
-    //char inputUrl[] = "http://pippy.netsoc.ie/rosca.png";
-    //char inputUrl[] = "https://www.googleapis.com/drive/v2/files";
-    char inputUrl[] = "https://doc-14-as-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/in4i4ddgph7ut164onm5k83v87ek74e8/1417190400000/13058876669334088843/00377112155790015384/0B7_KKsaOads4aE5wTUZRTmFEa28?e=download&gd=true";
-    
-    //create the access token
-    //TODO: write get access token header
-    char *accessTokenHeader = getAccessTokenHeader();
-
-    packet_organiser *po;
-    start_file_download(inputUrl, accessTokenHeader, &po);
-
-    FILE *fp = fopen("output", "w");
-    
-    int outputDataLength;
-    char *outputDataBuffer = malloc(MAXDATASIZE+1);
-    outputDataBuffer[0] = '\0';
-    parserStateStuct *state = get_start_state_struct();
-    //FIXME:
-    state->currentPacketPtr = po->current_packet;
-    process_data( po->current_packet, po->current_packet_length, 0, state, 
-                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd);
-    
-    fwrite(outputDataBuffer, outputDataLength, 1, fp);
-    
-    while ( state->currentState != packetEnd ){
-        get_next_packet_file_download(po);
-        state->currentPacketPtr = po->current_packet;
-        process_data( po->current_packet, po->current_packet_length, 0, state, 
-                    outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd);
-        fwrite(outputDataBuffer, outputDataLength, 1, fp);
-        outputDataBuffer[0] = '\0';
-    }
-    return 0;
-
-*/
+    */

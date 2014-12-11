@@ -6,8 +6,9 @@
 #include "parser.h"
 
 
-#define MAX_STRING_SIZE 2000
+#define MAX_STRING_SIZE 20000
 #define FORMAT "\"%s\" : "
+#define FORMAT2 "\"%s\": "
 
 //todo:
 void isFormatChar(){
@@ -30,10 +31,18 @@ char* get_json_value(char* inputName, char* jsonData, int jsonDataSize){
 	char needle[MAX_STRING_SIZE];
 	sprintf( needle, FORMAT, inputName);
 	char* ptr;
-	if((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL)
-		return NULL;
 
-	ptr += strlen( inputName ) + strlen( FORMAT ) - strlen("%s");
+	if((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL){
+		//FIXME: DIRTY HACKS EVERYWHERE !
+		sprintf( needle, FORMAT2, inputName);
+		if((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL){
+			return NULL;
+		}
+		ptr += strlen( inputName ) + strlen( FORMAT2 ) - strlen("%s");
+	}else{
+		ptr += strlen( inputName ) + strlen( FORMAT ) - strlen("%s");
+	}
+
 
 	//now find the value
 
@@ -53,7 +62,7 @@ char* get_json_value(char* inputName, char* jsonData, int jsonDataSize){
 		for( endPtr = ptr+1; *endPtr != '\"'; endPtr++ )
 			;
 	}else{
-		for( endPtr = ptr; *endPtr != ','; endPtr++ )
+		for( endPtr = ptr; *endPtr != ',' && *endPtr != '\n'; endPtr++ )
 			;
 	}
 

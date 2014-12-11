@@ -188,7 +188,7 @@ int process_data(char *inputData, int dataLength, int offset, parserStateStuct* 
 		//TODO: have an error if it's not content-length, chunked
 
 		if (state->currentState != prevState){
-			printf("state changed: %d -> %d\n", prevState, state->currentState );
+			//printf("state changed: %d -> %d\n", prevState, state->currentState );
 		}
 
 		if( state->currentState == exitState )

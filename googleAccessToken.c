@@ -181,6 +181,8 @@ char* getAccessToken(){
 	}
 }
 
+
+//THERE WAS AN ERROR HERE, WHERE YOU FREE'D A GLOBAL VAR, MAKE SURE THAT DOESN'T HAPPEN AGAIN
 char* getAccessTokenHeader(){
 
     char *accessToken = getAccessToken();
@@ -188,7 +190,6 @@ char* getAccessTokenHeader(){
 
     char* tokenHeader = malloc( strlen(headerStub) + strlen(accessToken) + 1 + 2 );
     sprintf( tokenHeader, "%s%s%s", headerStub, accessToken, "\r\n");
-    
-    free(accessToken);
+
     return tokenHeader;
 }

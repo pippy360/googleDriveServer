@@ -32,6 +32,8 @@
                     ""\
                     "Content-length: %d\r\n\r\n%s"
 
+#define temp_server_header "HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\n"
+
 typedef struct
 {
     connection *currConnection;//chuncked or content-length 
@@ -328,32 +330,71 @@ void getDownloadUrlAndSize(char *file, char **url, char **size){
 
 void handle_client( int client_fd ){
 
-    //recv: and get the filename
 
+    /* get the first packet from the client, continue until we have the whole header, discard any data*/
+    //TODO: write this properly
     char buffer[2000];
     int recvd = recv( client_fd, buffer, 2000, 0);
     buffer[ recvd ] = '\0';
 
-    //get the file from the get
     int i = 4;
     for (; buffer[i] != ' ' ; i++)
         ;
     buffer[i] = '\0';
 
-    printf("fileurl: --%s--\n", buffer + 4);
+    printf("fileurl: --%s--\n", buffer + 5);
+
 
     char *url, *size;
-    getDownloadUrlAndSize("upload8.jpg", &url, &size);
+    getDownloadUrlAndSize(buffer + 5, &url, &size);
     printf("now printing url and size:\n");
     printf("%s\n", size);
     printf("%s\n", url);
 
+    /* start downloading from google, continue until we have the whole header */
+    char *accessTokenHeader = getAccessTokenHeader();
+    packet_organiser *po;
+    start_file_download(url, accessTokenHeader, &po);
+    
+    int outputDataLength;
+    char *outputDataBuffer = malloc(MAXDATASIZE+1);
+    parserStateStuct *state = get_start_state_struct();
 
-    //because we need to send some sort of response 
+    state->currentPacketPtr = po->current_packet;
+    process_data( po->current_packet, po->current_packet_length, 0, state, 
+                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd);
 
-    //start downloading the url
 
-    //download the file and send to the client
+    //respond to client
+    //TODO: seperate the downloader
+
+    char moreBuffer[MAXDATASIZE];
+    sprintf(moreBuffer, temp_server_header, size);
+    send(client_fd, moreBuffer, strlen(moreBuffer), 0);
+    
+    /* continue downloading and passing data onto the client */
+
+    //remember to pass on any data that came with the packets that contained the header
+    do{
+
+        while ( state->currentState != packetEnd ){
+            get_next_packet_file_download(po);
+            state->currentPacketPtr = po->current_packet;
+            process_data( po->current_packet, po->current_packet_length, 0, state, 
+                        outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd);
+
+            //hm......
+            flipBits(outputDataBuffer, outputDataLength);
+            send(client_fd, outputDataBuffer, outputDataLength, 0);
+
+            outputDataBuffer[0] = '\0';
+        }
+
+    }while(0);
+
+
+    printf("we're done apparently\n");
+    //check how the whole process went...
 
 }
 

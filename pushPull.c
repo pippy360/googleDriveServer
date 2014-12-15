@@ -289,7 +289,6 @@ int get_next_packet_file_download(packet_organiser *po)
 char *download_google_json_file(char *inputUrl){
 
     char *accessTokenHeader = getAccessTokenHeader();
-    printf("done\n");
     accessTokenHeader = getAccessTokenHeader();
     packet_organiser *po;
     start_file_download(inputUrl, accessTokenHeader, &po);
@@ -298,20 +297,19 @@ char *download_google_json_file(char *inputUrl){
     char *start = malloc(MAXDATASIZE+1);
     char *outputDataBuffer = start;
     
-    parserStateStuct *state = get_start_state_struct();
-    
-    state->currentPacketPtr = po->current_packet;
+    parserState_t *parserState = get_start_state_struct();
+    headerInfo_t *hInfo   = get_start_header_info();
 
-    process_data( po->current_packet, po->current_packet_length, 0, state, 
-                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd);
+    process_data( po->current_packet, po->current_packet_length, parserState, 
+                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfo);
     
     outputDataBuffer += outputDataLength;
 
-    while ( state->currentState != packetEnd ){
+    while ( parserState->currentState != packetEnd ){
         get_next_packet_file_download(po);
-        state->currentPacketPtr = po->current_packet;
-        process_data( po->current_packet, po->current_packet_length, 0, state, 
-                      outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd);
+        parserState->currentPacketPtr = po->current_packet;
+        process_data( po->current_packet, po->current_packet_length, parserState, 
+                      outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfo);
         outputDataBuffer += outputDataLength;
     }
 
@@ -358,12 +356,11 @@ void handle_client( int client_fd ){
     
     int outputDataLength;
     char *outputDataBuffer = malloc(MAXDATASIZE+1);
-    parserStateStuct *state = get_start_state_struct();
+    parserState_t *parserState = get_start_state_struct();
+    headerInfo_t *hInfo   = get_start_header_info();
 
-    state->currentPacketPtr = po->current_packet;
-    process_data( po->current_packet, po->current_packet_length, 0, state, 
-                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd);
-
+    process_data( po->current_packet, po->current_packet_length, parserState, 
+                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfo);
 
     //respond to client
     //TODO: seperate the downloader
@@ -377,15 +374,17 @@ void handle_client( int client_fd ){
     //remember to pass on any data that came with the packets that contained the header
     do{
 
-        while ( state->currentState != packetEnd ){
+        while ( parserState->currentState != packetEnd ){
             get_next_packet_file_download(po);
-            state->currentPacketPtr = po->current_packet;
-            process_data( po->current_packet, po->current_packet_length, 0, state, 
-                        outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd);
+            parserState->currentPacketPtr = po->current_packet;
+            process_data( po->current_packet, po->current_packet_length, parserState, 
+                        outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfo);
 
             //hm......
             flipBits(outputDataBuffer, outputDataLength);
-            send(client_fd, outputDataBuffer, outputDataLength, 0);
+            if( send(client_fd, outputDataBuffer, outputDataLength, 0) == -1){
+                break;
+            }
 
             outputDataBuffer[0] = '\0';
         }
@@ -394,6 +393,8 @@ void handle_client( int client_fd ){
 
 
     printf("we're done apparently\n");
+    close(client_fd);
+    sslDisconnect(po->currConnection);
     //check how the whole process went...
 
 }
@@ -476,7 +477,7 @@ int main(int argc, char *argv[])
     c = sslConnect( "www.googleapis.com", "443" );
 
 
-    while( stateStruct->state != finished ){ 
+    while( stateStruct->parserState != finished ){ 
         int read = fread( fileBuffer, 1, 300, fp);
         packetSize = getNextUploadPacket(fileBuffer, read, &dataSent, filesize, metadata, accessTokenHeader, 
                                         stateStruct, buffer, 2000, &noChange);

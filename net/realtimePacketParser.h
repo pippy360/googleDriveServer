@@ -7,7 +7,8 @@
 
 
 typedef enum {
-	getHeaderFirstLine,//next state -> finishHeaderValue
+	getHTTPStatusLine,//next state -> finishHeaderValue
+	finishedHTTPStatusLine,
 	getHeaderName,
 	finishedHeaderName,//expecting ':' 
 	getHeaderValue,
@@ -23,34 +24,61 @@ typedef enum {
 } state_t;
 
 typedef enum {
+	GET,
+	HEAD,
+	POST,
+	PUT,
+	DELETE,
+	TRACE,
+	OPTIONS,
+	CONNECT,
+	PATCH
+} httpRequestTypes_t;
+
+typedef enum {
+//todo:
+	todo
+} httpErrorCodes_t;
+
+typedef enum {
 	chunked,
-	contentLength
+	contentLength,
+	contentRange,
+	default_empty//a packet with no body/payload
 } packetDataTypes_t;
 
 typedef struct {
-	packetDataTypes_t type;// 1 - content-length, 2 - chunked
-	unsigned long contentLength;
-} headerInfo;
+	long contentRangeStart;
+	long contentRangeEnd;
+	long contentLength;
+	packetDataTypes_t transferType;
+	httpRequestTypes_t requestType;
+	char isRequest;
+	int  statusCode;
+	char *statusStringBuffer;
+	char *urlBuffer;
+} headerInfo_t;
 
 //state of the parser
 typedef struct {
 	state_t currentState;
-	state_t nextState;
 	char *currentPacketPtr;
-	headerInfo *header;
 	int stateEndIdentifier;
 	int fullLength;
 	unsigned long remainingLength;
 	int currentTokenPos;
-	packetDataTypes_t transferEncoding; 
-	/*lengthBuffer used to buffer lengths, because the declared 
-	length could be stretched across multiple packets*/
+	/* lengthBuffer used to buffer lengths, because the "Content-length"
+	could be stretched across multiple packets */
 	char *lengthBuffer;
 	char *nameBuffer;
 	char *valueBuffer;
-} parserStateStuct;
+	packetDataTypes_t transferType;
+	char *statusLineBuffer;
+} parserState_t;
 
-int process_data(char *inputData, int dataLength, int offset, parserStateStuct* state, 
-				char *outputData, int outputDataMaxLength, int *outputDataLength, state_t exitState);
+int process_data(char *inputData, int dataLength, parserState_t* state, char *outputData, 
+				int outputDataMaxLength, int *outputDataLength, state_t exitState, headerInfo_t *hInfo);
 
-parserStateStuct* get_start_state_struct();
+parserState_t* get_start_state_struct();
+
+headerInfo_t *get_start_header_info();

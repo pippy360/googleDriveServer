@@ -24,40 +24,10 @@ typedef enum {
 } state_t;
 
 typedef enum {
-	GET,
-	HEAD,
-	POST,
-	PUT,
-	DELETE,
-	TRACE,
-	OPTIONS,
-	CONNECT,
-	PATCH
-} httpRequestTypes_t;
-
-typedef enum {
-//todo:
-	todo
-} httpErrorCodes_t;
-
-typedef enum {
-	chunked,
-	contentLength,
-	contentRange,
-	default_empty//a packet with no body/payload
-} packetDataTypes_t;
-
-typedef struct {
-	long contentRangeStart;
-	long contentRangeEnd;
-	long contentLength;
-	packetDataTypes_t transferType;
-	httpRequestTypes_t requestType;
-	char isRequest;
-	int  statusCode;
-	char *statusStringBuffer;
-	char *urlBuffer;
-} headerInfo_t;
+	default_empty_p,//a packet with no body/payload
+	chunked_p,
+	contentLength_p
+} parserPacketDataType_t;
 
 //state of the parser
 typedef struct {
@@ -72,7 +42,7 @@ typedef struct {
 	char *lengthBuffer;
 	char *nameBuffer;
 	char *valueBuffer;
-	packetDataTypes_t transferType;
+	parserPacketDataType_t packetDataType;
 	char *statusLineBuffer;
 } parserState_t;
 

@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "commonHTTP.h"
 #include "realtimePacketParser.h"
+#include "createHTTPHeader.h"
 
 #define MAX_LEN 10000//FIXME: this seems really big...
 #define MAX_BUFFER 1000//FIXME: do something to prevent bufferoverflows
@@ -14,7 +16,7 @@ parserState_t *get_start_state_struct(){
 	parserState_t *parserState = calloc( sizeof( parserState_t ), 1 );
 
 	parserState->currentState 		 = getHTTPStatusLine;
-	parserState->transferType 		 = default_empty;
+	parserState->packetDataType 	 = default_empty_p;
 
 	parserState->currentPacketPtr 	 = NULL;
 	parserState->lengthBuffer 		 = malloc(MAX_BUFFER+1);
@@ -31,6 +33,8 @@ parserState_t *get_start_state_struct(){
 
 headerInfo_t *get_start_header_info(){
 	headerInfo_t *httpStats = calloc( sizeof(headerInfo_t), 1 );
+
+	httpStats->transferType = default_empty;
 
 	httpStats->statusStringBuffer = malloc(MAX_BUFFER+1);
 	httpStats->statusStringBuffer[0] = '\0';
@@ -118,12 +122,12 @@ void process_byte(char byte, parserState_t* parserState,
 		case finishedHeaderValue_2:
 			if( currByte == '\n' ){
 				//check if it's chunked 
-				if (parserState->transferType == chunked)
+				if (parserState->packetDataType == chunked_p)
 				{
 					setState( parserState, getChunkLength );
-				}else if (parserState->transferType == contentLength){
+				}else if (parserState->packetDataType == contentLength_p){
 					setState( parserState, getContentLengthData );
-				}else if (parserState->transferType == default_empty){
+				}else if (parserState->packetDataType == default_empty_p){
 					setState( parserState, packetEnd );
 				}
 			}else{
@@ -268,21 +272,38 @@ int process_header(char *name, char *value, parserState_t* parserState, headerIn
 	if(strcmp("Transfer-Encoding",name) == 0 && strcmp(" chunked",value) == 0){
 		//FIXME: ERROR HERE, HTTP SPEC DOESN'T SAY HOW MUCH WHITESPACE
 		//FIXME: IF THERE'S A TRANSFER ENCODING WITHOUT CHUNK CAUSE ERROR
-		parserState->transferType = chunked;
+		parserState->packetDataType = chunked;
 		hInfo->transferType 	  = chunked;
 
 		printf("it's chunked\n");
 	}else if(strcmp("Content-Length",name) == 0){
 		
-		parserState->transferType = contentLength;
+		parserState->packetDataType = contentLength;
 		hInfo->transferType		  = contentLength;
 		parserState->remainingLength = strtol(value, NULL, 10);
 		
 		printf("it's content length : %lu\n", parserState->remainingLength);
 	}else if(strcmp("Range",name) == 0){
-		//get the start and end
-		printf("they want a range but we don't have that implemented yet\n");
-		//just parse it
+		//"Range: bytes=106717810-114836737\r\n"\
+		//TODO: error handling
+		hInfo->isRange = 1;
+
+		char *ptr = value + strlen(" bytes=");//FIXME, you guessing the number of spaces again !
+		char *endPtr;
+		hInfo->getContentRangeStart = strtol( ptr, &endPtr, 10);
+		ptr = endPtr + 1;
+		hInfo->getContentRangeEnd = strtol( ptr, &endPtr, 10);
+	}else if(strcmp("Content-Range",name) == 0){
+		//"Content-Range: bytes 106717810-114836737/114836738\r\n\r\n"
+		hInfo->isRange = 1;
+
+		char *ptr = value + strlen(" bytes ");//FIXME, you guessing the number of spaces again !
+		char *endPtr;
+		hInfo->sentContentRangeStart = strtol( ptr, &endPtr, 10);
+		ptr = endPtr + 1;
+		hInfo->sentContentRangeEnd = strtol( ptr, &endPtr, 10);
+		ptr = endPtr + 1;
+		hInfo->sentContentRangeFull = strtol( ptr, &endPtr, 10);
 	}
 
 	return 0;
@@ -360,18 +381,25 @@ int process_data(char *inputData, int dataLength, parserState_t* parserState, ch
 //
 //	process_data(packet2, strlen(packet2), parserState, buffer, 100000, &outputDataLength, packetEnd, hInfo);
 //	
-//	printf("data length %d\n", outputDataLength);
+//	//printf("getContentRangeStart: %lu\n", 	hInfo->getContentRangeStart);
+//	//printf("getContentRangeEnd: %lu\n", 	hInfo->getContentRangeEnd);
+//	//printf("sentContentRangeStart: %lu\n", 	hInfo->sentContentRangeStart);
+//	//printf("sentContentRangeEnd: %lu\n", 	hInfo->sentContentRangeEnd);
+//	//printf("sentContentRangeFull: %lu\n", 	hInfo->sentContentRangeFull);
+//	//printf("data length %d\n", outputDataLength);
+//	//printf("contentLength: %lu\n", 		hInfo->contentLength);
+//	//printf("transferType: %d\n", 			hInfo->transferType);
+//	//printf("requestType: %d\n", 			hInfo->requestType);
+//	//printf("isRequest: %d\n", 			hInfo->isRequest);
+//	//printf("statusCode: %d\n", 			hInfo->statusCode);
+//	//printf("statusStringBuffer: %s\n", 	hInfo->statusStringBuffer);
+//	//printf("urlBuffer: %s\n", 			hInfo->urlBuffer);
 //	
-//	printf("contentRangeStart: %lu\n", 	hInfo->contentRangeStart);
-//	printf("contentRangeEnd: %lu\n", 		hInfo->contentRangeEnd);
-//	printf("contentLength: %lu\n", 		hInfo->contentLength);
-//	printf("transferType: %d\n", 			hInfo->transferType);
-//	printf("requestType: %d\n", 			hInfo->requestType);
-//	printf("isRequest: %d\n", 			hInfo->isRequest);
-//	printf("statusCode: %d\n", 			hInfo->statusCode);
-//	printf("statusStringBuffer: %s\n", 	hInfo->statusStringBuffer);
-//	printf("urlBuffer: %s\n", 			hInfo->urlBuffer);
-//	
+//
+//	createHTTPHeader(buffer, 100000, hInfo, "this is an extra: header\r\n");
+//
+//	printf("----%s---\n", buffer );
+//
 //	return 0;
 //}
 

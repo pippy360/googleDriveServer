@@ -17,7 +17,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include "net/networking.h"
-#include "net/realtimePacketParser.h"//TODO: parser states
+#include "httpProcessing/commonHTTP.h"//TODO: parser states
+#include "httpProcessing/realtimePacketParser.h"//TODO: parser states
 #include "utils.h"
 #include "googleAccessToken.h"
 #include "googleUpload.h"
@@ -31,8 +32,6 @@
 #define GET_HEADER_FORMAT "GET %s HTTP/1.1\r\nHost: %s\r\n%s"\
                     ""\
                     "Content-length: %d\r\n\r\n%s"
-
-#define temp_server_header "HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\n"
 
 typedef struct
 {
@@ -65,148 +64,6 @@ void decryptPacketData(void* packetData, int size){
     flipBits(packetData, size);
 }
 
-long get_content_length(char* buf, int bufSize){
-    char* ptr;
-    if ((ptr = strstrn( buf, "Content-Length: ", bufSize )) != NULL ){
-        return strtol( ptr + strlen("Content-Length: "), NULL, 10 );
-    }
-    return -1;
-}
-
-int strip_packet(char* const buf, const int bufSize, char** header, int* headerSize,
-                    char** data, int* dataSize){
-    if ((*data = strstrn( buf, "\r\n\r\n", bufSize )) != NULL ){
-        *data += 4;
-        *header = buf;
-        *headerSize = *data - *header;
-        *dataSize = bufSize - *headerSize;
-        return 0;
-    }
-    return -1;
-}
-
-int is_get( char *packet, int packetLength ){
-    return (packetLength > 2 && strstrn(packet, "GET", 3) != NULL);
-}
-
-int get_requsted_file_string(char* buf, int inputPacketLength, char** outputStr){
-
-    char* ptr;
-    if ( (ptr = strstrn(buf, " HTTP", inputPacketLength)) != NULL ){
-        int length = ptr - (buf + strlen("GET "));
-        *outputStr = malloc( length + 1 );
-        (*outputStr)[ length ] = '\0';
-        memcpy( *outputStr, buf + strlen("GET "), length);
-        return 0;
-    }
-    return -1;
-}
-
-//return: 0 if success, -1 if there is no host, -2 if packet is broken
-//if return == -1 then *outputPacket points to the inputPacket
-//if return == -2 then the packet should be thrown away and an error should be sent to the host
-int changeHost(char *inputPacket, int inputPacketLength, char *newHost, 
-                    char **outputPacket, int* outputPacketLength){
-
-    char *ptr, *newPtr;
-    if ( (ptr = strstrn(inputPacket, "Host: ", inputPacketLength)) != NULL )
-    {
-        int offset = (ptr + strlen("Host: ")) - inputPacket;        
-        if ( (newPtr = strstrn(ptr + strlen("Host: "), "\r\n", inputPacketLength - offset)) == NULL ){
-            perror("bad packet, couldn't find \\r\\n");
-            return -2;
-        }
-        
-        int restOfPacketLength = inputPacketLength - (newPtr - inputPacket);
-        *outputPacketLength = offset + strlen(newHost) + restOfPacketLength;
-        *outputPacket = malloc( *outputPacketLength );
-
-        memcpy(*outputPacket, inputPacket, offset);
-        memcpy(*outputPacket + offset, newHost, strlen(newHost));
-        memcpy(*outputPacket + offset + strlen(newHost), newPtr, restOfPacketLength );
-
-        return 0;
-    }else{
-        *outputPacket = inputPacket;
-        *outputPacketLength = inputPacketLength;
-        return -1;
-    }
-}
-
-//return: 0 if success, -1 if it's not a get, -2 if packet is broken
-int changeFileRequest(char *buf, int inputPacketLength, char *newFilePath, 
-                        char **outputPacket, int* outputPacketLength){
-
-    if ( is_get(buf, inputPacketLength) )
-    {
-        int offset = strlen("GET ");
-        char *newPtr;
-        if ( (newPtr = strstrn(buf, " HTTP/", inputPacketLength)) == NULL ){
-            perror("bad packet, couldn't find HTTP/");
-            return -2;
-        }
-        *outputPacketLength = offset + strlen(newFilePath) + inputPacketLength - (newPtr - buf);
-        
-        *outputPacket = malloc(*outputPacketLength);
-        memcpy(*outputPacket, buf, offset);
-        memcpy(*outputPacket + offset, newFilePath, strlen(newFilePath));
-        memcpy(*outputPacket + offset + strlen(newFilePath), newPtr, inputPacketLength - (newPtr - buf));
-        return 0;
-    }else{
-        printf("changeFileRequest called on bad packet\n");
-        return -1;
-    }
-}
-
-//NOTE: this probably won't be needed
-// a space is automatically set between the id and new value, so don't inlude it
-int set_header_value(char *inputPacket, int inputPacketLength, char *identifier, char *newValue, 
-                        char **outputPacket, int* outputPacketLength)
-{
-}
-
-/*
-"POST %s HTTP/1.1\r\nHost: %s\r\n"\
-                    "Content-Type: application/x-www-form-urlencoded\r\n"\
-                    "Content-length: %d%s\r\n\r\n%s"
-*/
-char *getRequestData(char *fileUrl, char *domain, char *content, char *addedHeaders ){
-    char *output = malloc( strlen(GET_HEADER_FORMAT) + strlen(fileUrl) + strlen(domain) + strlen(content) 
-        + strlen(addedHeaders) );
-    sprintf( output, GET_HEADER_FORMAT, fileUrl, domain, addedHeaders, (int)strlen(content), content );
-
-    return output;
-}
-
-int get_http_response_code(char* packet, int packetLength){
-    char *ptr;
-    for (ptr = packet; *ptr != ' '; ptr++)
-        ;
-    
-    char buffer[4];
-    int i;
-    for ( i=0, ptr += 1; *ptr != ' ' ; ptr++, i++)
-        buffer[i] = *ptr;
-
-    buffer[3] = '\0';
-    return (int)strtol( buffer, NULL, 10 );
-}
-
-int is_chunked(char* packet, int packetLength){
-    return strstrn(packet, "Transfer-Encoding: chunked", packetLength) != NULL;
-}
-
-//offset should point to the start of the chunk
-void get_next_chunk(char *chunkStart, int packetLength, char** endPtr, chunk **resultChunk){
-    char *tempPtr;
-    *resultChunk = malloc( sizeof(chunk) );
-    (*resultChunk)->chunkSize = strtol(chunkStart, &tempPtr, 16);
-    tempPtr += strlen("\r\n");
-    (*resultChunk)->data = tempPtr;
-    (*resultChunk)->dataInPacket = packetLength - (tempPtr - chunkStart);
-    *endPtr = tempPtr + (*resultChunk)->dataInPacket;
-}
-
 void fill_packet_organiser(packet_organiser *po, char *packet, int packetSize, 
                         char *inputUrl, connection *c, protocol_t type )
 {
@@ -218,6 +75,14 @@ void fill_packet_organiser(packet_organiser *po, char *packet, int packetSize,
     po->amount_of_data_downloaded += packetSize;
     po->current_packet_no = 0;
     po->type = type;
+}
+
+char *getRequestData(char *fileUrl, char *domain, char *content, char *addedHeaders ){
+    char *output = malloc( strlen(GET_HEADER_FORMAT) + strlen(fileUrl) + strlen(domain) + strlen(content) 
+        + strlen(addedHeaders) );
+    sprintf( output, GET_HEADER_FORMAT, fileUrl, domain, addedHeaders, (int)strlen(content), content );
+
+    return output;
 }
 
 //return the first packet of a file download
@@ -319,8 +184,6 @@ char *download_google_json_file(char *inputUrl){
 void getDownloadUrlAndSize(char *file, char **url, char **size){
     char inputUrl[2000];
     sprintf( inputUrl, "https://www.googleapis.com/drive/v2/files?q=title='%s'&fields=items(downloadUrl,fileSize)", file);
-    //char inputUrl[5000] = "https://www.googleapis.com/drive/v2/files?q=title='upload8.jpg'&fields=items(downloadUrl,fileSize)";
-    //char inputUrl[] = "https://doc-14-as-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/in4i4ddgph7ut164onm5k83v87ek74e8/1417190400000/13058876669334088843/00377112155790015384/0B7_KKsaOads4aE5wTUZRTmFEa28?e=download&gd=true";
     char *str = download_google_json_file( inputUrl );
     *url  = get_json_value("downloadUrl", str, strlen(str));
     *size = get_json_value("fileSize", str, strlen(str));
@@ -332,80 +195,107 @@ void handle_client( int client_fd ){
     /* get the first packet from the client, continue until we have the whole header, discard any data*/
     //TODO: write this properly
     char buffer[2000];
+    char buffer2[2000];
     int recvd = recv( client_fd, buffer, 2000, 0);
     buffer[ recvd ] = '\0';
 
-    int i = 4;
-    for (; buffer[i] != ' ' ; i++)
-        ;
-    buffer[i] = '\0';
+    printf("recvd: %d\n", recvd);
+    printf("packet got from client %.*s\n", recvd, buffer);
+    printf("packet got from client %s\n", buffer);
 
-    printf("fileurl: --%s--\n", buffer + 5);
-
-
-    char *url, *size;
-    getDownloadUrlAndSize(buffer + 5, &url, &size);
-    printf("now printing url and size:\n");
-    printf("%s\n", size);
-    printf("%s\n", url);
-
-    /* start downloading from google, continue until we have the whole header */
-    char *accessTokenHeader = getAccessTokenHeader();
-    packet_organiser *po;
-    start_file_download(url, accessTokenHeader, &po);
-    
     int outputDataLength;
     char *outputDataBuffer = malloc(MAXDATASIZE+1);
-    parserState_t *parserState = get_start_state_struct();
-    headerInfo_t *hInfo   = get_start_header_info();
+    parserState_t *parserStateClientRecv = get_start_state_struct();
+    headerInfo_t *hInfoClientRecv   = get_start_header_info();
 
-    process_data( po->current_packet, po->current_packet_length, parserState, 
-                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfo);
+    process_data( buffer, recvd, parserStateClientRecv, outputDataBuffer, 
+                MAXDATASIZE, &outputDataLength, packetEnd, hInfoClientRecv);
+    
 
-    //respond to client
-    //TODO: seperate the downloader
+    /* get the size and stuff from the url */
+
+    char *url, *size;
+    getDownloadUrlAndSize(hInfoClientRecv->urlBuffer+1, &url, &size);
+    printf("now print size: %s\n", size);
+    printf("now print url: %s\n", url);
+
+    /* start downloading from google, continue until we have the whole header */
+    /* send the get request to google*/
+    char *accessTokenHeader = getAccessTokenHeader();
+
+    protocol_t type;
+    char *domain, *fileUrl;
+    parseUrl(url, &type, &domain, &fileUrl);
+    
+    hInfoClientRecv->urlBuffer = fileUrl;
+    hInfoClientRecv->contentLength = 0;
+    hInfoClientRecv->transferType = contentLength;
+    createHTTPHeader(buffer2, MAXDATASIZE, hInfoClientRecv, accessTokenHeader);
+
+    connection *c = sslConnect( domain, "443" );
+
+    SSL_write (c->sslHandle, buffer2, strlen(buffer2));    
+    printf("packet sent to google domain : %s\n", domain );
+    printf("packet sent to google %s\n", buffer2 );
+
+    /* get the reply and start sending stuff back to client */
+
+    char *buffer1 = malloc(MAXDATASIZE+1);
+    int received = SSL_read (c->sslHandle, buffer1, MAXDATASIZE-1);
+    printf("the packet from google %s\n", buffer1);
+
+    parserState_t *parserStateGoogleRecv = get_start_state_struct();
+    headerInfo_t *hInfoGoogleRecv   = get_start_header_info();
+
+    process_data( buffer1, received, parserStateGoogleRecv,
+                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfoGoogleRecv);
+    
+    printf("statusCode : %d\n", hInfoGoogleRecv->statusCode);
+
+    /* respond to client about the file */
 
     char moreBuffer[MAXDATASIZE];
-    sprintf(moreBuffer, temp_server_header, size);
+    
+    hInfoGoogleRecv->transferType = contentLength;
+    if (!hInfoGoogleRecv->isRange)
+    {
+        hInfoGoogleRecv->contentLength = strtol(size, NULL, 10);    
+    }else{
+        hInfoGoogleRecv->contentLength = hInfoGoogleRecv->sentContentRangeEnd - hInfoGoogleRecv->sentContentRangeStart;
+    }
+    createHTTPHeader(moreBuffer, MAXDATASIZE, hInfoGoogleRecv, NULL);
+
+    printf("packet Sent to client response: \n%s\n\n", moreBuffer);
+
     send(client_fd, moreBuffer, strlen(moreBuffer), 0);
     
     /* continue downloading and passing data onto the client */
 
-    //remember to pass on any data that came with the packets that contained the header
-    do{
+    //remember to pass on any data that came with the packets that was contained in the header
+    while ( parserStateGoogleRecv->currentState != packetEnd ){
 
-        while ( parserState->currentState != packetEnd ){
-            get_next_packet_file_download(po);
-            parserState->currentPacketPtr = po->current_packet;
-            process_data( po->current_packet, po->current_packet_length, parserState, 
-                        outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfo);
+        received = SSL_read (c->sslHandle, buffer1, MAXDATASIZE-1);
+        process_data( buffer1, received, parserStateGoogleRecv, outputDataBuffer, 
+            MAXDATASIZE, &outputDataLength, packetEnd, hInfoGoogleRecv);
 
-            //hm......
-            flipBits(outputDataBuffer, outputDataLength);
-            if( send(client_fd, outputDataBuffer, outputDataLength, 0) == -1){
-                break;
-            }
+        flipBits(outputDataBuffer, outputDataLength);
 
-            outputDataBuffer[0] = '\0';
+        if( send(client_fd, outputDataBuffer, outputDataLength, 0) == -1){
+            break;
         }
 
-    }while(0);
-
+        outputDataBuffer[0] = '\0';
+    }
 
     printf("we're done apparently\n");
     close(client_fd);
-    sslDisconnect(po->currConnection);
+    sslDisconnect(c);
     //check how the whole process went...
 
 }
 
 int main(int argc, char *argv[])
 {
-    if(argc != 2){
-        printf("error, bad argc\n");
-        return -1;
-    }
-
     google_init();
 
     int sockfd = get_listening_socket(SERVER_LISTEN_PORT);
@@ -445,54 +335,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-    /*
-    //time for pull
-    google_init();
-    
-    char fileBuffer[2000];
-
-    int counter;
-    FILE *fp;
-    fp = fopen("big_text.txt","r");
-    
-    fseek(fp, 0L, SEEK_END);
-    long filesize = ftell(fp);
-    fseek(fp, 0L, SEEK_SET);
-    
-    //fetch a file,
-    int type;
-    char *domain, *fileUrl;
-    char *accessTokenHeader = getAccessTokenHeader();
-    char buffer[20000];
-
-    int noChange, packetSize, dataSent;
-    char fileData[] = "firstline tea;flkjadsf;lkjasfd;lkjsaasf;lkkjas;lfj;sakdjf ;lsakdjf;lksadjf;lasdkjf;lsadkjf;lsadkjf;lsadkjf;lasdkjf;lasdkjf;lsadkjf;sdakjf;sadlkjf;lsadkjfawjept2 dsf aslkdfj a;sdflk asdf a kf;ldsa l;asd j;lfjals dfen asdlfkjs;adlkfj sadf dsalkjf ;ldsa k d -----------------------------------end";
-    int length = strlen( fileData );
-    //get a file and load it 
-    googleUploadStruct *stateStruct = getGoogleUploadStruct_struct();
-    char *metadata = "{\n  \"title\": \"My File2\"\n}\n";
-
-    connection *c;
-    c = sslConnect( "www.googleapis.com", "443" );
-
-
-    while( stateStruct->parserState != finished ){ 
-        int read = fread( fileBuffer, 1, 300, fp);
-        packetSize = getNextUploadPacket(fileBuffer, read, &dataSent, filesize, metadata, accessTokenHeader, 
-                                        stateStruct, buffer, 2000, &noChange);
-        SSL_write(c->sslHandle, buffer, packetSize);
-        if ( dataSent != read )
-        {
-            printf("BAD FILE SEND\n");
-        }
-    }
-
-    printf("sent:\n");
-
-    int received = SSL_read(c->sslHandle, buffer, MAXDATASIZE-1);
-    printf("%s\n", buffer);
-
-    fclose(fp);
-    return 0;
-    */

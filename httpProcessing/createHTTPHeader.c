@@ -52,8 +52,12 @@ void createHTTPHeader(char *output, int maxOutputLen, headerInfo_t *hInfo, char 
 		l += strlen(REQUEST_HEADERS);
 		//"Range: bytes=106717810-114836737\r\n"
 		if( hInfo->isRange ){
-			sprintf( output+l, "Range111: bytes=%lu-%lu\r\n", hInfo->getContentRangeStart, 
-					hInfo->getContentRangeEnd);
+			if (hInfo->getContentRangeEndSet){
+				sprintf( output+l, "Range: bytes=%lu-%lu\r\n", hInfo->getContentRangeStart, 
+						hInfo->getContentRangeEnd);
+			}else{				
+				sprintf( output+l, "Range: bytes=%lu-\r\n", hInfo->getContentRangeStart);
+			}
 		}
 		l = strlen(output);
 		//"Host: doc-0o-as-docs.googleusercontent.com\r\n"
@@ -63,7 +67,7 @@ void createHTTPHeader(char *output, int maxOutputLen, headerInfo_t *hInfo, char 
 		l += strlen(RESPONSE_HEADERS);
 		//"Content-Range: bytes 106717810-114836737/114836738\r\n\r\n"
 		if( hInfo->isRange ){
-			sprintf( output+l, "Content-Range222: bytes %lu-%lu/%lu\r\n", hInfo->sentContentRangeStart, 
+			sprintf( output+l, "Content-Range: bytes %lu-%lu/%lu\r\n", hInfo->sentContentRangeStart, 
 					hInfo->sentContentRangeEnd, hInfo->sentContentRangeFull);
 		}		
 	}

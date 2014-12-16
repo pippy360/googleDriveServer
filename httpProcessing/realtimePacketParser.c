@@ -42,6 +42,7 @@ headerInfo_t *get_start_header_info(){
 	httpStats->urlBuffer[0] = '\0';
 	httpStats->hostBuffer = malloc(MAX_BUFFER+1);
 	httpStats->hostBuffer[0] = '\0';
+	httpStats->getContentRangeEndSet = 0;
 
 	return httpStats;
 }
@@ -295,7 +296,12 @@ int process_header(char *name, char *value, parserState_t* parserState, headerIn
 		char *endPtr;
 		hInfo->getContentRangeStart = strtol( ptr, &endPtr, 10);
 		ptr = endPtr + 1;
-		hInfo->getContentRangeEnd = strtol( ptr, &endPtr, 10);
+		if (*ptr >= '0' && *ptr <= '9'){
+			hInfo->getContentRangeEndSet = 1;
+			hInfo->getContentRangeEnd = strtol( ptr, &endPtr, 10);
+		}else{
+			hInfo->getContentRangeEndSet = 0;
+		}
 	}else if(strcmp("Content-Range",name) == 0){
 		//"Content-Range: bytes 106717810-114836737/114836738\r\n\r\n"
 		hInfo->isRange = 1;

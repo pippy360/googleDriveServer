@@ -21,6 +21,7 @@ typedef enum {
 typedef struct {
 	long getContentRangeStart;
 	long getContentRangeEnd;
+	char getContentRangeEndSet;//a bool to check if we got a "getContentRangeEnd"
 	long sentContentRangeStart;
 	long sentContentRangeEnd;
 	long sentContentRangeFull;

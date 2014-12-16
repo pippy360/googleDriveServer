@@ -194,9 +194,9 @@ void handle_client( int client_fd ){
 
     /* get the first packet from the client, continue until we have the whole header, discard any data*/
     //TODO: write this properly
-    char *buffer = malloc(MAXDATASIZE+1);
+    char *buffer = calloc(MAXDATASIZE+1,1);
     char buffer2[2000];
-    int recvd = recv( client_fd, buffer, 2000, 0);
+    int recvd = recv( client_fd, buffer, 20000, 0);
     buffer[ recvd ] = '\0';
 
     printf("recvd: %d\n", recvd);
@@ -222,13 +222,19 @@ void handle_client( int client_fd ){
     /* send the get request to google*/
     char *accessTokenHeader = getAccessTokenHeader();
 
+    printf("Range data, isRange %d, getStart %lu getEnd %lu \n", hInfoClientRecv->isRange, 
+        hInfoClientRecv->getContentRangeStart, hInfoClientRecv->getContentRangeEnd);
+    
     protocol_t type;
     char *domain, *fileUrl;
     parseUrl(url, &type, &domain, &fileUrl);
     
+    printf("is it set ? %d\n", hInfoClientRecv->getContentRangeEndSet);
     hInfoClientRecv->urlBuffer  = fileUrl;
     hInfoClientRecv->hostBuffer = domain;
     createHTTPHeader(buffer2, MAXDATASIZE, hInfoClientRecv, accessTokenHeader);
+
+    printf("lets look at the google header \n\n %s\n\n", buffer2);
 
     connection *c = sslConnect( domain, "443" );
 
@@ -267,7 +273,7 @@ void handle_client( int client_fd ){
     }else{
         printf("google is sending us a ranged file, this is trouble because of how we deal with chunking\n");
         hInfoGoogleRecv->transferType = contentLength;
-        hInfoGoogleRecv->contentLength = hInfoGoogleRecv->sentContentRangeEnd - hInfoGoogleRecv->sentContentRangeStart;
+        hInfoGoogleRecv->contentLength = (hInfoGoogleRecv->sentContentRangeEnd+1) - hInfoGoogleRecv->sentContentRangeStart;
     }
 
     createHTTPHeader(moreBuffer, MAXDATASIZE, hInfoGoogleRecv, NULL);

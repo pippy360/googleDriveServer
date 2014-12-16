@@ -32,5 +32,6 @@ typedef struct {
 	int  statusCode;
 	char *statusStringBuffer;
 	char *urlBuffer;
+	char *hostBuffer;
 } headerInfo_t;
 

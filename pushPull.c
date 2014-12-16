@@ -194,14 +194,13 @@ void handle_client( int client_fd ){
 
     /* get the first packet from the client, continue until we have the whole header, discard any data*/
     //TODO: write this properly
-    char buffer[2000];
+    char *buffer = malloc(MAXDATASIZE+1);
     char buffer2[2000];
     int recvd = recv( client_fd, buffer, 2000, 0);
     buffer[ recvd ] = '\0';
 
     printf("recvd: %d\n", recvd);
-    printf("packet got from client %.*s\n", recvd, buffer);
-    printf("packet got from client %s\n", buffer);
+    printf("packet got from client \n\n%.*s\n", recvd, buffer);
 
     int outputDataLength;
     char *outputDataBuffer = malloc(MAXDATASIZE+1);
@@ -227,45 +226,53 @@ void handle_client( int client_fd ){
     char *domain, *fileUrl;
     parseUrl(url, &type, &domain, &fileUrl);
     
-    hInfoClientRecv->urlBuffer = fileUrl;
-    hInfoClientRecv->contentLength = 0;
-    hInfoClientRecv->transferType = contentLength;
+    hInfoClientRecv->urlBuffer  = fileUrl;
+    hInfoClientRecv->hostBuffer = domain;
     createHTTPHeader(buffer2, MAXDATASIZE, hInfoClientRecv, accessTokenHeader);
 
     connection *c = sslConnect( domain, "443" );
 
     SSL_write (c->sslHandle, buffer2, strlen(buffer2));    
-    printf("packet sent to google domain : %s\n", domain );
-    printf("packet sent to google %s\n", buffer2 );
+    printf("packet sent to google \n\n%s\n", buffer2 );
 
     /* get the reply and start sending stuff back to client */
 
     char *buffer1 = malloc(MAXDATASIZE+1);
     int received = SSL_read (c->sslHandle, buffer1, MAXDATASIZE-1);
-    printf("the packet from google %s\n", buffer1);
+    printf("the packet from google \n\n%s\n", buffer1);
 
     parserState_t *parserStateGoogleRecv = get_start_state_struct();
     headerInfo_t *hInfoGoogleRecv   = get_start_header_info();
 
     process_data( buffer1, received, parserStateGoogleRecv,
                   outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfoGoogleRecv);
-    
+        
     printf("statusCode : %d\n", hInfoGoogleRecv->statusCode);
 
     /* respond to client about the file */
 
     char moreBuffer[MAXDATASIZE];
     
-    hInfoGoogleRecv->transferType = contentLength;
     if (!hInfoGoogleRecv->isRange)
     {
-        hInfoGoogleRecv->contentLength = strtol(size, NULL, 10);    
+        if (hInfoGoogleRecv->transferType == chunked)
+        {
+            hInfoGoogleRecv->transferType = contentLength;
+            hInfoGoogleRecv->contentLength = strtol(size, NULL, 10);
+            printf("sending the whole file\n");
+            /* code */
+        }else{
+            printf("it's good the way it is\n");
+        }
     }else{
+        printf("google is sending us a ranged file, this is trouble because of how we deal with chunking\n");
+        hInfoGoogleRecv->transferType = contentLength;
         hInfoGoogleRecv->contentLength = hInfoGoogleRecv->sentContentRangeEnd - hInfoGoogleRecv->sentContentRangeStart;
     }
+
     createHTTPHeader(moreBuffer, MAXDATASIZE, hInfoGoogleRecv, NULL);
 
-    printf("packet Sent to client response: \n%s\n\n", moreBuffer);
+    printf("packet Sent to client response: \n\n%s\n\n", moreBuffer);
 
     send(client_fd, moreBuffer, strlen(moreBuffer), 0);
     

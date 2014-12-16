@@ -40,6 +40,8 @@ headerInfo_t *get_start_header_info(){
 	httpStats->statusStringBuffer[0] = '\0';
 	httpStats->urlBuffer = malloc(MAX_BUFFER+1);
 	httpStats->urlBuffer[0] = '\0';
+	httpStats->hostBuffer = malloc(MAX_BUFFER+1);
+	httpStats->hostBuffer[0] = '\0';
 
 	return httpStats;
 }
@@ -278,8 +280,9 @@ int process_header(char *name, char *value, parserState_t* parserState, headerIn
 		printf("it's chunked\n");
 	}else if(strcmp("Content-Length",name) == 0){
 		
-		parserState->packetDataType = contentLength;
-		hInfo->transferType		  = contentLength;
+		parserState->packetDataType  = contentLength;
+		hInfo->transferType		  	 = contentLength;
+		hInfo->contentLength		 = strtol(value, NULL, 10);;
 		parserState->remainingLength = strtol(value, NULL, 10);
 		
 		printf("it's content length : %lu\n", parserState->remainingLength);
@@ -304,6 +307,9 @@ int process_header(char *name, char *value, parserState_t* parserState, headerIn
 		hInfo->sentContentRangeEnd = strtol( ptr, &endPtr, 10);
 		ptr = endPtr + 1;
 		hInfo->sentContentRangeFull = strtol( ptr, &endPtr, 10);
+	}else if(strcmp("Host",name) == 0){
+		//"Content-Range: bytes 106717810-114836737/114836738\r\n\r\n"
+		memcpy( hInfo->hostBuffer, value, strlen(value) );
 	}
 
 	return 0;

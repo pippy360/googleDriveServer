@@ -6,15 +6,13 @@
 #include <string.h>
 #include "commonHTTP.h"
 #include "realtimePacketParser.h"
-#include "createHTTPHeader.h"
 
 #define MAX_LEN 10000//FIXME: this seems really big...
 #define MAX_BUFFER 1000//FIXME: do something to prevent bufferoverflows
 
 //FIXME: THE BUFFERS SHOULDN'T BE MALLOC'D HERE
-parserState_t *get_start_state_struct(){
-	parserState_t *parserState = calloc( sizeof( parserState_t ), 1 );
-
+void set_new_parser_state_struct(parserState_t *parserState){
+	memset(parserState, 0, sizeof(parserState_t));
 	parserState->currentState 		 = getHTTPStatusLine;
 	parserState->packetDataType 	 = default_empty_p;
 
@@ -28,12 +26,10 @@ parserState_t *get_start_state_struct(){
 	parserState->statusLineBuffer	 = malloc(MAX_BUFFER+1);
 	parserState->statusLineBuffer[0] = '\0';
 	parserState->headerFullyParsed	 = 0;
-
-	return parserState;
 }
 
-headerInfo_t *get_start_header_info(){
-	headerInfo_t *httpStats = calloc( sizeof(headerInfo_t), 1 );
+void set_new_header_info(headerInfo_t *httpStats){
+	memset(httpStats, 0, sizeof(headerInfo_t));
 
 	httpStats->transferType 		 = default_empty;
 	httpStats->statusStringBuffer 	 = malloc(MAX_BUFFER+1);
@@ -43,8 +39,6 @@ headerInfo_t *get_start_header_info(){
 	httpStats->hostBuffer			 = malloc(MAX_BUFFER+1);
 	httpStats->hostBuffer[0]		 = '\0';
 	httpStats->getContentRangeEndSet = 0;
-
-	return httpStats;
 }
 
 void setState(parserState_t *parserState, state_t nextState){

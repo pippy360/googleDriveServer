@@ -19,7 +19,7 @@ typedef enum {
 	getChunkData,
 	finishedChunkData,//expecting '\r\n' followed by new chunk or zero chunk
 	getContentLengthData,
-	packetEnd,
+	packetEnd_s,
 	BAD_PACKET
 } state_t;
 
@@ -44,6 +44,7 @@ typedef struct {
 	char *valueBuffer;
 	parserPacketDataType_t packetDataType;
 	char *statusLineBuffer;
+	int  headerFullyParsed;
 } parserState_t;
 
 int process_data(char *inputData, int dataLength, parserState_t* state, char *outputData, 

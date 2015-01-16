@@ -25,6 +25,7 @@
 #include "parser.h"
 
 #define MAXDATASIZE 200000//FIXME: this should only need to be the max size of one packet !!!
+#define MAX_PACKET_SIZE 1500
 #define MAX_CHUNK_ARRAY_LENGTH 100
 #define MAX_CHUNK_SIZE_BUFFER 100
 #define SERVER_LISTEN_PORT "25001"
@@ -166,15 +167,15 @@ char *download_google_json_file(char *inputUrl){
     headerInfo_t *hInfo   = get_start_header_info();
 
     process_data( po->current_packet, po->current_packet_length, parserState, 
-                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfo);
+                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd_s, hInfo);
     
     outputDataBuffer += outputDataLength;
 
-    while ( parserState->currentState != packetEnd ){
+    while ( parserState->currentState != packetEnd_s ){
         get_next_packet_file_download(po);
         parserState->currentPacketPtr = po->current_packet;
         process_data( po->current_packet, po->current_packet_length, parserState, 
-                      outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfo);
+                      outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd_s, hInfo);
         outputDataBuffer += outputDataLength;
     }
 
@@ -189,26 +190,41 @@ void getDownloadUrlAndSize(char *file, char **url, char **size){
     *size = get_json_value("fileSize", str, strlen(str));
 }
 
+//returns 0 if success, non-0 otherwise
+int getHeader(int client_fd, parserState_t **parserStateBuf, char *outputData, 
+                int outputDataMaxSize, int *outputDataLength, headerInfo_t **headerInfoBuf){
+
+    //set the parser state to start state
+    *parserStateBuf = get_start_state_struct();
+    *headerInfoBuf  = get_start_header_info();
+    //set the header info  to start state
+    char packetBuf[MAX_PACKET_SIZE+1];
+    while (!(*parserStateBuf)->headerFullyParsed){
+        int recvd = recv(client_fd, packetBuf, MAX_PACKET_SIZE, 0);
+        packetBuf[ recvd ] = '\0';
+        process_data(packetBuf, recvd, *parserStateBuf, outputData, 
+                    outputDataMaxSize, outputDataLength, packetEnd_s, *headerInfoBuf);
+        //todo: check for errors
+    }
+    return 0;
+}
+
 void handle_client( int client_fd ){
 
+    /* get the first packet from the client, 
+        continue until we have the whole header and see what he wants */
 
-    /* get the first packet from the client, continue until we have the whole header, discard any data*/
-    //TODO: write this properly
-    char *buffer = calloc(MAXDATASIZE+1,1);
     char buffer2[2000];
-    int recvd = recv( client_fd, buffer, 20000, 0);
-    buffer[ recvd ] = '\0';
-
-    printf("recvd: %d\n", recvd);
-    printf("packet got from client \n\n%.*s\n", recvd, buffer);
-
     int outputDataLength;
     char *outputDataBuffer = malloc(MAXDATASIZE+1);
-    parserState_t *parserStateClientRecv = get_start_state_struct();
-    headerInfo_t *hInfoClientRecv   = get_start_header_info();
+    parserState_t *parserStateClientRecv;
+    headerInfo_t *hInfoClientRecv;
 
-    process_data( buffer, recvd, parserStateClientRecv, outputDataBuffer, 
-                MAXDATASIZE, &outputDataLength, packetEnd, hInfoClientRecv);
+    getHeader(client_fd, &parserStateClientRecv, buffer2, MAXDATASIZE, 
+                &outputDataLength, &hInfoClientRecv);
+
+    /* check what the client wants by checking the URL*/
+
     
 
     /* get the size and stuff from the url */
@@ -251,7 +267,7 @@ void handle_client( int client_fd ){
     headerInfo_t *hInfoGoogleRecv   = get_start_header_info();
 
     process_data( buffer1, received, parserStateGoogleRecv,
-                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd, hInfoGoogleRecv);
+                  outputDataBuffer, MAXDATASIZE, &outputDataLength, packetEnd_s, hInfoGoogleRecv);
         
     printf("statusCode : %d\n", hInfoGoogleRecv->statusCode);
 
@@ -285,11 +301,11 @@ void handle_client( int client_fd ){
     /* continue downloading and passing data onto the client */
 
     //remember to pass on any data that came with the packets that was contained in the header
-    while ( parserStateGoogleRecv->currentState != packetEnd ){
+    while ( parserStateGoogleRecv->currentState != packetEnd_s ){
 
         received = SSL_read (c->sslHandle, buffer1, MAXDATASIZE-1);
         process_data( buffer1, received, parserStateGoogleRecv, outputDataBuffer, 
-            MAXDATASIZE, &outputDataLength, packetEnd, hInfoGoogleRecv);
+            MAXDATASIZE, &outputDataLength, packetEnd_s, hInfoGoogleRecv);
 
         flipBits(outputDataBuffer, outputDataLength);
 

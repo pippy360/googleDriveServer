@@ -27,6 +27,7 @@ parserState_t *get_start_state_struct(){
 	parserState->valueBuffer[0] 	 = '\0';
 	parserState->statusLineBuffer	 = malloc(MAX_BUFFER+1);
 	parserState->statusLineBuffer[0] = '\0';
+	parserState->headerFullyParsed	 = 0;
 
 	return parserState;
 }
@@ -34,14 +35,13 @@ parserState_t *get_start_state_struct(){
 headerInfo_t *get_start_header_info(){
 	headerInfo_t *httpStats = calloc( sizeof(headerInfo_t), 1 );
 
-	httpStats->transferType = default_empty;
-
-	httpStats->statusStringBuffer = malloc(MAX_BUFFER+1);
+	httpStats->transferType 		 = default_empty;
+	httpStats->statusStringBuffer 	 = malloc(MAX_BUFFER+1);
 	httpStats->statusStringBuffer[0] = '\0';
-	httpStats->urlBuffer = malloc(MAX_BUFFER+1);
-	httpStats->urlBuffer[0] = '\0';
-	httpStats->hostBuffer = malloc(MAX_BUFFER+1);
-	httpStats->hostBuffer[0] = '\0';
+	httpStats->urlBuffer 			 = malloc(MAX_BUFFER+1);
+	httpStats->urlBuffer[0]			 = '\0';
+	httpStats->hostBuffer			 = malloc(MAX_BUFFER+1);
+	httpStats->hostBuffer[0]		 = '\0';
 	httpStats->getContentRangeEndSet = 0;
 
 	return httpStats;
@@ -125,13 +125,14 @@ void process_byte(char byte, parserState_t* parserState,
 		case finishedHeaderValue_2:
 			if( currByte == '\n' ){
 				//check if it's chunked 
+				parserState->headerFullyParsed = 1;
 				if (parserState->packetDataType == chunked_p)
 				{
 					setState( parserState, getChunkLength );
 				}else if (parserState->packetDataType == contentLength_p){
 					setState( parserState, getContentLengthData );
 				}else if (parserState->packetDataType == default_empty_p){
-					setState( parserState, packetEnd );
+					setState( parserState, packetEnd_s );
 				}
 			}else{
 				//fail
@@ -141,7 +142,7 @@ void process_byte(char byte, parserState_t* parserState,
 			if( (retVal = token_check(parserState, NULL, "\r\n")) == 0 ){
 				parserState->remainingLength = strtol(parserState->lengthBuffer, NULL, 16);
 				if( parserState->remainingLength == 0 ){	
-					setState( parserState, packetEnd );
+					setState( parserState, packetEnd_s );
 				}else{
 					setState( parserState, getChunkData );
 				}
@@ -175,11 +176,11 @@ void process_byte(char byte, parserState_t* parserState,
 			outputData[*outputDataLength+1] = '\0';
 			(*outputDataLength)++;
 			if( parserState->remainingLength == 1 ){
-				setState( parserState, packetEnd );
+				setState( parserState, packetEnd_s );
 			}
 			parserState->remainingLength--;
 			break;
-		case packetEnd:
+		case packetEnd_s:
 			printf("hm.....hit packet end\n");
 			break;
 	}
@@ -267,7 +268,7 @@ int process_status_line(char *buffer, parserState_t* parserState, headerInfo_t* 
 }
 
 
-//if it's a header we're interested in process it, otherwise just ignore
+//if it's a header we're interested in, process it, otherwise just ignore
 //returns -1 if invalid header, 0 otherwise 
 int process_header(char *name, char *value, parserState_t* parserState, headerInfo_t* hInfo){
 	int result = 0;
@@ -391,7 +392,7 @@ int process_data(char *inputData, int dataLength, parserState_t* parserState, ch
 //	parserState_t* parserState = get_start_state_struct();
 //	headerInfo_t* hInfo = get_start_header_info();
 //
-//	process_data(packet2, strlen(packet2), parserState, buffer, 100000, &outputDataLength, packetEnd, hInfo);
+//	process_data(packet2, strlen(packet2), parserState, buffer, 100000, &outputDataLength, packetEnd_s, hInfo);
 //	
 //	//printf("getContentRangeStart: %lu\n", 	hInfo->getContentRangeStart);
 //	//printf("getContentRangeEnd: %lu\n", 	hInfo->getContentRangeEnd);

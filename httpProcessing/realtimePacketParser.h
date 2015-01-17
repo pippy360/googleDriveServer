@@ -50,6 +50,6 @@ typedef struct {
 int process_data(char *inputData, int dataLength, parserState_t* state, char *outputData, 
 				int outputDataMaxLength, int *outputDataLength, state_t exitState, headerInfo_t *hInfo);
 
-parserState_t* get_start_state_struct();
+void set_new_parser_state_struct(parserState_t *parserState);
 
-headerInfo_t *get_start_header_info();
+void set_new_header_info(headerInfo_t *hInfo);

@@ -32,7 +32,7 @@ typedef struct {
 	char isRange;
 	int  statusCode;
 	char *statusStringBuffer;
-	char *urlBuffer;
-	char *hostBuffer;
+	char *urlBuffer;//
+	char *hostBuffer;//used for the host header
 } headerInfo_t;
 

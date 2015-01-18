@@ -24,6 +24,7 @@
 #include "googleAccessToken.h"
 #include "googleUpload.h"
 #include "parser.h"
+#include "net/httpConnection.h"
 
 #define MAX_ACCEPTED_HTTP_PAYLOAD 200000
 #define MAXDATASIZE 200000//FIXME: this should only need to be the max size of one packet !!!
@@ -47,7 +48,7 @@ void decryptPacketData(void* packetData, int size){
 
 //returns the amount of data downloaded (excluding the header)
 int downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength, 
-                        const char *inputUrl, headerInfo_t *hInfo, const char *extraHeaders){
+                        char *inputUrl, headerInfo_t *hInfo, const char *extraHeaders){
     protocol_t type;
     char *domain, *fileUrl;
     parseUrl(inputUrl, &type, &domain, &fileUrl);
@@ -56,10 +57,8 @@ int downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength,
 
 char *download_google_json_file(char *inputUrl){
 
-    protocol_t type;
-    char *domain, *fileUrl;
-    parseUrl(inputUrl, &type, &domain, &fileUrl);
-    sslConnection *c = sslConnect( domain, "443" );
+    httpConnection_t httpConnection;
+    connectByUrl(inputUrl, &httpConnection);
 
     char *result = malloc(MAX_ACCEPTED_HTTP_PAYLOAD+1);
 
@@ -74,7 +73,11 @@ char *download_google_json_file(char *inputUrl){
     //request the file
     headerInfo_t requestHeaderInfo;
     set_new_header_info(&requestHeaderInfo);
-
+    
+    protocol_t type;
+    char *domain, *fileUrl;
+    parseUrl(inputUrl, &type, &domain, &fileUrl);
+    
     requestHeaderInfo.isRequest   = 1;
     requestHeaderInfo.requestType = GET;
     requestHeaderInfo.urlBuffer   = fileUrl;
@@ -82,14 +85,14 @@ char *download_google_json_file(char *inputUrl){
     char *accessTokenHeader = getAccessTokenHeader();
     createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, &requestHeaderInfo, 
                         accessTokenHeader);
-    SSL_write (c->sslHandle, packetBuffer, strlen(packetBuffer));
+    send_http(&httpConnection, packetBuffer, strlen(packetBuffer));
     //handle response
 
-    //printf("Packet to GET json: \n\n%s\n\n", packetBuffer);
+    printf("Packet to GET json: \n\n%s\n\n", packetBuffer);
 
     while ( parserState.currentState != packetEnd_s ){
 
-        int received = SSL_read (c->sslHandle, packetBuffer, MAXDATASIZE-1);
+        int received = recv_http(&httpConnection, packetBuffer, MAXDATASIZE-1);
         process_data( packetBuffer, received, &parserState, outputDataBuffer, 
                         MAXDATASIZE, &outputDataLength, packetEnd_s, &hInfo);
         outputDataBuffer += outputDataLength;

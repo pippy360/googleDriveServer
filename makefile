@@ -1,10 +1,13 @@
 all: server.out
 
-server.out: networking.o utils.o pushPull.o googleAccessToken.o parser.o googleUpload.o realtimePacketParser.o createHTTPHeader.o
-	gcc realtimePacketParser.o pushPull.o createHTTPHeader.o parser.o utils.o networking.o googleUpload.o googleAccessToken.o -lssl -lcrypto -g -o server.out
+server.out: networking.o utils.o pushPull.o googleAccessToken.o parser.o googleUpload.o realtimePacketParser.o createHTTPHeader.o httpConnection.o
+	gcc realtimePacketParser.o pushPull.o createHTTPHeader.o parser.o utils.o httpConnection.o networking.o googleUpload.o googleAccessToken.o -lssl -lcrypto -g -o server.out
 
 networking.o: net/networking.c
 	gcc -c net/networking.c
+
+httpConnection.o: net/httpConnection.c
+	gcc -c net/httpConnection.c
 
 pushPull.o: pushPull.c
 	gcc -c pushPull.c

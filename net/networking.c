@@ -15,15 +15,9 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#define BACKLOG 10
+#include "networking.h"
 
-// Simple structure to keep track of the handle, and
-// of what needs to be freed later.
-typedef struct {
-    int socket;
-    SSL *sslHandle;
-    SSL_CTX *sslContext;
-} connection;
+#define BACKLOG 10
 
 void sigchld_handler(int s)
 {
@@ -151,9 +145,9 @@ int set_up_tcp_connection(const char* hostname, const char* port){
     return sockfd;
 }
 
-connection *set_up_tcp_connection_struct (const char* hostname, const char* port){
-  connection *c;
-  c = malloc (sizeof (connection));
+sslConnection *set_up_tcp_connection_struct (const char* hostname, const char* port){
+  sslConnection *c;
+  c = malloc (sizeof (sslConnection));
   c->sslHandle = NULL;
   c->sslContext = NULL;
   c->socket = set_up_tcp_connection(hostname, port);
@@ -165,11 +159,11 @@ connection *set_up_tcp_connection_struct (const char* hostname, const char* port
 //
 
 // Establish a connection using an SSL layer
-connection *sslConnect (char* host, char* port)
+sslConnection *sslConnect (char* host, char* port)
 {
-  connection *c;
+  sslConnection *c;
 
-  c = malloc (sizeof (connection));
+  c = malloc (sizeof (sslConnection));
   c->sslHandle = NULL;
   c->sslContext = NULL;
 
@@ -208,7 +202,7 @@ connection *sslConnect (char* host, char* port)
 }
 
 // Disconnect & free connection struct
-void sslDisconnect (connection *c)
+void sslDisconnect (sslConnection *c)
 {
   if (c->socket)
     close (c->socket);

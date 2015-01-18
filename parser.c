@@ -82,13 +82,13 @@ int parseUrl(char* inputUrl, protocol_t* type, char** domain, char** fileUrl){
     char *ptr = strstrn(inputUrl, "://", strlen(inputUrl));
 
     int protoSize = ptr - inputUrl;
-    if( strncmp( inputUrl, "https", (protoSize > strlen("https"))? protoSize: strlen("https") ) == 0 ){
-    	*type = https;
-    }else if( strncmp( inputUrl, "http", (protoSize > strlen("http"))? protoSize: strlen("http")) == 0 ){
-    	*type = http;
+    if( strncmp( inputUrl, "https", (protoSize > strlen("https"))? protoSize : strlen("https") ) == 0 ){
+    	*type = PROTO_HTTPS;
+    }else if( strncmp( inputUrl, "http", (protoSize > strlen("http"))? protoSize : strlen("http")) == 0 ){
+    	*type = PROTO_HTTP;
     }else{
     	printf("ERROR: BAD PROTOCOL\n");
-    	*type = http;
+    	*type = PROTO_HTTP;
     }
 
     ptr += strlen("://");

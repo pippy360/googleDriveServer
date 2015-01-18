@@ -21,7 +21,7 @@ typedef struct {
     int socket;
     SSL *sslHandle;
     SSL_CTX *sslContext;
-} connection;
+} sslConnection;
 
 void sigchld_handler(int s);
 
@@ -31,8 +31,8 @@ int get_listening_socket(char* port);
 
 int set_up_tcp_connection(const char* hostname, const char* port);
 
-connection *sslConnect (char* host, char* port);
+sslConnection *sslConnect (char* host, char* port);
 
-void sslDisconnect (connection *c);
+void sslDisconnect (sslConnection *c);
 
-connection *set_up_tcp_connection_struct(const char* hostname, const char* port);
+sslConnection *set_up_tcp_connection_struct(const char* hostname, const char* port);

@@ -45,10 +45,9 @@ void decryptPacketData(void* packetData, int size){
     flipBits(packetData, size);
 }
 
-//0 if success, non-0 otherwise
-int downloadFileSimple(char *outputBuffer, const int outputMaxLength, 
-                        const char *inputUrl,const char *extraHeaders){
-
+//returns the amount of data downloaded (excluding the header)
+int downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength, 
+                        const char *inputUrl, headerInfo_t *hInfo, const char *extraHeaders){
     protocol_t type;
     char *domain, *fileUrl;
     parseUrl(inputUrl, &type, &domain, &fileUrl);
@@ -60,7 +59,7 @@ char *download_google_json_file(char *inputUrl){
     protocol_t type;
     char *domain, *fileUrl;
     parseUrl(inputUrl, &type, &domain, &fileUrl);
-    connection *c = sslConnect( domain, "443" );
+    sslConnection *c = sslConnect( domain, "443" );
 
     char *result = malloc(MAX_ACCEPTED_HTTP_PAYLOAD+1);
 
@@ -75,7 +74,7 @@ char *download_google_json_file(char *inputUrl){
     //request the file
     headerInfo_t requestHeaderInfo;
     set_new_header_info(&requestHeaderInfo);
-    
+
     requestHeaderInfo.isRequest   = 1;
     requestHeaderInfo.requestType = GET;
     requestHeaderInfo.urlBuffer   = fileUrl;
@@ -86,7 +85,7 @@ char *download_google_json_file(char *inputUrl){
     SSL_write (c->sslHandle, packetBuffer, strlen(packetBuffer));
     //handle response
 
-    printf("Packet to GET json: \n\n%s\n\n", packetBuffer);
+    //printf("Packet to GET json: \n\n%s\n\n", packetBuffer);
 
     while ( parserState.currentState != packetEnd_s ){
 
@@ -103,7 +102,7 @@ void getDownloadUrlAndSize(char *file, char **url, char **size){
     char inputUrl[2000];
     sprintf( inputUrl, "https://www.googleapis.com/drive/v2/files?q=title='%s'&fields=items(downloadUrl,fileSize)", file);
     char *str = download_google_json_file( inputUrl );
-    printf("Json received \n\n%s\n\n", str);
+    //printf("Json received \n\n%s\n\n", str);
     *url  = get_json_value("downloadUrl", str, strlen(str));
     *size = get_json_value("fileSize", str, strlen(str));
 }
@@ -147,8 +146,8 @@ void downloadDriveFile(int client_fd, parserState_t *parserState, headerInfo_t *
     hInfoClientRecv->hostBuffer = domain;
     createHTTPHeader(buffer2, MAXDATASIZE, hInfoClientRecv, accessTokenHeader);
 
-    connection *c = sslConnect( domain, "443" );
-    SSL_write (c->sslHandle, buffer2, 2000);    
+    sslConnection *c = sslConnect( domain, "443" );
+    SSL_write (c->sslHandle, buffer2, 2000);
 
     /* get the reply and process it, handle 404's and stuff */
 
@@ -170,8 +169,6 @@ void downloadDriveFile(int client_fd, parserState_t *parserState, headerInfo_t *
 
     /* respond to client about the file */
 
-    char moreBuffer[MAXDATASIZE];
-
     //hack length
     //converFromRangedToContentLength()
     if (!hInfoGoogleRecv.isRange)
@@ -191,6 +188,7 @@ void downloadDriveFile(int client_fd, parserState_t *parserState, headerInfo_t *
                                          - hInfoGoogleRecv.sentContentRangeStart;
     }
 
+    char moreBuffer[MAXDATASIZE];
     createHTTPHeader(moreBuffer, MAXDATASIZE, &hInfoGoogleRecv, NULL);
     send(client_fd, moreBuffer, strlen(moreBuffer), 0);
     

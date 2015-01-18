@@ -1,6 +1,11 @@
 #define HTTP_VERSION "HTTP/1.1"
 
 typedef enum {
+    PROTO_HTTP,
+    PROTO_HTTPS
+} protocol_t;
+
+typedef enum {
 	GET,
 	HEAD,
 	POST,

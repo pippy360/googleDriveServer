@@ -20,3 +20,4 @@ int send_http(httpConnection_t *httpConnection, char *packetBuf, int dataSize);
 
 int recv_http(httpConnection_t *httpConnection, char *packetBuf, int maxBufferSize);
 
+void getHttpConnectionByFileDescriptor(int fd, httpConnection_t *httpCon);

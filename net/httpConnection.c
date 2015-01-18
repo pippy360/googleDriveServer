@@ -15,6 +15,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+#include "../httpProcessing/commonHTTP.h"
 #include "networking.h"
 #include "../parser.h"
 
@@ -27,6 +28,13 @@
  *
  *
  */
+
+//pass in a working+connected http (not https) fileDescriptor
+void getHttpConnectionByFileDescriptor(int fd, httpConnection_t *httpCon){
+	set_new_httpConnection(httpCon);
+	httpCon->type = PROTO_HTTP;
+	httpCon->httpSocketFD = fd;
+}
 
 void connectByUrl(char *inputUrl, httpConnection_t *httpConnection){
 	set_new_httpConnection(httpConnection);

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "utils.h"
+#include "httpProcessing/commonHTTP.h"
 #include "parser.h"
 
 

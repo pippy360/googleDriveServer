@@ -45,6 +45,16 @@ void decryptPacketData(void* packetData, int size){
     flipBits(packetData, size);
 }
 
+//0 if success, non-0 otherwise
+int downloadFileSimple(char *outputBuffer, const int outputMaxLength, 
+                        const char *inputUrl,const char *extraHeaders){
+
+    protocol_t type;
+    char *domain, *fileUrl;
+    parseUrl(inputUrl, &type, &domain, &fileUrl);
+    //todo: http/https independent connection !!!
+}
+
 char *download_google_json_file(char *inputUrl){
 
     protocol_t type;
@@ -64,6 +74,8 @@ char *download_google_json_file(char *inputUrl){
     char packetBuffer[MAX_PACKET_SIZE];
     //request the file
     headerInfo_t requestHeaderInfo;
+    set_new_header_info(&requestHeaderInfo);
+    
     requestHeaderInfo.isRequest   = 1;
     requestHeaderInfo.requestType = GET;
     requestHeaderInfo.urlBuffer   = fileUrl;
@@ -73,6 +85,9 @@ char *download_google_json_file(char *inputUrl){
                         accessTokenHeader);
     SSL_write (c->sslHandle, packetBuffer, strlen(packetBuffer));
     //handle response
+
+    printf("Packet to GET json: \n\n%s\n\n", packetBuffer);
+
     while ( parserState.currentState != packetEnd_s ){
 
         int received = SSL_read (c->sslHandle, packetBuffer, MAXDATASIZE-1);
@@ -88,7 +103,7 @@ void getDownloadUrlAndSize(char *file, char **url, char **size){
     char inputUrl[2000];
     sprintf( inputUrl, "https://www.googleapis.com/drive/v2/files?q=title='%s'&fields=items(downloadUrl,fileSize)", file);
     char *str = download_google_json_file( inputUrl );
-
+    printf("Json received \n\n%s\n\n", str);
     *url  = get_json_value("downloadUrl", str, strlen(str));
     *size = get_json_value("fileSize", str, strlen(str));
 }
@@ -111,19 +126,23 @@ int getHeader(int client_fd, parserState_t *parserStateBuf, char *outputData,
     return 0;
 }
 
-void downloadFile(int client_fd, parserState_t *parserState, headerInfo_t *hInfoClientRecv, 
+void downloadDriveFile(int client_fd, parserState_t *parserState, headerInfo_t *hInfoClientRecv, 
                     char *outputData, int outputDataLength){
-    char buffer2[2000];
+
+    /* get the url and size of the file using the name given by the user */
+
     char *url, *size;
     getDownloadUrlAndSize(hInfoClientRecv->urlBuffer+1, &url, &size);
+    
+    printf("File found, size: %s, url: %s", size, url);
 
-    /* start downloading from google, continue until we have the whole header */
-    /* send the get request to google*/
+    /* create the get request for the file  */
+
+    char buffer2[2000];
     char *accessTokenHeader = getAccessTokenHeader();
     protocol_t type;
     char *domain, *fileUrl;
     parseUrl(url, &type, &domain, &fileUrl);
-    
     hInfoClientRecv->urlBuffer  = fileUrl;
     hInfoClientRecv->hostBuffer = domain;
     createHTTPHeader(buffer2, MAXDATASIZE, hInfoClientRecv, accessTokenHeader);
@@ -131,11 +150,13 @@ void downloadFile(int client_fd, parserState_t *parserState, headerInfo_t *hInfo
     connection *c = sslConnect( domain, "443" );
     SSL_write (c->sslHandle, buffer2, 2000);    
 
-    /* get the reply and start sending stuff back to client */
+    /* get the reply and process it, handle 404's and stuff */
 
-    char *buffer1 = malloc(MAXDATASIZE+1);
+    char buffer1[2000];
     int received = SSL_read (c->sslHandle, buffer1, MAXDATASIZE-1);
     
+    printf("Reply from google:\n\n %s\n\n", buffer1);
+
     parserState_t parserStateGoogleRecv;
     set_new_parser_state_struct(&parserStateGoogleRecv);
     headerInfo_t hInfoGoogleRecv;
@@ -210,7 +231,7 @@ void handle_client( int client_fd ){
     //if ( !strncmp(hInfoClientRecv.urlBuffer, "/pull/", strlen("/pull/")) ){
         //FIXME: quick hack here
       //  hInfoClientRecv.urlBuffer = hInfoClientRecv.urlBuffer + strlen("/pull/");
-        downloadFile(client_fd, &parserStateClientRecv, &hInfoClientRecv, 
+        downloadDriveFile(client_fd, &parserStateClientRecv, &hInfoClientRecv, 
                         outputDataBuffer, outputDataLength );
     //}else{
       //  printf("NOT NOT NOT starting file download !\n");

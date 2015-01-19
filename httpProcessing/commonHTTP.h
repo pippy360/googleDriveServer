@@ -19,8 +19,8 @@ typedef enum {
 
 typedef enum {
 	default_empty,//a packet with no body/payload
-	chunked,
-	contentLength
+	TRANSFER_CHUNKED,
+	TRANSFER_CONTENT_LENGTH
 } packetDataTypes_t;
 
 typedef struct {

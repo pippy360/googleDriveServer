@@ -119,9 +119,9 @@ int getHeader(httpConnection_t *httpCon, parserState_t *parserStateBuf, char *ou
 void converFromRangedToContentLength(headerInfo_t *hInfo, long fileSize){
     if (!hInfo->isRange)
     {
-        if (hInfo->transferType == chunked)
+        if (hInfo->transferType == TRANSFER_CHUNKED)
         {
-            hInfo->transferType = contentLength;
+            hInfo->transferType = TRANSFER_CONTENT_LENGTH;
             hInfo->contentLength = fileSize;
             /* sending the whole file */
         }else{
@@ -129,7 +129,7 @@ void converFromRangedToContentLength(headerInfo_t *hInfo, long fileSize){
         }
     }else{
         printf("google is sending us a ranged file, this is trouble because of how we deal with chunking\n");
-        hInfo->transferType = contentLength;
+        hInfo->transferType = TRANSFER_CONTENT_LENGTH;
         hInfo->contentLength = (hInfo->sentContentRangeEnd+1) 
                                          - hInfo->sentContentRangeStart;
     }
@@ -221,17 +221,17 @@ void handle_client( int client_fd ){
                 &outputDataLength, &hInfoClientRecv);
 
     /* check what the client wants by checking the URL*/
-    //if ( !strncmp(hInfoClientRecv.urlBuffer, "/pull/", strlen("/pull/")) ){
+    if ( !strncmp(hInfoClientRecv.urlBuffer, "/pull/", strlen("/pull/")) ){
         //FIXME: quick hack here
-      //  hInfoClientRecv.urlBuffer = hInfoClientRecv.urlBuffer + strlen("/pull/");
+        hInfoClientRecv.urlBuffer = hInfoClientRecv.urlBuffer + strlen("/pull");
         downloadDriveFile(&httpCon, &parserStateClientRecv, &hInfoClientRecv, 
-                        outputDataBuffer, outputDataLength );
-    //}else{
-      //  printf("NOT NOT NOT starting file download !\n");
-    //}
-    /* if they request a file call another function */
+                            outputDataBuffer, outputDataLength );
+    }else if ( !strncmp(hInfoClientRecv.urlBuffer, "/push/", strlen("/push/")) ){
+        //printf("NOT NOT NOT starting file download !\n");
 
-    /* get the size and stuff from the url */
+    }else{
+        //404 !
+    }
 
     printf("we're done apparently\n");
     close(client_fd);

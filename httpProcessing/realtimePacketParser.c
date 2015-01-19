@@ -270,14 +270,14 @@ int process_header(char *name, char *value, parserState_t* parserState, headerIn
 	if(strcmp("Transfer-Encoding",name) == 0 && strcmp(" chunked",value) == 0){
 		//FIXME: ERROR HERE, HTTP SPEC DOESN'T SAY HOW MUCH WHITESPACE
 		//FIXME: IF THERE'S A TRANSFER ENCODING WITHOUT CHUNK CAUSE ERROR
-		parserState->packetDataType = chunked;
-		hInfo->transferType 	  = chunked;
+		parserState->packetDataType = chunked_p;
+		hInfo->transferType			= TRANSFER_CHUNKED;
 
 		printf("it's chunked\n");
-	}else if(strcmp("Content-Length",name) == 0){
+	}else if(strcmp("Content-Length", name) == 0){
 		
-		parserState->packetDataType  = contentLength;
-		hInfo->transferType		  	 = contentLength;
+		parserState->packetDataType  = contentLength_p;
+		hInfo->transferType		  	 = TRANSFER_CONTENT_LENGTH;
 		hInfo->contentLength		 = strtol(value, NULL, 10);;
 		parserState->remainingLength = strtol(value, NULL, 10);
 		

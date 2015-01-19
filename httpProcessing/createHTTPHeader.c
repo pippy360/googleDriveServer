@@ -79,9 +79,9 @@ void createHTTPHeader(char *output, int maxOutputLen, headerInfo_t *hInfo, char 
 
 	/* now the common headers*/
 	int l = strlen(output);
-	if( hInfo->transferType == contentLength ){
+	if( hInfo->transferType == TRANSFER_CONTENT_LENGTH ){
 		sprintf( output+l, "Content-length: %lu\r\n", hInfo->contentLength);
-	}else if( hInfo->transferType == chunked ){
+	}else if( hInfo->transferType == TRANSFER_CHUNKED ){
 		sprintf( output+l, "Transfer-Encoding: chunked\r\n");
 	}
 

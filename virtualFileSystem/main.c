@@ -73,15 +73,16 @@ void __createPart(){
 }
 
 void vfs_pwd(redisContext *context, long dirId){
+    int j = 0;
     redisReply *reply;
-    reply = redisCommand(c,"LRANGE FOLDER_%lu_folders 0 -1", dirId);
+    reply = redisCommand(context,"LRANGE FOLDER_%lu_folders 0 -1", dirId);
     if (reply->type == REDIS_REPLY_ARRAY) {
         for (j = 0; j < reply->elements; j++) {
             printf("%s\n", reply->element[j]->str);
         }
     }
     freeReplyObject(reply);
-    reply = redisCommand(c,"LRANGE FOLDER_%lu_files   0 -1", dirId);
+    reply = redisCommand(context,"LRANGE FOLDER_%lu_files   0 -1", dirId);
     if (reply->type == REDIS_REPLY_ARRAY) {
         for (j = 0; j < reply->elements; j++) {
             printf("%s\n", reply->element[j]->str);

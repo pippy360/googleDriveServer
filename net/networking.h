@@ -23,16 +23,19 @@ typedef struct {
     SSL_CTX *sslContext;
 } sslConnection;
 
-void sigchld_handler(int s);
+int getListeningSocket(const char* port);
 
-void *get_in_addr(struct sockaddr *sa);
+//returns a valid file descriptor, or -1 if error
+int setUpTcpConnection(const char* hostname, const char* port);
 
-int get_listening_socket(char* port);
+//
+// opensll stuff
+//
 
-int set_up_tcp_connection(const char* hostname, const char* port);
+// Establish a connection using an SSL layer
+//returns 0 if success, -1 otherwise
+int sslConnect (const char* host, const char* port, sslConnection *c);
+}
 
-sslConnection *sslConnect (char* host, char* port);
-
+// Disconnect & free connection struct
 void sslDisconnect (sslConnection *c);
-
-sslConnection *set_up_tcp_connection_struct(const char* hostname, const char* port);

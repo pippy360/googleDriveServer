@@ -30,13 +30,13 @@
  */
 
 //pass in a working+connected http (not https) fileDescriptor
-void getHttpConnectionByFileDescriptor(int fd, httpConnection_t *httpCon){
+void getHttpConnectionByFileDescriptor(int fd, Connection_t *httpCon){
 	set_new_httpConnection(httpCon);
 	httpCon->type = PROTO_HTTP;
 	httpCon->httpSocketFD = fd;
 }
 
-void connectByUrl(char *inputUrl, httpConnection_t *httpConnection){
+void connectByUrl(char *inputUrl, Connection_t *httpConnection){
 	set_new_httpConnection(httpConnection);
 	char *domain;//TODO: this needs to be fixed when you fix parse url
 	printf("the input url is : %s\n", inputUrl);
@@ -45,28 +45,17 @@ void connectByUrl(char *inputUrl, httpConnection_t *httpConnection){
 	connect_http(httpConnection, domain);
 }
 
-void set_new_httpConnection(httpConnection_t *httpConnection){
-	memset(httpConnection, 0, sizeof(httpConnection_t));
+void set_new_httpConnection(Connection_t *httpConnection){
+	memset(httpConnection, 0, sizeof(Connection_t));
 }
 
-void freeHttpConnection(httpConnection_t *input){
+void freeHttpConnection(Connection_t *input){
 	//todo
 	//call the free sslConnection rather than freeing it here
 }
 
-void getHttpConnectionByUrl(char *inputUrl, httpConnection_t *httpConnection, char **domain){
-	protocol_t type;
-	char *fileUrl;
-	parseUrl(inputUrl, &type, domain, &fileUrl);
-	printf("fileUrl: %s, domain: %s, type: %d\n", fileUrl, *domain, (int)type );
-	if (type == PROTO_HTTP){
-		httpConnection->type = PROTO_HTTP;
-	}else if(type == PROTO_HTTPS){
-		httpConnection->type = PROTO_HTTPS;
-	}
-}
 
-int connect_http(httpConnection_t *httpConnection, char *domain){
+int connect_http(Connection_t *httpConnection, char *domain){
 	if (httpConnection->type == PROTO_HTTP){
 		httpConnection->httpSocketFD = set_up_tcp_connection(domain, "80");
 	}else if(httpConnection->type == PROTO_HTTPS){
@@ -75,7 +64,7 @@ int connect_http(httpConnection_t *httpConnection, char *domain){
 	//todo, return value !
 }
 
-int close_http(httpConnection_t *httpConnection, char *domain){
+int close_http(Connection_t *httpConnection, char *domain){
 	if (httpConnection->type == PROTO_HTTP){
 		//todo
 	}else if(httpConnection->type == PROTO_HTTPS){
@@ -83,7 +72,7 @@ int close_http(httpConnection_t *httpConnection, char *domain){
 	}
 }
 
-int send_http(httpConnection_t *httpConnection, char *packetBuf, int dataSize){
+int send_http(Connection_t *httpConnection, char *packetBuf, int dataSize){
 	if (httpConnection->type == PROTO_HTTP){
 		return send(httpConnection->httpSocketFD, packetBuf, dataSize, 0);
 	}else if(httpConnection->type == PROTO_HTTPS){
@@ -91,7 +80,7 @@ int send_http(httpConnection_t *httpConnection, char *packetBuf, int dataSize){
 	}
 }
 
-int recv_http(httpConnection_t *httpConnection, char *packetBuf, int maxBufferSize){
+int recv_http(Connection_t *httpConnection, char *packetBuf, int maxBufferSize){
 	if (httpConnection->type == PROTO_HTTP){
 		return recv(httpConnection->httpSocketFD, packetBuf, maxBufferSize, 0);
 	}else if(httpConnection->type == PROTO_HTTPS){

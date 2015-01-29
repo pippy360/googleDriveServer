@@ -34,7 +34,7 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int get_listening_socket(char* port){
+int getListeningSocket(const char* port){
 
     int sockfd;
     struct addrinfo hints, *servinfo, *p;
@@ -98,7 +98,11 @@ int get_listening_socket(char* port){
     return sockfd;
 }
 
-int set_up_tcp_connection(const char* hostname, const char* port){
+/*
+returns a valid file descriptor, or -1 if error
+*/
+//TODO: error checking
+int setUpTcpConnection(const char* hostname, const char* port){
 
     int sockfd, numbytes;
     struct addrinfo hints, *servinfo, *p;
@@ -111,7 +115,7 @@ int set_up_tcp_connection(const char* hostname, const char* port){
 
     if ((rv = getaddrinfo(hostname, port, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-        return 1;
+        return -1;
     }
 
     // loop through all the results and connect to the first we can
@@ -133,7 +137,7 @@ int set_up_tcp_connection(const char* hostname, const char* port){
 
     if (p == NULL) {
         fprintf(stderr, "client: failed to connect\n");
-        return 2;
+        return -1;
     }
 
     inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
@@ -145,9 +149,7 @@ int set_up_tcp_connection(const char* hostname, const char* port){
     return sockfd;
 }
 
-sslConnection *set_up_tcp_connection_struct (const char* hostname, const char* port){
-  sslConnection *c;
-  c = malloc (sizeof (sslConnection));
+void set_up_tcp_connection_struct (const char* hostname, const char* port, sslConnection *c){
   c->sslHandle = NULL;
   c->sslContext = NULL;
   c->socket = set_up_tcp_connection(hostname, port);
@@ -159,11 +161,9 @@ sslConnection *set_up_tcp_connection_struct (const char* hostname, const char* p
 //
 
 // Establish a connection using an SSL layer
-sslConnection *sslConnect (char* host, char* port)
+//returns 0 if success, -1 otherwise
+int sslConnect (const char* host, const char* port, sslConnection *c)
 {
-  sslConnection *c;
-
-  c = malloc (sizeof (sslConnection));
   c->sslHandle = NULL;
   c->sslContext = NULL;
 
@@ -196,9 +196,10 @@ sslConnection *sslConnect (char* host, char* port)
   else
     {
       perror ("Connect failed");
+      return -1;
     }
 
-  return c;
+  return 0;
 }
 
 // Disconnect & free connection struct

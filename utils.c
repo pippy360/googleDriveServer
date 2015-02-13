@@ -45,3 +45,11 @@ void getConnectionByUrl(const char *inputUrl, Connection_t *httpConnection){
     }
 }
 
+void connectByUrl(char *inputUrl, Connection_t *httpConnection){
+    set_new_httpConnection(httpConnection);
+    char *domain;//TODO: this needs to be fixed when you fix parse url
+    printf("the input url is : %s\n", inputUrl);
+    getConnectionByUrl(inputUrl, httpConnection, &domain);
+    printf("the domain was detected as : %s\n", domain);
+    connect_http(httpConnection, domain);
+}

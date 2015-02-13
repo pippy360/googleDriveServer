@@ -149,13 +149,6 @@ int setUpTcpConnection(const char* hostname, const char* port){
     return sockfd;
 }
 
-void set_up_tcp_connection_struct (const char* hostname, const char* port, sslConnection *c){
-  c->sslHandle = NULL;
-  c->sslContext = NULL;
-  c->socket = set_up_tcp_connection(hostname, port);
-  return c;
-}
-
 //
 // opensll stuff
 //
@@ -203,7 +196,7 @@ int sslConnect (const char* host, const char* port, sslConnection *c)
 }
 
 // Disconnect & free connection struct
-void sslDisconnect (sslConnection *c)
+void sslDisconnectAndFree (sslConnection *c)
 {
   if (c->socket)
     close (c->socket);

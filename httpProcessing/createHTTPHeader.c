@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "commonHTTP.h"
-#include "../parser.h"
 #include "realtimePacketParser.h"
 
 #define REQUEST_HEADERS \
@@ -86,21 +85,6 @@ void createHTTPHeader(char *output, int maxOutputLen, headerInfo_t *hInfo, char 
 	}
 
 	strcat(output, "\r\n");
-}
-
-void createHTTPGetHeaderFromUrl(char *inputUrl, char *output, int maxOutputLen, 
-									headerInfo_t *hInfo, char *extraHeaders){
-	set_new_header_info(hInfo);
-    
-    protocol_t type;
-    char *domain, *fileUrl;
-    parseUrl(inputUrl, &type, &domain, &fileUrl);
-    
-    hInfo->isRequest   = 1;
-    hInfo->requestType = GET;
-    hInfo->urlBuffer   = fileUrl;
-    hInfo->hostBuffer  = domain;
-    createHTTPHeader(output, maxOutputLen, hInfo, extraHeaders);
 }
 
 

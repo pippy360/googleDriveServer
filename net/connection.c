@@ -19,8 +19,6 @@
 #include "networking.h"
 #include "connection.h"
 
-#include "../parser.h"
-
 
 /*
  *
@@ -32,9 +30,9 @@
 
 //pass in a working+connected non-ssl (not https) fileDescriptor
 void net_fileDescriptorToConnection(int fd, Connection_t *con){
-	set_new_con(con);
+	net_setupNewConnection(con);
 	con->type = TCP_DIRECT;
-	con->httpSocketFD = fd;
+	con->socketFD = fd;
 }
 
 void net_setupNewConnection(Connection_t *con){
@@ -49,9 +47,9 @@ void net_freeConnection(Connection_t *input){
 
 int net_connect(Connection_t *con, char *domain){
 	if (con->type == TCP_DIRECT){
-		con->httpSocketFD = setUpTcpConnection(domain, "80");
+		con->socketFD = setUpTcpConnection(domain, "80");
 	}else if(con->type == TCP_SSL){
-		if(sslConnect(domain, "443", con.sslConnection) != 0)
+		if(sslConnect(domain, "443", &(con->sslConnection)) != 0)
 			perror("sslConnect");
 	}
 	//todo, return value !
@@ -68,17 +66,28 @@ int net_close(Connection_t *con, char *domain){
 
 int net_send(Connection_t *con, char *packetBuf, int dataSize){
 	if (con->type == TCP_DIRECT){
-		return send(con->httpSocketFD, packetBuf, dataSize, 0);
+		signed int sent = send(con->socketFD, packetBuf, dataSize, 0);
+		if(sent == -1){
+			perror("Error Send");
+		}
+		return sent;
 	}else if(con->type == TCP_SSL){
-		return SSL_write (con->sslConnection->sslHandle, packetBuf, dataSize);
+		printf("Sending SSL:\n\n%s\n\n", packetBuf);
+		signed int sent = SSL_write (con->sslConnection.sslHandle, packetBuf, dataSize);
+		if(sent == -1){
+			perror("Error SSL_write");
+		}
+		return sent;
+	}else{
+		printf("ERROR: BAD connection.type\n");
 	}
 }
 
 int net_recv(Connection_t *con, char *packetBuf, int maxBufferSize){
 	if (con->type == TCP_DIRECT){
-		return recv(con->httpSocketFD, packetBuf, maxBufferSize, 0);
+		return recv(con->socketFD, packetBuf, maxBufferSize, 0);
 	}else if(con->type == TCP_SSL){
-		return SSL_read(con->sslConnection->sslHandle, packetBuf, maxBufferSize);
+		return SSL_read(con->sslConnection.sslHandle, packetBuf, maxBufferSize);
 	}
 }
 

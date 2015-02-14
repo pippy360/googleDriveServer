@@ -28,6 +28,8 @@ typedef struct {
     SSL_CTX *sslContext;
 } sslConnection;
 
+void *get_in_addr(struct sockaddr *sa);
+
 int getListeningSocket(const char* port);
 
 //returns a valid file descriptor, or -1 if error

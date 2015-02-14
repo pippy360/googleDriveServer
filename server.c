@@ -21,10 +21,10 @@
 #include "httpProcessing/realtimePacketParser.h"//TODO: parser states
 #include "httpProcessing/createHTTPHeader.h"
 #include "utils.h"
-#include "googleAccessToken.h"
-#include "googleUpload.h"
-#include "parser.h"
-#include "net/httpConnection.h"
+//#include "googleAccessToken.h"
+//#include "googleUpload.h"
+//#include "parser.h"
+#include "net/connection.h"
 
 #define MAX_ACCEPTED_HTTP_PAYLOAD 200000
 #define MAXDATASIZE 200000//FIXME: this should only need to be the max size of one packet !!!
@@ -49,55 +49,55 @@ void decryptPacketData(void* packetData, int size){
 //returns the amount of data downloaded (excluding the header)
 int downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength, 
                         char *inputUrl, headerInfo_t *hInfo, char *extraHeaders){
-
-    Connection_t httpConnection;
-    connectByUrl(inputUrl, &httpConnection);
-
-    parserState_t parserState;
-    set_new_parser_state_struct(&parserState);
-    set_new_header_info(hInfo);
-
-    char packetBuffer[MAX_PACKET_SIZE];
-    //request the file
-    headerInfo_t requestHeaderInfo;
-    createHTTPGetHeaderFromUrl(inputUrl, packetBuffer, MAX_PACKET_SIZE, &requestHeaderInfo, extraHeaders);
-
-    printf("Packet to GET json: \n\n%s\n\n", packetBuffer);
-
-    send_http(&httpConnection, packetBuffer, strlen(packetBuffer));
-    //handle response
-
-    char *tempPtr = outputBuffer;
-    while ( parserState.currentState != packetEnd_s ){
-
-        int received = recv_http(&httpConnection, packetBuffer, MAXDATASIZE-1);
-        int outputDataLength;
-        process_data( packetBuffer, received, &parserState, tempPtr, 
-                        MAXDATASIZE, &outputDataLength, packetEnd_s, hInfo);
-        tempPtr += outputDataLength;
-    }
+//
+//    Connection_t httpConnection;
+//    connectByUrl(inputUrl, &httpConnection);
+//
+//    parserState_t parserState;
+//    set_new_parser_state_struct(&parserState);
+//    set_new_header_info(hInfo);
+//
+//    char packetBuffer[MAX_PACKET_SIZE];
+//    //request the file
+//    headerInfo_t requestHeaderInfo;
+//    createHTTPGetHeaderFromUrl(inputUrl, packetBuffer, MAX_PACKET_SIZE, &requestHeaderInfo, extraHeaders);
+//
+//    printf("Packet to GET json: \n\n%s\n\n", packetBuffer);
+//
+//    send_http(&httpConnection, packetBuffer, strlen(packetBuffer));
+//    //handle response
+//
+//    char *tempPtr = outputBuffer;
+//    while ( parserState.currentState != packetEnd_s ){
+//
+//        int received = recv_http(&httpConnection, packetBuffer, MAXDATASIZE-1);
+//        int outputDataLength;
+//        process_data( packetBuffer, received, &parserState, tempPtr, 
+//                        MAXDATASIZE, &outputDataLength, packetEnd_s, hInfo);
+//        tempPtr += outputDataLength;
+//    }
 }
 
 void getDownloadUrlAndSize(char *filename, char **url, char **size){
-    char inputUrl[2000];
-    sprintf( inputUrl, "https://www.googleapis.com/drive/v2/files?q=title='%s'&fields=items(downloadUrl,fileSize)", filename);
-    char str[MAX_ACCEPTED_HTTP_PAYLOAD];
-
-    char *accessToken = getAccessTokenHeader();
-    headerInfo_t headerInfo;
-    downloadHTTPFileSimple(str, MAX_ACCEPTED_HTTP_PAYLOAD, inputUrl, &headerInfo, accessToken);
-
-    //todo: check if we got the file
-
-    //todo: check it the json has what we want
-
-    printf("Json received \n\n%s\n\n", str);
-    *url  = get_json_value("downloadUrl", str, strlen(str));
-    *size = get_json_value("fileSize", str, strlen(str));
+//    char inputUrl[2000];
+//    sprintf( inputUrl, "https://www.googleapis.com/drive/v2/files?q=title='%s'&fields=items(downloadUrl,fileSize)", filename);
+//    char str[MAX_ACCEPTED_HTTP_PAYLOAD];
+//
+//    char *accessToken = getAccessTokenHeader();
+//    headerInfo_t headerInfo;
+//    downloadHTTPFileSimple(str, MAX_ACCEPTED_HTTP_PAYLOAD, inputUrl, &headerInfo, accessToken);
+//
+//    //todo: check if we got the file
+//
+//    //todo: check it the json has what we want
+//
+//    printf("Json received \n\n%s\n\n", str);
+//    *url  = get_json_value("downloadUrl", str, strlen(str));
+//    *size = get_json_value("fileSize", str, strlen(str));
 }
 
 //returns 0 if success, non-0 otherwise
-int getHeader(Connection_t *httpCon, parserState_t *parserStateBuf, char *outputData, 
+int getHeader(Connection_t *con, parserState_t *parserStateBuf, char *outputData, 
                 int outputDataMaxSize, int *outputDataLength, headerInfo_t *headerInfoBuf){
 
     set_new_parser_state_struct(parserStateBuf);
@@ -105,7 +105,7 @@ int getHeader(Connection_t *httpCon, parserState_t *parserStateBuf, char *output
     
     char packetBuf[MAX_PACKET_SIZE+1];
     while (!parserStateBuf->headerFullyParsed){
-        int recvd = recv_http(httpCon, packetBuf, MAX_PACKET_SIZE);
+        int recvd = net_recv(con, packetBuf, MAX_PACKET_SIZE);
         packetBuf[ recvd ] = '\0';
         process_data(packetBuf, recvd, parserStateBuf, outputData, 
                     outputDataMaxSize, outputDataLength, packetEnd_s, headerInfoBuf);
@@ -135,41 +135,39 @@ void converFromRangedToContentLength(headerInfo_t *hInfo, long fileSize){
     }
 }
 
-
-void downloadDriveFile(Connection_t *clientHttpCon, parserState_t *parserState, headerInfo_t *hInfoClientRecv, 
+void reverseProxyHack(Connection_t *clientCon, parserState_t *parserState, headerInfo_t *hInfoClientRecv, 
                     char *outputData, int outputDataLength){
 
-    /* get the url and size of the file using the name given by the url */
-    char *url, *size;
-    getDownloadUrlAndSize(hInfoClientRecv->urlBuffer+1, &url, &size);
+    //hInfoClientRecv->urlBuffer+1
     
-    printf("File found, size: %s, url: %s", size, url);
-
-    /* request the file from google */
-
+    /* make the get request */
     char packetBuffer[MAX_PACKET_SIZE];//reused quite a bit
-    char *accessTokenHeader = getAccessTokenHeader();
-    protocol_t type;
-    char *domain, *fileUrl;
-    parseUrl(url, &type, &domain, &fileUrl);
-    hInfoClientRecv->urlBuffer  = fileUrl;
-    hInfoClientRecv->hostBuffer = domain;
-    createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, hInfoClientRecv, accessTokenHeader);
+    hInfoClientRecv->hostBuffer = "www.rockpapershotgun.com";
+    createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, hInfoClientRecv, NULL);
 
-    sslConnection *c = sslConnect( domain, "443" );
-    SSL_write (c->sslHandle, packetBuffer, MAX_PACKET_SIZE);
+    /* send it to RPS */
+    Connection_t serverCon;
+    serverCon.type = TCP_DIRECT;//hard coded here, test out https
+    net_connect( &serverCon, "www.rockpapershotgun.com" );
+    net_send(&serverCon, packetBuffer, MAX_PACKET_SIZE);
+
+    printf("Sent:\n\n%s\n\n", packetBuffer);
 
     /* get the reply and process it, handle 404's and stuff */
 
     //TODO: change this with get the whole header !!
-    int received = SSL_read (c->sslHandle, packetBuffer, MAX_PACKET_SIZE);
-    
-    printf("Reply from google:\n\n %s\n\n", packetBuffer);
+    signed int received = net_recv(&serverCon, packetBuffer, MAX_PACKET_SIZE);
+    if( received < 0 ){
+        perror("net_recv");
+    }
+    printf("Reply %d:\n\n%s\n\n",  received,packetBuffer);
 
     parserState_t parserStateGoogleRecv;
     set_new_parser_state_struct(&parserStateGoogleRecv);
     headerInfo_t hInfoGoogleRecv;
     set_new_header_info(&hInfoGoogleRecv);
+
+    //FIXME: reusing outputDataLength is bad !!! don't do that !!!
 
     process_data( packetBuffer, received, &parserStateGoogleRecv, outputData, 
                     MAXDATASIZE, &outputDataLength, packetEnd_s, &hInfoGoogleRecv);
@@ -179,31 +177,132 @@ void downloadDriveFile(Connection_t *clientHttpCon, parserState_t *parserState, 
 
     /* respond to client about the file */
 
-    //hack length
-    converFromRangedToContentLength(&hInfoGoogleRecv, strtol(size, NULL, 10));
-
+    /* hack in chunked transfer */
+    hInfoGoogleRecv.transferType = TRANSFER_CHUNKED;
     createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, &hInfoGoogleRecv, NULL);
-    send_http(clientHttpCon, packetBuffer, strlen(packetBuffer));
-    
+
+    printf("header: \n\n%s\n\n", packetBuffer);
+    net_send(clientCon, packetBuffer, strlen(packetBuffer));
+
+    /* send any data that might have been in the packets we fetched to get the whole header */
+    char chunkBuffer[MAXDATASIZE];
+    chunkData(outputData, outputDataLength, chunkBuffer, MAXDATASIZE);
+    net_send(clientCon, chunkBuffer, strlen(chunkBuffer));
+
     /* continue downloading and passing data onto the client */
-    //send any data that might have been in the packets we fetched to get the whole header
 
     while ( parserStateGoogleRecv.currentState != packetEnd_s ){
 
-        received = SSL_read (c->sslHandle, packetBuffer, MAX_PACKET_SIZE-1);
+        received = net_recv(&serverCon, packetBuffer, MAX_PACKET_SIZE-1);
         process_data( packetBuffer, received, &parserStateGoogleRecv, outputData, 
             MAXDATASIZE, &outputDataLength, packetEnd_s, &hInfoGoogleRecv);
 
-        flipBits(outputData, outputDataLength);
+        int resultLen = chunkData(outputData, outputDataLength, 
+                                    chunkBuffer, MAXDATASIZE );
 
-        if( send_http(clientHttpCon, outputData, outputDataLength) == -1){
+        //send it
+        if( net_send(clientCon, chunkBuffer, strlen(chunkBuffer)) == -1){
             break;
         }
 
         outputData[0] = '\0';
     }
-    sslDisconnect(c);
+
+    /* now send the zero chunk */
+    sprintf(chunkBuffer, "0\r\n\r\n");
+    net_send(clientCon, chunkBuffer, strlen(chunkBuffer));
+
+    /* disconnect */
+    //TODO:
+    //net_disconnect(&con);
 }
+
+//TEST: make sure count/the return value is as expected
+//FIXME: check for buffer overflow
+//returns the resulting length
+//targetChunkSize isn't needed 
+int chunkData(const void *inputData, const int inputDataLength, void *outputBuffer, const int outputBufferLen){
+    //calc the chunk length and get the string
+    char *tempPtr = outputBuffer;
+    sprintf(outputBuffer, "%x\r\n", inputDataLength);
+    tempPtr += strlen(outputBuffer);
+    memcpy(tempPtr, inputData, inputDataLength);
+    tempPtr += inputDataLength;
+    memcpy(tempPtr, "\r\n\0", strlen("\r\n")+1);
+    tempPtr += strlen("\r\n");
+    return tempPtr - (const char *) inputData;
+}
+
+//void downloadDriveFile(Connection_t *clientHttpCon, parserState_t *parserState, headerInfo_t *hInfoClientRecv, 
+//                    char *outputData, int outputDataLength){
+//
+//    /* get the url and size of the file using the name given by the url */
+//    char *url, *size;
+//    getDownloadUrlAndSize(hInfoClientRecv->urlBuffer+1, &url, &size);
+//    
+//    printf("File found, size: %s, url: %s", size, url);
+//
+//    /* request the file from google */
+//
+//    char packetBuffer[MAX_PACKET_SIZE];//reused quite a bit
+//    char *accessTokenHeader = getAccessTokenHeader();
+//    protocol_t type;
+//    char *domain, *fileUrl;
+//    parseUrl(url, &type, &domain, &fileUrl);
+//    
+//    //should these buffers be freed ??
+//    hInfoClientRecv->urlBuffer  = fileUrl;
+//    hInfoClientRecv->hostBuffer = domain;
+//    createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, hInfoClientRecv, accessTokenHeader);
+//
+//    sslConnection *c = sslConnect( domain, "443" );
+//    SSL_write (c->sslHandle, packetBuffer, MAX_PACKET_SIZE);
+//
+//    /* get the reply and process it, handle 404's and stuff */
+//
+//    //TODO: change this with get the whole header !!
+//    int received = SSL_read (c->sslHandle, packetBuffer, MAX_PACKET_SIZE);
+//    
+//    printf("Reply from google:\n\n %s\n\n", packetBuffer);
+//
+//    parserState_t parserStateGoogleRecv;
+//    set_new_parser_state_struct(&parserStateGoogleRecv);
+//    headerInfo_t hInfoGoogleRecv;
+//    set_new_header_info(&hInfoGoogleRecv);
+//
+//    process_data( packetBuffer, received, &parserStateGoogleRecv, outputData, 
+//                    MAXDATASIZE, &outputDataLength, packetEnd_s, &hInfoGoogleRecv);
+//    
+//    //check for errors        
+//    printf("statusCode : %d\n", hInfoGoogleRecv.statusCode);
+//
+//    /* respond to client about the file */
+//
+//    //hack length
+//    converFromRangedToContentLength(&hInfoGoogleRecv, strtol(size, NULL, 10));
+//
+//    createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, &hInfoGoogleRecv, NULL);
+//    send_http(clientHttpCon, packetBuffer, strlen(packetBuffer));
+//    
+//    /* continue downloading and passing data onto the client */
+//    //send any data that might have been in the packets we fetched to get the whole header
+//
+//    while ( parserStateGoogleRecv.currentState != packetEnd_s ){
+//
+//        received = SSL_read (c->sslHandle, packetBuffer, MAX_PACKET_SIZE-1);
+//        process_data( packetBuffer, received, &parserStateGoogleRecv, outputData, 
+//            MAXDATASIZE, &outputDataLength, packetEnd_s, &hInfoGoogleRecv);
+//
+//        flipBits(outputData, outputDataLength);
+//
+//        if( send_http(clientHttpCon, outputData, outputDataLength) == -1){
+//            break;
+//        }
+//
+//        outputData[0] = '\0';
+//    }
+//    sslDisconnect(c);
+//}
 
 void handle_client( int client_fd ){
 
@@ -215,7 +314,7 @@ void handle_client( int client_fd ){
     parserState_t parserStateClientRecv;
     headerInfo_t hInfoClientRecv;
     Connection_t httpCon;
-    getHttpConnectionByFileDescriptor(client_fd, &httpCon);
+    net_fileDescriptorToConnection(client_fd, &httpCon);
 
     getHeader(&httpCon, &parserStateClientRecv, outputDataBuffer, MAXDATASIZE, 
                 &outputDataLength, &hInfoClientRecv);
@@ -224,7 +323,7 @@ void handle_client( int client_fd ){
     if ( !strncmp(hInfoClientRecv.urlBuffer, "/pull/", strlen("/pull/")) ){
         //FIXME: quick hack here
         hInfoClientRecv.urlBuffer = hInfoClientRecv.urlBuffer + strlen("/pull");
-        downloadDriveFile(&httpCon, &parserStateClientRecv, &hInfoClientRecv, 
+        reverseProxyHack(&httpCon, &parserStateClientRecv, &hInfoClientRecv, 
                             outputDataBuffer, outputDataLength );
     }else if ( !strncmp(hInfoClientRecv.urlBuffer, "/push/", strlen("/push/")) ){
         //printf("NOT NOT NOT starting file download !\n");
@@ -239,9 +338,9 @@ void handle_client( int client_fd ){
 
 int main(int argc, char *argv[])
 {
-    google_init();
+    //google_init();
 
-    int sockfd = get_listening_socket(SERVER_LISTEN_PORT);
+    int sockfd = getListeningSocket(SERVER_LISTEN_PORT);
     int client_fd;
     socklen_t sin_size;
     struct sockaddr_storage their_addr;
@@ -257,9 +356,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        inet_ntop(their_addr.ss_family,
-            get_in_addr((struct sockaddr *)&their_addr),
-            s, sizeof s);
+        inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
         printf("server: got connection from %s\n", s);
 
         if (!fork()) { // this is the child process

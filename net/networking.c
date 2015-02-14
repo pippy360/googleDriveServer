@@ -160,7 +160,7 @@ int sslConnect (const char* host, const char* port, sslConnection *c)
   c->sslHandle = NULL;
   c->sslContext = NULL;
 
-  c->socket = set_up_tcp_connection(host, port);
+  c->socket = setUpTcpConnection(host, port);
   if (c->socket)
     {
       // Register the error strings for libcrypto & libssl

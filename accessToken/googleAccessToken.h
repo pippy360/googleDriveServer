@@ -1,9 +1,14 @@
 
 typedef struct {
 	char 	isAccessTokenLoaded;//boolean
-	char* 	accessTokenStr;
+	char* 	accessTokenStr;//'\0' terminated 
+	int 	accessTokenBufferLength;//the length of the buffer,-
+									//-if an access token is greater than- 
+									//-this then realloc will have to be called 
+									//IT IS NOT THE LENGTH OF THE ACCESS TOKEN!! 
 	int 	expireTime;
-	char* 	refreshTokenStr;
+	char* 	refreshTokenStr;//'\0' terminated
+	int 	refreshTokenBufferLength;
 } AccessTokenState_t;
 
 

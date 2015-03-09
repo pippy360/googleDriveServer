@@ -5,6 +5,9 @@
 
 //FIXME: these can be a VERY expensive functions to execute
 //this whole page is a minefield, there's hdd access, send/recv'ing and printf/fget'ing
+#define MAX_REFRESH_TOKEN_LENGTH 	1000
+#define MAX_PASTED_CODE_LENGTH 		1000
+#define MAX_ACCESS_TOKEN_LENGTH 	1000
 
 #define CODE_REQUEST_POST_DATA "code=%s&"\
 		"client_id=83270242690-k8gfaaaj5gjahc7ncvri5m3pu2lp9nsu.apps.googleusercontent.com&"\
@@ -17,7 +20,32 @@
 		"refresh_token=%s&"\
 		"grant_type=refresh_token"
 
+void gat_newAccessTokenState(AccessTokenState_t *stateStruct){
+	//malloc the intial stuff
+	stateStruct->isAccessTokenLoaded 	= 0;
+	stateStruct->accessTokenStr 		= malloc(MAX_ACCESS_TOKEN_LENGTH);
+	stateStruct->accessTokenBufferLength = MAX_ACCESS_TOKEN_LENGTH;
+	stateStruct->expireTime 			= 0;
+	stateStruct->refreshTokenStr 		= malloc(MAX_REFRESH_TOKEN_LENGTH);
+	stateStruct->refreshTokenBufferLength = MAX_REFRESH_TOKEN_LENGTH;
+}
+
+void gat_freeAccessTokenState(AccessTokenState_t *stateStruct){
+	//TODO:
+}
+
+void setAccessToken(const char *accessToken, AccessTokenState_t *stateStruct){
+	//check if we have enough room in the buffer and realloc if we don't
+	memcpy(stateStruct->accessTokenStr, accessToken, strlen(accessToken));
+}
+
+void setRefreshToken(const char *refreshToken, AccessTokenState_t *stateStruct){
+	//check if we have enough room in the buffer and realloc if we don't
+	memcpy(stateStruct->refreshTokenStr, refreshToken, strlen(refreshToken));
+}
+
 //returns 0 if success, -1 if error where errorno is set, -2 otherwise
+//if return code is non-0 accessTokenBuffer will be set to an empty string
 //puts a '\0' terminated string in accessTokenBuffer
 //it can return an invalid acces token
 int loadFromFile(void *accessTokenBuffer, const int bufferLength){
@@ -47,64 +75,70 @@ void saveToFile(const char *accessTokenBuffer, const int accessTokenLength){
 	fclose(f);
 }
 
-//does all the connect, fetch file and parse
-//set any token you don't want to null
-void getFromGoogle(char *jsonFileUrl, AccessTokenState_t *stateStruct){
-    /*
-    *
-    *
-    *USE THIS
-    *
-    *
-    */
-}
-
+//after this function we can be sure there'll be a refresh token in the refresh token file,
+//after this function we can also be sure there'll be a refresh token in ram,
+//hence you never have to loadFromFile after this
+//we can also be sure that there'll be a access token in ram, although it may be expired
 //returns 0 if success, -1 if error where errorno is set, -2 otherwise
-int init_googleAccessToken(AccessTokenState_t *stateStruct, void *buffer, 
-							const int bufferLength, int *stateStructSize){
+int gat_init_googleAccessToken(AccessTokenState_t *stateStruct){
 	int error;
-	
+	char refreshTokenBuffer[MAX_REFRESH_TOKEN_LENGTH];
+	int saveToFile = 0;//boolean: true if the refresh token saved to file is invalid 
+
 	//load it straight into the struct
-	if((error = loadFromFile(buffer, bufferLength)) != 0){
-		return error;
+	if(loadFromFile(refreshTokenBuffer, MAX_REFRESH_TOKEN_LENGTH) != 0){
+		//if there's an error attempt to go on, pass on an invalid refresh token 
+		refreshTokenBuffer[0] = '\0';
+		saveToFile = 1;
 	}
+
+	setRefreshToken(refreshTokenBuffer, stateStruct);
 
 	//try to use the refresh token to get an access token
-	error = getAccessTokenWithRefreshToken(buffer void* accessTokenBuffer, 
-							const int bufferLength, int *accessTokenLength);
+	error = getAccessTokenWithRefreshToken(stateStruct, refreshTokenBuffer);
 	if(error != 0){
-		//if it fails then get a refresh token
-		//save it
-		//try get an accesstoken again, if that fails keep asking for input accesstoken
-		return error;
+		saveToFile = 1;
+		while(error != 0){
+			//get a access token using the user's pasted code
+			error = getNewTokensWithLink(stateStruct);
+			if(error != 0){
+				printf("Error: failed to get the access token, please retry\n");
+			}
+		}
 	}
 
-	//now we have an access/refresh token, add it to the stateStruct
-	//and build the stateStruct
-	//set the size of the state struct
-	//write a build stateStruct function
+	if(saveToFile){
+		saveToFile(stateStruct->accessTokenStr, strlen(stateStruct->accessTokenStr));
+	}
+	return 0
 }
 
+//returns 0 if we got a valid access token from google, -1 if error with errorno, -2 otherwise
 //refreshTokenStr must be null terminated
 int getAccessTokenWithRefreshToken(const char *refreshTokenStr){
+	//create a packet buffer
+	//create a big file buffer
+	headerInfo_t hInfo;
+	
+	//send it and get the response
+	//make sure the respose is what we want
+	//parse for an access token
+	//parse for a refresh token
 
-	//go off to google and get the token
-	//parse it using getJsonValue()
+	free(hugeJsonDataBuffer);
 }
 
+//sets both the refresh token and the access token
+//returns 0 if we got a valid access token from google, -1 if error with errorno, -2 otherwise
 //codeStr must be null terminated
-char* getAccessTokenWithPastedCode(const char *codeStr, void* accessTokenBuffer, 
-									const int bufferLength, int *accessTokenLength){
-	//go off to google and get the token
-	//parse it using getJsonValue()
+char* getAccessTokenWithPastedCode(const char *codeStr, AccessTokenState_t *stateStruct){
 
 }
 
-//TODO: ERROR CODES
-int getNewTokensWithLink(void* accessTokenBuffer , const int accessTokenBufferLength, 
-						 void* refreshTokenBuffer, const int refreshTokenBufferLength, 
-						int *accessTokenLength){
-	char buffer[MAX_RETURN_CODE_LENGTH + 1];
+//sets both the refresh token and the access token
+//returns 0 if we got a valid access token from google, -1 if error with errorno, -2 otherwise
+int getNewTokensWithLink(AccessTokenState_t *stateStruct){
+	char buffer[MAX_PASTED_CODE_LENGTH];
 
 	printf("Visit this link and paste the code in...:\n"
 		"https://accounts.google.com/o/oauth2/auth?access_type=offline"
@@ -115,10 +149,10 @@ int getNewTokensWithLink(void* accessTokenBuffer , const int accessTokenBufferLe
 
 	fgets(buffer, MAX_RETURN_CODE_LENGTH, stdin);
 	buffer[ strlen(buffer) - 1 ] = '\0';//cut out the last char
-	getAccessTokenWithPastedCode( buffer );
+	return getAccessTokenWithPastedCode( buffer, stateStruct );
 }
 
-void getAccessToken(AccessTokenState_t *stateStruct, void* buffer, int *accessTokenLength){
+void gat_getAccessToken(AccessTokenState_t *stateStruct, void* buffer, int *accessTokenLength){
 
 	//check if the access token is valid
 	if ( ATExpireTime > (unsigned)time(NULL) ){

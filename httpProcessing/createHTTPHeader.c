@@ -34,7 +34,7 @@ char *toRequestStr(httpRequestTypes_t requestType){
 }
 
 //FIXME: MAKE SURE THE BUFFER IS BIG ENOUGH
-void createHTTPHeader(char *output, int maxOutputLen, headerInfo_t *hInfo, char *extraHeaders){
+void createHTTPHeader(char *output, const int maxOutputLen, const headerInfo_t *hInfo, const char *extraHeaders){
 
 	/* status line first */
 	if ( hInfo->isRequest ){

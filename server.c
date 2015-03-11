@@ -201,10 +201,8 @@ int chunkData(const void *inputData, const int inputDataLength, void *outputBuff
     return tempPtr - (const char *) inputData;
 }
 
-void downloadDriveFile(Connection_t *clientHttpCon, parserState_t *parserState, headerInfo_t *hInfoClientRecv, 
-                    char *outputData, int outputDataLength){
-
-    /* get the url and size of the file using the name given by the url */
+//this will download the full header
+int startFileDownload(){
     int received;
     char *url, *size;
     char *domain, *fileUrl;
@@ -213,19 +211,19 @@ void downloadDriveFile(Connection_t *clientHttpCon, parserState_t *parserState, 
     headerInfo_t hInfoGoogleRecv;
     protocol_t type;
 
-    getDownloadUrlAndSize(hInfoClientRecv->urlBuffer+1, &url, &size);    
-    printf("File found, size: %s, url: %s", size, url);
 
     /* request the file from google */
 
     //connect by url here !!
-    SSL_write (c->sslHandle, packetBuffer, MAX_PACKET_SIZE);
+    //make a header for the file request
+    net_send (/*connection or something*/ , packetBuffer, MAX_PACKET_SIZE);
 
     /* get the reply and process it, handle 404's and stuff */
 
     //TODO: change this with get the whole header !!
-    received = SSL_read (c->sslHandle, packetBuffer, MAX_PACKET_SIZE);
-    
+    getHeader(Connection_t *con, parserState_t *parserStateBuf, char *outputData, 
+                int outputDataMaxSize, int *outputDataLength, headerInfo_t *headerInfoBuf){
+
     printf("Reply from google:\n\n %s\n\n", packetBuffer);
 
     set_new_parser_state_struct(&parserStateGoogleRecv);
@@ -233,26 +231,42 @@ void downloadDriveFile(Connection_t *clientHttpCon, parserState_t *parserState, 
 
     process_data( packetBuffer, received, &parserStateGoogleRecv, outputData, 
                     MAXDATASIZE, &outputDataLength, packetEnd_s, &hInfoGoogleRecv);
-    
+
     //check for errors        
     printf("statusCode : %d\n", hInfoGoogleRecv.statusCode);
 
+}
+
+int updateFileDownload(){
+
+}
+
+int finishFileDownload(){
+
+} 
+
+void downloadDriveFile(Connection_t *clientHttpCon, parserState_t *parserState, headerInfo_t *hInfoClientRecv, 
+                    char *outputData, int outputDataLength){
+
+    /* get the url and size of the file using the name given by the url */
+    getDownloadUrlAndSize(hInfoClientRecv->urlBuffer+1, &url, &size);    
+    printf("File found, size: %s, url: %s", size, url);
+    //
+    startFileDownload()
     /* respond to client about the file */
 
     //hack length
     converFromRangedToContentLength(&hInfoGoogleRecv, strtol(size, NULL, 10));
 
     createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, &hInfoGoogleRecv, NULL);
-    send_http(clientHttpCon, packetBuffer, strlen(packetBuffer));
+    net_send(clientHttpCon, packetBuffer, strlen(packetBuffer));
     
     /* continue downloading and passing data onto the client */
     //send any data that might have been in the packets we fetched to get the whole header
 
     while ( parserStateGoogleRecv.currentState != packetEnd_s ){
 
-        received = SSL_read (c->sslHandle, packetBuffer, MAX_PACKET_SIZE-1);
-        process_data( packetBuffer, received, &parserStateGoogleRecv, outputData, 
-            MAXDATASIZE, &outputDataLength, packetEnd_s, &hInfoGoogleRecv);
+        updateFileDownload()
 
         flipBits(outputData, outputDataLength);
 

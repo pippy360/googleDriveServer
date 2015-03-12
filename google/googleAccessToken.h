@@ -11,7 +11,11 @@ typedef struct {
 	int 	refreshTokenBufferLength;
 } AccessTokenState_t;
 
+void gat_newAccessTokenState(AccessTokenState_t *stateStruct);
 
-void init_googleAccessToken(AccessTokenState_t *stateStruct);
+void gat_freeAccessTokenState(AccessTokenState_t *stateStruct);
 
-void getAccessToken(AccessTokenState_t *stateStruct, void* buffer, int *accessTokenLength);
+int gat_init_googleAccessToken(AccessTokenState_t *stateStruct);
+
+void gat_getAccessToken(AccessTokenState_t *stateStruct, int *accessTokenLength);
+

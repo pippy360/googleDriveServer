@@ -1,0 +1,26 @@
+all: test.out
+
+test.out: utils_tests.o googleAccessToken.o connection.o networking.o utils.o realtimePacketParser.o createHTTPHeader.o
+	gcc realtimePacketParser.o utils_tests.o googleAccessToken.o connection.o createHTTPHeader.o utils.o networking.o -lssl -lcrypto -g -o test.out
+
+networking.o: ../net/networking.c
+	gcc -c ../net/networking.c
+
+googleAccessToken.o: ../google/googleAccessToken.c
+	gcc -c ../google/googleAccessToken.c
+
+connection.o: ../net/connection.c
+	gcc -c ../net/connection.c
+
+utils_tests.o: utils_tests.c
+	gcc -c utils_tests.c
+
+utils.o: ../utils.c
+	gcc -c ../utils.c
+
+realtimePacketParser.o: ../httpProcessing/realtimePacketParser.c
+	gcc -c ../httpProcessing/realtimePacketParser.c
+
+createHTTPHeader.o: ../httpProcessing/createHTTPHeader.c
+	gcc -c ../httpProcessing/createHTTPHeader.c
+

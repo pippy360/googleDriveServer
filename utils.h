@@ -5,3 +5,6 @@
 int utils_parseUrl(char *inputUrl, char **protocol, int *protocolLength, 
                     char **domain, int *domainLength, char **fileUrl, 
                     int *fileUrlLength );
+
+int utils_parseUrl_proto(char *inputUrl, protocol_t *type, char **domain, 
+                    int *domainLength, char **fileUrl, int *fileUrlLength);

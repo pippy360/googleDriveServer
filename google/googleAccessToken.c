@@ -127,6 +127,11 @@ int getAccessTokenWithRefreshToken(AccessTokenState_t *stateStruct){
 	//create a big file buffer
 	//headerInfo_t hInfo;
 	
+	//connect to accounts.google.com
+	//send a packet with that data and get the response
+	//create packet from url then
+	//just net send it
+
 	//send it and get the response
 	//make sure the respose is what we want
 	//parse for an access token
@@ -140,7 +145,7 @@ int getAccessTokenWithRefreshToken(AccessTokenState_t *stateStruct){
 //returns 0 if we got a valid access token from google, -1 if error with errorno, -2 otherwise
 //codeStr must be null terminated
 int getAccessTokenWithPastedCode(const char *codeStr, AccessTokenState_t *stateStruct){
-
+	return 0;
 }
 
 //sets both the refresh token and the access token
@@ -160,22 +165,13 @@ int getNewTokensWithLink(AccessTokenState_t *stateStruct){
 	return getAccessTokenWithPastedCode( buffer, stateStruct );
 }
 
-void gat_getAccessToken(AccessTokenState_t *stateStruct, int *accessTokenLength){
+void gat_getAccessToken(AccessTokenState_t *stateStruct){
 
 	//check if the access token is valid
 	if ( stateStruct->expireTime > (unsigned)time(NULL) ){
 		;
-	}else if(/*something here !!!*/1){
-		getAccessTokenWithRefreshToken( stateStruct );
-		//if there's a bad refresh token
-		if( NULL )
-			getNewAccessTokenWithLink();
-
-		saveToFile(NULL, 1);
 	}else{
-		//else ask for the user to get one
-		getNewAccessTokenWithLink();
-		saveToFile(NULL, 1);
+		getAccessTokenWithRefreshToken( stateStruct );
 	}
 }
 

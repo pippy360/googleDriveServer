@@ -184,4 +184,5 @@ int utils_downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength,
         //                MAXDATASIZE, &outputDataLength, packetEnd_s, hInfo);
         tempPtr += outputDataLength;
     }
+	return 0;//FIXME: RETURN THE DATA DOWNLOADED
 }

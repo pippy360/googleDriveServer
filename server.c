@@ -156,14 +156,15 @@ int startFileDownload(){
 //
 //    //check for errors        
 //    printf("statusCode : %d\n", hInfoGoogleRecv.statusCode);
+	return 0;
 }
 
 int updateFileDownload(){
-
+	return 0;
 }
 
 int finishFileDownload(){
-
+	return 0;
 } 
 
 void downloadDriveFile(Connection_t *clientHttpCon, parserState_t *parserState, 

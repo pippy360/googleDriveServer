@@ -17,11 +17,7 @@
 		"client_secret=BDkeIsUA394I_n-hwFp6syeO&"\
 		"redirect_uri=urn:ietf:wg:oauth:2.0:oob&"\
 		"grant_type=authorization_code"
-#define REFRESH_TOKEN_DATA "client_id=83270242690-k8gfaaaj5gjahc7ncvri5m3pu2lp9nsu."\
-		"apps.googleusercontent.com&"\
-		"client_secret=BDkeIsUA394I_n-hwFp6syeO&&"\
-		"refresh_token=%s&"\
-		"grant_type=refresh_token"
+
 
 void gat_newAccessTokenState(AccessTokenState_t *stateStruct){
 	//malloc the intial stuff
@@ -122,22 +118,36 @@ int gat_init_googleAccessToken(AccessTokenState_t *stateStruct){
 
 //returns 0 if we got a valid access token from google, -1 if error with errorno, -2 otherwise
 //refreshTokenStr must be null terminated
+//FIXME: HARDCODED VALUES
 int getAccessTokenWithRefreshToken(AccessTokenState_t *stateStruct){
-	//create a packet buffer
-	//create a big file buffer
-	//headerInfo_t hInfo;
+	int size;
+	char packetBuffer[1800];
+	char url = "https://developers.google.com/oauth2/v3/token";
+	char jsonReturnDataBuffer = malloc(200000);
+	char refresh_token_data[] = "client_id=83270242690-k8gfaaaj5gjahc7ncvri5m3pu2lp9nsu."
+								"apps.googleusercontent.com&"
+								"client_secret=BDkeIsUA394I_n-hwFp6syeO&&"
+								"refresh_token=%s&"
+								"grant_type=refresh_token";
+	headerInfo_t hInfo;
+	Connection_t con;
+
+
+	hInfo.contentLength = strlen(refresh_token_data) + strlen(stateStruct->accessTokenStr) - strlen("%s");
+
+	size = utils_createHTTPHeaderFromUrl(url, packetBuffer, 1800, &hInfo, REQUEST_POST, NULL);
+	//append the data
+	sprintf(packetBuffer+size, refresh_token_data, stateStruct->accessTokenStr );
+
+	utils_connectByUrl(url, &con);
+	net_send();
 	
-	//connect to accounts.google.com
-	//send a packet with that data and get the response
-	//create packet from url then
-	//just net send it
-
-	//send it and get the response
-	//make sure the respose is what we want
-	//parse for an access token
-	//parse for a refresh token
-
-	//free(hugeJsonDataBuffer);
+	//download the data
+	//receive the data until we're done
+	//close the connection
+	//parse the json and find what we're looking for,
+	//set the stuff
+	free(jsonReturnDataBuffer);
 	return 0;
 }
 

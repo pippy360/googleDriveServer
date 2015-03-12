@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
     while(1) {  // main accept() loop
         sin_size = sizeof their_addr;
         client_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-        if (client_fd == -1) {
+        if (client_fd == -1){
             perror("accept");
             continue;
         }

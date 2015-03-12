@@ -7,7 +7,6 @@
 #include "net/connection.h"
 #include "commonDefines.h"
 
-//TODO: PARSE URL
 
 char* strstrn(char* const haystack, const char* needle, const int haystackSize){
     if (haystackSize < strlen(needle))
@@ -136,26 +135,35 @@ void utils_connectByUrl(char *inputUrl, Connection_t *con){
     net_connect(con, domain);
 }
 
-void utils_createHTTPGetHeaderFromUrl(char *inputUrl, char *output, int maxOutputLen, 
-                                        headerInfo_t *hInfo, char *extraHeaders){
+
+//This function allows the content length to already be set,
+//if the content length is not set then the packet must not have any data (other than the header)
+void utils_createHTTPHeaderFromUrl(char *inputUrl, char *output, int maxOutputLen,
+                                    headerInfo_t *hInfo, const httpRequestTypes_t requestType,
+                                    char *extraHeaders){
+	utils_setHInfoFromUrl(inputUrl, hInfo, requestType, extraHeaders);
+	createHTTPHeader(output, maxOutputLen, hInfo, extraHeaders);
+}
+
+//creates a hIfno get request for the the url
+void utils_setHInfoFromUrl(char *inputUrl, headerInfo_t *hInfo,
+							const httpRequestTypes_t requestType, char *extraHeaders){
     protocol_t type;
     char *fileUrl, *domain;
     int fileUrlLength, domainLength;
 
-    set_new_header_info(hInfo);
-    
     utils_parseUrl_proto(inputUrl, &type, &domain, &domainLength, &fileUrl, &fileUrlLength);
-    
+
     hInfo->isRequest   = 1;
-    hInfo->requestType = GET;
-    hInfo->urlBuffer   = fileUrl;
-    hInfo->hostBuffer  = domain;
-    createHTTPHeader(output, maxOutputLen, hInfo, extraHeaders);
+    hInfo->requestType = requestType;
+    //FIXME: there should really be some sort of setUrlBuffer and setHostBuffer
+    memcpy(hInfo->urlBuffer, fileUrl, fileUrlLength);
+    memcpy(hInfo->hostBuffer, domain, domainLength);
 }
 
 //returns the amount of data downloaded (excluding the header)
 int utils_downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength, 
-                        char *inputUrl, headerInfo_t *hInfo, char *extraHeaders){
+                        		char *inputUrl, headerInfo_t *hInfo, char *extraHeaders){
 
     Connection_t httpConnection;
     utils_connectByUrl(inputUrl, &httpConnection);

@@ -186,7 +186,7 @@ int validateHttpVersion(char *buffer, char **exitPosition){
 	return 0;
 
 	//do something like what's below
-
+/*
 	char *ptr = buffer;
 	for (; *ptr != '.'; ptr++)
 		if ( *ptr < '0' || *ptr > '9' )
@@ -196,7 +196,7 @@ int validateHttpVersion(char *buffer, char **exitPosition){
 	for (; *ptr != ' '; ptr++)
 		if ( *ptr < '0' || *ptr > '9' )
 			printf("fail 186\n");//fail
-
+*/
 	//check it's version
 }
 
@@ -224,23 +224,23 @@ int process_status_line(char *buffer, parserState_t* parserState, headerInfo_t* 
 		hInfo->isRequest = 1;
 
 		if (strncmp(buffer, "GET", 3)		== 0){
-			hInfo->requestType = GET;
+			hInfo->requestType = REQUEST_GET;
 		}else if(strncmp(buffer, "HEAD", 4)	== 0){
-			hInfo->requestType = HEAD;
+			hInfo->requestType = REQUEST_HEAD;
 		}else if(strncmp(buffer, "POST", 4)	== 0){
-			hInfo->requestType = POST;
+			hInfo->requestType = REQUEST_POST;
 		}else if(strncmp(buffer, "PUT", 3)	== 0){
-			hInfo->requestType = PUT;
+			hInfo->requestType = REQUEST_PUT;
 		}else if(strncmp(buffer, "DELETE", 6)	== 0){
-			hInfo->requestType = DELETE;
+			hInfo->requestType = REQUEST_DELETE;
 		}else if(strncmp(buffer, "TRACE", 5)	== 0){
-			hInfo->requestType = TRACE;
+			hInfo->requestType = REQUEST_TRACE;
 		}else if(strncmp(buffer, "OPTIONS", 7)	== 0){
-			hInfo->requestType = OPTIONS;
+			hInfo->requestType = REQUEST_OPTIONS;
 		}else if(strncmp(buffer, "CONNECT", 7)	== 0){
-			hInfo->requestType = CONNECT;
+			hInfo->requestType = REQUEST_CONNECT;
 		}else if(strncmp(buffer, "PATCH", 5)	== 0){
-			hInfo->requestType = PATCH;
+			hInfo->requestType = REQUEST_PATCH;
 		}else{
 			//fail
 			printf("fail 224\n");

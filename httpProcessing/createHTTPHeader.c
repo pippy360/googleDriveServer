@@ -20,21 +20,23 @@
 
 char *toRequestStr(httpRequestTypes_t requestType){
 	switch( requestType ){	
-		case GET: 		return "GET";
-		case HEAD: 		return "HEAD";
-		case POST: 		return "POST";
-		case PUT: 		return "PUT";
-		case DELETE: 	return "DELETE";
-		case TRACE: 	return "TRACE";
-		case OPTIONS: 	return "OPTIONS";
-		case CONNECT: 	return "CONNECT";
-		case PATCH: 	return "PATCH";
+		case REQUEST_GET: 		return "GET";
+		case REQUEST_HEAD: 		return "HEAD";
+		case REQUEST_POST: 		return "POST";
+		case REQUEST_PUT: 		return "PUT";
+		case REQUEST_DELETE: 	return "DELETE";
+		case REQUEST_TRACE: 	return "TRACE";
+		case REQUEST_OPTIONS: 	return "OPTIONS";
+		case REQUEST_CONNECT: 	return "CONNECT";
+		case REQUEST_PATCH: 	return "PATCH";
 	}
 	return NULL;//fail
 }
 
+//it's important that this works even if the content length isn't set
 //FIXME: MAKE SURE THE BUFFER IS BIG ENOUGH
-void createHTTPHeader(char *output, const int maxOutputLen, const headerInfo_t *hInfo, const char *extraHeaders){
+//returns the amount of data written to *output
+int createHTTPHeader(char *output, const int maxOutputLen, const headerInfo_t *hInfo, const char *extraHeaders){
 
 	/* status line first */
 	if ( hInfo->isRequest ){
@@ -85,6 +87,7 @@ void createHTTPHeader(char *output, const int maxOutputLen, const headerInfo_t *
 	}
 
 	strcat(output, "\r\n");
+	return strlen(output);
 }
 
 

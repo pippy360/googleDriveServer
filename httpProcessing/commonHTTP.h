@@ -6,15 +6,15 @@ typedef enum {
 } protocol_t;
 
 typedef enum {
-	GET,
-	HEAD,
-	POST,
-	PUT,
-	DELETE,
-	TRACE,
-	OPTIONS,
-	CONNECT,
-	PATCH
+	REQUEST_GET,
+	REQUEST_HEAD,
+	REQUEST_POST,
+	REQUEST_PUT,
+	REQUEST_DELETE,
+	REQUEST_TRACE,
+	REQUEST_OPTIONS,
+	REQUEST_CONNECT,
+	REQUEST_PATCH
 } httpRequestTypes_t;
 
 typedef enum {

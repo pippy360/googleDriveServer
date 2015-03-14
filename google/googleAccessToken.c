@@ -4,8 +4,8 @@
 #include "../httpProcessing/commonHTTP.h"
 #include "../net/networking.h"
 #include "../net/connection.h"
-#include "../utils.h"
 #include "googleAccessToken.h"
+#include "../utils.h"
 
 //FIXME: these can be a VERY expensive functions to execute
 //this whole page is a minefield, there's hdd access, send/recv'ing and printf/fget'ing
@@ -96,16 +96,12 @@ int gat_init_googleAccessToken(AccessTokenState_t *stateStruct) {
 		refreshTokenBuffer[1] = '\0';
 		shouldSaveToFile = 1;
 	}
-	printf("finished loading from file: %s\n", refreshTokenBuffer);
+	//printf("finished loading from file: %s\n", refreshTokenBuffer);
 
 	setRefreshToken(refreshTokenBuffer, stateStruct);
 
-	printf("finished setting\n");
-
 	//try to use the refresh token to get an access token
 	error = getAccessTokenWithRefreshToken(stateStruct);
-
-	printf("finished getting Access token\n");
 
 	if (error != 0) {
 		shouldSaveToFile = 1;
@@ -130,8 +126,8 @@ int gat_init_googleAccessToken(AccessTokenState_t *stateStruct) {
 //FIXME: HARDCODED VALUES
 int getAccessTokenWithRefreshToken(AccessTokenState_t *stateStruct) {
 	int size, jsonDataSize = 200000;
-	char packetBuffer[MAX_PACKET_SIZE];
-	char url[] = "https://developers.google.com/oauth2/v3/token";
+	char packetBuffer[MAX_PACKET_SIZE], *jsonReturnValue;
+	char url[] = "https://accounts.google.com/o/oauth2/token";
 	char *jsonReturnDataBuffer = malloc(jsonDataSize);
 	char refresh_token_post_data[] =
 			"client_id=83270242690-k8gfaaaj5gjahc7ncvri5m3pu2lp9nsu."
@@ -148,22 +144,19 @@ int getAccessTokenWithRefreshToken(AccessTokenState_t *stateStruct) {
 			+ strlen(stateStruct->refreshTokenStr) - strlen("%s");
 	size = utils_createHTTPHeaderFromUrl(url, packetBuffer, MAX_PACKET_SIZE,
 			&hInfo, REQUEST_POST, "Content-Type: application/x-www-form-urlencoded\r\n");
-	printf("the header we got: %s\n", packetBuffer);
 
 	//append the data
-	sprintf(packetBuffer + size, refresh_token_post_data,
-			stateStruct->refreshTokenStr);
+	sprintf(packetBuffer + size, refresh_token_post_data, stateStruct->refreshTokenStr);
 
-	printf("the data at this point: %s\n", packetBuffer);
 	utils_connectByUrl(url, &con);
 	net_send(&con, packetBuffer, strlen(packetBuffer));
-	printf("the data has been sent\n");
-	jsonReturnDataBuffer[0] = 'd';
-	printf("the data has been sent\n");
 	utils_recvNextHttpPacket(&con, &hInfo, jsonReturnDataBuffer, jsonDataSize);
 	net_close(&con);
 
 	//get the json value
+	jsonReturnValue = shitty_get_json_value("access_token", jsonReturnDataBuffer, jsonDataSize);
+	setAccessToken(jsonReturnValue, stateStruct);
+	//expiresTime = shitty_get_json_value("expires_in"  , jsonReturnDataBuffer, jsonDataSize);
 
 	free(jsonReturnDataBuffer);
 	return 0;

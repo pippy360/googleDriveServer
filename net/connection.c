@@ -72,7 +72,7 @@ int net_send(Connection_t *con, char *packetBuf, int dataSize){
 		}
 		return sent;
 	}else if(con->type == TCP_SSL){
-		printf("Sending SSL:\n\n%s\n\n", packetBuf);
+		//printf("Sending SSL:\n\n%s\n\n", packetBuf);
 		signed int sent = SSL_write (con->sslConnection.sslHandle, packetBuf, dataSize);
 		if(sent == -1){
 			perror("Error SSL_write");

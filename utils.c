@@ -6,6 +6,7 @@
 #include "net/networking.h"
 #include "net/connection.h"
 #include "commonDefines.h"
+#include "google/googleAccessToken.h"
 
 char* strstrn(char* const haystack, const char* needle, const int haystackSize) {
 	if (haystackSize < strlen(needle))
@@ -110,17 +111,22 @@ void utils_getAccessTokenHeader() {
 //creates a hIfno get request for the the url
 void utils_setHInfoFromUrl(char *inputUrl, headerInfo_t *hInfo,
 		const httpRequestTypes_t requestType, char *extraHeaders) {
+
 	protocol_t type;
 	char *fileUrl, *domain;
 	int fileUrlLength, domainLength;
-
 	utils_parseUrl_proto(inputUrl, &type, &domain, &domainLength, &fileUrl,
 			&fileUrlLength);
 	hInfo->isRequest = 1;
 	hInfo->requestType = requestType;
+
+	printf("we're here now2\n");
 	//FIXME: there should really be some sort of setUrlBuffer and setHostBuffer
 	memcpy(hInfo->urlBuffer, fileUrl, fileUrlLength);
+	hInfo->urlBuffer[fileUrlLength] = '\0';
 	memcpy(hInfo->hostBuffer, domain, domainLength);
+	hInfo->hostBuffer[domainLength] = '\0';
+	printf("we're here now3\n");
 }
 
 
@@ -161,8 +167,10 @@ int utils_createHTTPHeaderFromUrl(char *inputUrl, char *output,
 		int maxOutputLen, headerInfo_t *hInfo,
 		const httpRequestTypes_t requestType, char *extraHeaders) {
 
+	printf("some\n");
+	hInfo->hostBuffer[1] = 'l';
+	printf("thing\n");
 	utils_setHInfoFromUrl(inputUrl, hInfo, requestType, extraHeaders);
-	printf("hInfo set %lu, %d\n", hInfo->contentLength, hInfo->transferType);
 	return createHTTPHeader(output, maxOutputLen, hInfo, extraHeaders);
 }
 
@@ -182,7 +190,6 @@ int utils_recvNextHttpPacket(Connection_t *con, headerInfo_t *outputHInfo,
 	while (parserState.currentState != packetEnd_s) {
 
 		received = net_recv(con, packetBuffer, MAX_PACKET_SIZE);
-		printf("the output data so far: --%.*s--\n", received, packetBuffer);
 		process_data(packetBuffer, received, &parserState, tempPtr,
 				10000, &outputDataLength, packetEnd_s, outputHInfo);
 		tempPtr += outputDataLength;
@@ -194,20 +201,91 @@ int utils_recvNextHttpPacket(Connection_t *con, headerInfo_t *outputHInfo,
 int utils_downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength,
 		char *inputUrl, headerInfo_t *hInfo, char *extraHeaders) {
 
+	headerInfo_t requestHeaderInfo;
 	parserState_t parserState;
 	Connection_t con;
 	char packetBuffer[MAX_PACKET_SIZE];
 
 	set_new_parser_state_struct(&parserState);
 	set_new_header_info(hInfo);
+	set_new_header_info(&requestHeaderInfo);
 
 	utils_connectByUrl(inputUrl, &con);
 
-	//request the file
-	headerInfo_t requestHeaderInfo;
+	/* request the file */
+
 	utils_createHTTPHeaderFromUrl(inputUrl, packetBuffer, MAX_PACKET_SIZE,
 			&requestHeaderInfo, REQUEST_GET, extraHeaders);
 	net_send(&con, packetBuffer, strlen(packetBuffer));
-
 	return utils_recvNextHttpPacket(&con, hInfo, outputBuffer, outputMaxLength);
+}
+
+#define MAX_STRING_SIZE 20000
+#define FORMAT "\"%s\" : "
+#define FORMAT2 "\"%s\": "
+
+int isJsonChar( char inputChar ){
+	if ( ('a' <= inputChar && inputChar <= 'z') || ('A' <= inputChar && inputChar <= 'Z')
+		|| ( '0' <= inputChar && inputChar <= '9' ) || ( '"' == inputChar ) ){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+char *getAccessTokenHeader(AccessTokenState_t *tokenState){
+    char headerStub[]  = "Authorization: Bearer %s\r\n";
+    int size = strlen(headerStub) + strlen(tokenState->accessTokenStr);
+    char *tokenHeader = malloc(size);
+
+    sprintf(tokenHeader, headerStub, tokenState->accessTokenStr);
+
+    return tokenHeader;
+}
+
+//FIXME: DIRTY HACKS EVERYWHERE !
+char* shitty_get_json_value(char* inputName, char* jsonData, int jsonDataSize){
+	//find the area, get the value
+	char needle[MAX_STRING_SIZE];
+	sprintf( needle, FORMAT, inputName);
+	char* ptr;
+
+	if((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL){
+		sprintf( needle, FORMAT2, inputName);
+		if((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL){
+			return NULL;
+		}
+		ptr += strlen( inputName ) + strlen( FORMAT2 ) - strlen("%s");
+	}else{
+		ptr += strlen( inputName ) + strlen( FORMAT ) - strlen("%s");
+	}
+
+
+	//now find the value
+
+	//get the starting char
+	for( ; !isJsonChar( *ptr ); ptr++ )
+		;
+
+	int isString = 0;
+	if (*ptr == '\"'){
+		isString = 1;
+		ptr++;
+	}
+
+	char *endPtr;
+	if ( isString )
+	{
+		for( endPtr = ptr+1; *endPtr != '\"'; endPtr++ )
+			;
+	}else{
+		for( endPtr = ptr; *endPtr != ',' && *endPtr != '\n'; endPtr++ )
+			;
+	}
+
+	int outputLength = endPtr - ptr;
+	char* output = malloc( outputLength + 1 );
+	memcpy(output, ptr, outputLength );
+	output[ outputLength ] = '\0';
+	return output;
 }

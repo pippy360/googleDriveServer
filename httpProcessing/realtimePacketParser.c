@@ -8,7 +8,7 @@
 #include "realtimePacketParser.h"
 
 #define MAX_LEN 10000//FIXME: this seems really big...
-#define MAX_BUFFER 1000//FIXME: do something to prevent bufferoverflows
+#define MAX_BUFFER 6000//FIXME: do something to prevent bufferoverflows
 
 //FIXME: THE BUFFERS SHOULDN'T BE MALLOC'D HERE
 void set_new_parser_state_struct(parserState_t *parserState){
@@ -321,8 +321,6 @@ int process_header(char *name, char *value, parserState_t* parserState, headerIn
 //TODO: OFFSET REPLACE
 int process_data(char *inputData, int dataLength, parserState_t* parserState, char *outputData,
 				 int outputDataMaxLength, int *outputDataLength, state_t exitState, headerInfo_t* hInfo){
-	printf("print output data \n");
-	printf("print output data %c\n", outputData[0]);
 	state_t prevState;
 	*outputDataLength = 0;
 	parserState->currentPacketPtr = inputData;

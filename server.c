@@ -20,11 +20,12 @@
 #include "httpProcessing/commonHTTP.h"//TODO: parser states
 #include "httpProcessing/realtimePacketParser.h"//TODO: parser states
 #include "httpProcessing/createHTTPHeader.h"
+#include "net/connection.h"
 #include "utils.h"
-//#include "googleAccessToken.h"
+#include "google/googleAccessToken.h"
 //#include "googleUpload.h"
 //#include "parser.h"
-#include "net/connection.h"
+
 
 #define MAX_ACCEPTED_HTTP_PAYLOAD 200000
 #define MAXDATASIZE               200000//FIXME: this should only need to be the max size of one packet !!!
@@ -236,8 +237,10 @@ void handle_client( int client_fd ){
 int main(int argc, char *argv[])
 {
     //google_init();
+	AccessTokenState_t stateStruct;
+	gat_init_googleAccessToken(&stateStruct);
 
-    int sockfd = getListeningSocket(SERVER_LISTEN_PORT);
+	int sockfd = getListeningSocket(SERVER_LISTEN_PORT);
     int client_fd;
     socklen_t sin_size;
     struct sockaddr_storage their_addr;
@@ -262,8 +265,6 @@ int main(int argc, char *argv[])
             handle_client( client_fd );
             
             close(client_fd);
-           //recv from client, now get a file from google
-
             exit(0);
         }
         close(client_fd);  // parent doesn't need this

@@ -55,7 +55,7 @@ int net_connect(Connection_t *con, char *domain){
 	//todo, return value !
 }
 
-int net_close(Connection_t *con, char *domain){
+int net_close(Connection_t *con){
 	if (con->type == TCP_DIRECT){
 		//todo
 	}else if(con->type == TCP_SSL){
@@ -80,6 +80,7 @@ int net_send(Connection_t *con, char *packetBuf, int dataSize){
 		return sent;
 	}else{
 		printf("ERROR: BAD connection.type\n");
+		return -1;
 	}
 }
 

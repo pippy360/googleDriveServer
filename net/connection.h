@@ -11,7 +11,7 @@ void net_freeConnection(Connection_t *input);
 
 int net_connect(Connection_t *con, char *domain);
 
-int net_close(Connection_t *con, char *domain);
+int net_close(Connection_t *con);
 
 int net_send(Connection_t *con, char *packetBuf, int dataSize);
 

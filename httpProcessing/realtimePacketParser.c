@@ -321,6 +321,8 @@ int process_header(char *name, char *value, parserState_t* parserState, headerIn
 //TODO: OFFSET REPLACE
 int process_data(char *inputData, int dataLength, parserState_t* parserState, char *outputData,
 				 int outputDataMaxLength, int *outputDataLength, state_t exitState, headerInfo_t* hInfo){
+	printf("print output data \n");
+	printf("print output data %c\n", outputData[0]);
 	state_t prevState;
 	*outputDataLength = 0;
 	parserState->currentPacketPtr = inputData;

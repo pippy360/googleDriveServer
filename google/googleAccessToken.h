@@ -17,5 +17,5 @@ void gat_freeAccessTokenState(AccessTokenState_t *stateStruct);
 
 int gat_init_googleAccessToken(AccessTokenState_t *stateStruct);
 
-void gat_getAccessToken(AccessTokenState_t *stateStruct, int *accessTokenLength);
+void gat_getAccessToken(AccessTokenState_t *stateStruct);
 

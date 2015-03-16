@@ -23,10 +23,9 @@ realtimePacketParser.o: httpProcessing/realtimePacketParser.c
 
 createHTTPHeader.o: httpProcessing/createHTTPHeader.c
 	gcc -c httpProcessing/createHTTPHeader.c
-
 	
-ftpServer.out: ftpServer.o
-	gcc ftpServer.o -o ftpServer.out
+ftpServer.out: ftpServer.o ftp.o vfs.o
+	gcc ftpServer.o ftp.o -o ftpServer.out
 
 ftpServer.o: ftpServer.c
 	gcc -c ftpServer.c
@@ -34,3 +33,5 @@ ftpServer.o: ftpServer.c
 ftp.o: ftp/ftp.c
 	gcc -c ftp/ftp.c
 	
+vfs.o: virtualFileSystem/vfs.c
+	gcc -c virtualFileSystem/vfs.c

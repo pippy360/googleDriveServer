@@ -1,22 +1,8 @@
-typedef enum {
-	start,
-	sendingHeader,
-	sendingMetaData,
-	sendingFileDataDelimiter,
-	sendingFileData,
-	sendingEndDelimiter,
-	finished,
-	ERROR//this might not be needed
-} googleUploadState;
+int googleUpload_init(Connection_t *con, AccessTokenState_t *accessTokenState,
+		char *metadata, char *contentType);
 
-typedef struct {
-	unsigned int  stringOffset;//used to keep track of how much of the header/metadata we've sent
-	unsigned int  headerRemainingData;
-	unsigned long fileRemainingData;
-	googleUploadState state;
-} googleUploadStruct;
+int googleUpload_update(Connection_t *con, char *dataBuffer, char* dataLength);
 
-int getNextUploadPacket(char *data, int dataLength, int *dataSent, unsigned long filesize, char *metadata, char *addedHeaders,
-			googleUploadStruct *stateStruct, char *outputBuffer, int outputBufferSize, int *noChange);
+int googleUpload_end(Connection_t *con, char *dataBuffer, char* dataLength);
 
-googleUploadStruct* getGoogleUploadStruct_struct();
+

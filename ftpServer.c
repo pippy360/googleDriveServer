@@ -7,6 +7,7 @@
 #include "ftp/ftpCommon.h"
 #include "ftp/ftp.h"
 #include "ftp/ftpParser.h"
+#include "google/googleUpload.h"
 
 #define EXAMPLE_DIR "-rw-rw-r--. 1 lilo lilo 100 Feb 26 07:08 file1\r\n"
 
@@ -37,12 +38,14 @@ void openDataConnection(ftpClientState_t *clientState) {
 }
 
 void ftp_handleFtpRequest(redisContext *vfsContext,
-		ftpParserState_t *parserState, ftpClientState_t *clientState) {
+		AccessTokenState_t *accessTokenState, ftpParserState_t *parserState,
+		ftpClientState_t *clientState) {
 
 	char strBuf1[1800]; //FIXME: hardcoded
 	char tempBuffer[1800]; //FIXME: hardcoded
 	long id, fileSize;
 	int received;
+	Connection_t googleCon;
 
 	switch (parserState->type) {
 	case REQUEST_USER:
@@ -129,15 +132,19 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		//get the file name
 		printf("trying to store file %s\n", parserState->paramBuffer);
 
+		googleUpload_init(&googleCon, accessTokenState,
+				"\"title\": \"some_test_upload_file.txt\"", "image/jpeg");
+
 		//FIXME: make sure we have a connection open
 		sprintf(strBuf1, "150 FILE: /%s\r\n", parserState->paramBuffer);
-
 		sendFtpResponse(clientState, strBuf1);
 
 		//alright start reading in the file
 		while ((received = recv(clientState->data_fd, tempBuffer, 1800, 0)) > 0) {
+			googleUpload_update(&googleCon, tempBuffer, received);
 			//printf("recv'd:--%.*s--\n", received, tempBuffer);
 		}
+		googleUpload_end(googleCon);
 
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
 
@@ -155,7 +162,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	}
 }
 
-void handle_client(int client_fd) {
+void handle_client(int client_fd, AccessTokenState_t *stateStruct) {
 	unsigned int j;
 	redisContext *c;
 	redisReply *reply;
@@ -180,19 +187,23 @@ void handle_client(int client_fd) {
 	ftp_newClientState(&clientState, client_fd, usernameBuffer, 100);
 	sent = send(client_fd, VALID_GREETING, strlen(VALID_GREETING), 0);
 	while (1) {
-		recieved = recv(client_fd, buffer, MAX_PACKET_SIZE, 0);
+		if((recieved = recv(client_fd, buffer, MAX_PACKET_SIZE, 0)) == 0){
+			break;
+		}
 		printf("buffer: %.*s--\n", recieved, buffer);
 		ftp_parsePacket(buffer, recieved, &parserState, &clientState);
 		if (parserState.type == REQUEST_QUIT) {
 			printf("got a quit\n");
 			break;
 		}
-		ftp_handleFtpRequest(c, &parserState, &clientState);
+		ftp_handleFtpRequest(c, stateStruct, &parserState, &clientState);
 	}
 	close(client_fd);
 	printf("connection closed\n");
 }
 int main(int argc, char *argv[]) {
+	AccessTokenState_t stateStruct;
+	gat_init_googleAccessToken(&stateStruct);
 	int sockfd = getListeningSocket(SERVER_LISTEN_PORT);
 	int client_fd;
 	socklen_t sin_size;
@@ -211,7 +222,7 @@ int main(int argc, char *argv[]) {
 		printf("server: got connection from %s\n", s);
 		if (!fork()) { // this is the child process
 			close(sockfd); // child doesn't need the listener
-			handle_client(client_fd);
+			handle_client(client_fd, &stateStruct);
 			close(client_fd);
 			//recv from client, now get a file from google
 			exit(0);

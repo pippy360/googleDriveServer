@@ -25,8 +25,6 @@
 #include "ftpCommon.h"
 
 
-#define SEVER_IP_FTP "127,0,0,1"
-
 #define MAX_FILE_NAME 1000;
 
 
@@ -61,24 +59,6 @@ void ftp_newClientState(ftpClientState_t *clientState, int command_fd,
 	clientState->cwdId = 0;
 }
 
-void openDataConnection(ftpClientState_t *clientState) {
-	char strBuf1[1000]; //FIXME: hardcoded
-	int tempSock = getListeningSocket("5000"); //FIXME: WHAT DO I DO WITH TEMPSOCK ?????
-	clientState->data_fd2 = tempSock;
-	int port = getPort(tempSock);
-	sprintf(strBuf1, "227 Entering Passive Mode (%s,%d,%d).\r\n", SEVER_IP_FTP,
-			port >> 8, port & 255);
-	sendFtpResponse(clientState, strBuf1);
-	socklen_t sin_size;
-	struct sockaddr_storage their_addr;
-	sin_size = sizeof their_addr;
-	clientState->data_fd = accept(tempSock, (struct sockaddr *) &their_addr,
-			&sin_size);
-	if (clientState->data_fd == -1) {
-		perror("accept");
-	}
-	clientState->isDataConnectionOpen = 1;
-}
 
 void sendFile(ftpClientState_t *clientState) {
 	FILE *ifp, *ofp;

@@ -24,8 +24,8 @@ realtimePacketParser.o: httpProcessing/realtimePacketParser.c
 createHTTPHeader.o: httpProcessing/createHTTPHeader.c
 	gcc -c httpProcessing/createHTTPHeader.c
 	
-ftpServer.out: ftpServer.o ftpParser.o ftp.o vfs.o networking.o connection.o
-	gcc ftpServer.o ftp.o ftpParser.o vfs.o networking.o connection.o -lcrypto -lssl ./virtualFileSystem/hiredis/*.o -o ftpServer.out
+ftpServer.out: ftpServer.o createHTTPHeader.o ftpParser.o googleUpload.o realtimePacketParser.o ftp.o vfs.o networking.o utils.o connection.o googleAccessToken.o
+	gcc ftpServer.o googleUpload.o createHTTPHeader.o realtimePacketParser.o googleAccessToken.o ftp.o ftpParser.o vfs.o utils.o networking.o connection.o -lcrypto -lssl ./virtualFileSystem/hiredis/*.o -o ftpServer.out
 
 ftpServer.o: ftpServer.c
 	gcc -c ftpServer.c
@@ -38,3 +38,8 @@ ftpParser.o: ./ftp/ftpParser.o
 
 vfs.o: virtualFileSystem/vfs.c
 	gcc -c virtualFileSystem/vfs.c
+
+googleUpload.o: google/googleUpload.c
+	gcc -c google/googleUpload.c
+	
+	

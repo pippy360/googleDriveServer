@@ -21,3 +21,6 @@ int utils_downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength,
 int utils_createHTTPHeaderFromUrl(char *inputUrl, char *output,
 		int maxOutputLen, headerInfo_t *hInfo,
 		const httpRequestTypes_t requestType, char *extraHeaders);
+
+int utils_chunkData(const void *inputData, const int inputDataLength,
+		void *outputBuffer);

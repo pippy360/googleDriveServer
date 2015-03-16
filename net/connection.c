@@ -84,6 +84,18 @@ int net_send(Connection_t *con, char *packetBuf, int dataSize){
 	}
 }
 
+//int net_send_all(Connection_t *con, char *packetBuf, int dataSize){
+//    char *ptr = packetBuf;
+//    while (length > 0)
+//    {
+//        int i = send(socket, ptr, length);
+//        if (i < 1) return false;
+//        ptr += i;
+//        length -= i;
+//    }
+//    return true;
+//}
+
 int net_recv(Connection_t *con, char *packetBuf, int maxBufferSize){
 	if (con->type == TCP_DIRECT){
 		return recv(con->socketFD, packetBuf, maxBufferSize, 0);

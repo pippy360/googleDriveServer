@@ -2,16 +2,24 @@
 #include "virtualFileSystem/hiredis/hiredis.h"
 #include "virtualFileSystem/vfs.h"
 
+#include "commonDefines.h"
+
 #include "net/networking.h"
+#include "net/connection.h"
 
 #include "ftp/ftpCommon.h"
 #include "ftp/ftp.h"
 #include "ftp/ftpParser.h"
+
+#include "httpProcessing/commonHTTP.h"//TODO: parser states
+#include "httpProcessing/realtimePacketParser.h"//TODO: parser states
+#include "httpProcessing/createHTTPHeader.h"
+
+#include "google/googleAccessToken.h"
 #include "google/googleUpload.h"
 
 #define EXAMPLE_DIR "-rw-rw-r--. 1 lilo lilo 100 Feb 26 07:08 file1\r\n"
 
-#define MAX_PACKET_SIZE 1600
 #define SERVER_LISTEN_PORT "25001"
 #define FILE_SERVER_URL "localhost"
 #define VALID_GREETING "220 fuck yeah you've connected ! what are you looking for...?\r\n"
@@ -41,8 +49,8 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		AccessTokenState_t *accessTokenState, ftpParserState_t *parserState,
 		ftpClientState_t *clientState) {
 
-	char strBuf1[1800]; //FIXME: hardcoded
-	char tempBuffer[1800]; //FIXME: hardcoded
+	char strBuf1[2000]; //FIXME: hardcoded
+	char tempBuffer[2000]; //FIXME: hardcoded
 	long id, fileSize;
 	int received;
 	Connection_t googleCon;
@@ -133,7 +141,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		printf("trying to store file %s\n", parserState->paramBuffer);
 
 		googleUpload_init(&googleCon, accessTokenState,
-				"\"title\": \"some_test_upload_file.txt\"", "image/jpeg");
+				"\"title\": \"some_test_upload_file.txt\"", "video/webm");
 
 		//FIXME: make sure we have a connection open
 		sprintf(strBuf1, "150 FILE: /%s\r\n", parserState->paramBuffer);
@@ -144,7 +152,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 			googleUpload_update(&googleCon, tempBuffer, received);
 			//printf("recv'd:--%.*s--\n", received, tempBuffer);
 		}
-		googleUpload_end(googleCon);
+		googleUpload_end(&googleCon);
 
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
 

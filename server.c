@@ -16,6 +16,7 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include "commonDefines.h"
 #include "net/networking.h"
 #include "httpProcessing/commonHTTP.h"//TODO: parser states
 #include "httpProcessing/realtimePacketParser.h"//TODO: parser states
@@ -28,7 +29,6 @@
 
 #define MAX_ACCEPTED_HTTP_PAYLOAD 200000
 #define MAXDATASIZE               200000//FIXME: this should only need to be the max size of one packet !!!
-#define MAX_PACKET_SIZE           1600
 #define MAX_CHUNK_ARRAY_LENGTH    100
 #define MAX_CHUNK_SIZE_BUFFER     100
 #define SERVER_LISTEN_PORT        "25001"
@@ -107,23 +107,6 @@ void converFromRangedToContentLength(headerInfo_t *hInfo, long fileSize) {
 		hInfo->contentLength = (hInfo->sentContentRangeEnd + 1)
 				- hInfo->sentContentRangeStart;
 	}
-}
-
-//TEST: make sure count/the return value is as expected
-//FIXME: check for buffer overflow
-//returns the resulting length
-//targetChunkSize isn't needed 
-int chunkData(const void *inputData, const int inputDataLength,
-		void *outputBuffer) {
-	//calc the chunk length and get the string
-	char *tempPtr = outputBuffer;
-	sprintf(outputBuffer, "%x\r\n", inputDataLength);
-	tempPtr += strlen(outputBuffer);
-	memcpy(tempPtr, inputData, inputDataLength);
-	tempPtr += inputDataLength;
-	memcpy(tempPtr, "\r\n\0", strlen("\r\n") + 1);
-	tempPtr += strlen("\r\n");
-	return tempPtr - (const char *) outputBuffer;
 }
 
 //this will download the full header
@@ -233,7 +216,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 		flipBits(dataBuffer, received);
 		//hm.......we need to decrypt the data here
 
-		chunkSize = chunkData(dataBuffer, outputBufferLength, chunkBuffer);
+		chunkSize = utils_chunkData(dataBuffer, outputBufferLength, chunkBuffer);
 		if (net_send(clientCon, chunkBuffer, chunkSize) == -1) {
 			break;
 		}

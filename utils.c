@@ -243,6 +243,24 @@ char *getAccessTokenHeader(AccessTokenState_t *tokenState){
     return tokenHeader;
 }
 
+//TEST: make sure count/the return value is as expected
+//FIXME: check for buffer overflow
+//returns the resulting length
+//targetChunkSize isn't needed
+int utils_chunkData(const void *inputData, const int inputDataLength,
+		void *outputBuffer) {
+	//calc the chunk length and get the string
+	char *tempPtr = outputBuffer;
+	sprintf(outputBuffer, "%x\r\n", inputDataLength);
+	tempPtr += strlen(outputBuffer);
+	memcpy(tempPtr, inputData, inputDataLength);
+	tempPtr += inputDataLength;
+	memcpy(tempPtr, "\r\n\0", strlen("\r\n") + 1);
+	tempPtr += strlen("\r\n");
+	return tempPtr - (const char *) outputBuffer;
+}
+
+
 //FIXME: DIRTY HACKS EVERYWHERE !
 char* shitty_get_json_value(char* inputName, char* jsonData, int jsonDataSize){
 	//find the area, get the value

@@ -17,26 +17,24 @@
 
 #define SEVER_IP_FTP "127,0,0,1"
 
-
-void openDataConnection(ftpClientState_t *clientState) { 
-        char strBuf1[1000]; //FIXME: hardcoded 
-        int tempSock = getListeningSocket("5000"); //FIXME: WHAT DO I DO WITH TEMPSOCK ????? 
-        clientState->data_fd2 = tempSock; 
-        int port = getPort(tempSock); 
-        sprintf(strBuf1, "227 Entering Passive Mode (%s,%d,%d).\r\n", SEVER_IP_FTP, 
-                        port >> 8, port & 255); 
-        sendFtpResponse(clientState, strBuf1); 
-        socklen_t sin_size; 
-        struct sockaddr_storage their_addr; 
-        sin_size = sizeof their_addr; 
-        clientState->data_fd = accept(tempSock, (struct sockaddr *) &their_addr, 
-                        &sin_size); 
-        if (clientState->data_fd == -1) { 
-                perror("accept"); 
-        } 
-        clientState->isDataConnectionOpen = 1; 
+void openDataConnection(ftpClientState_t *clientState) {
+	char strBuf1[1000]; //FIXME: hardcoded
+	int tempSock = getListeningSocket("5000"); //FIXME: WHAT DO I DO WITH TEMPSOCK ?????
+	clientState->data_fd2 = tempSock;
+	int port = getPort(tempSock);
+	sprintf(strBuf1, "227 Entering Passive Mode (%s,%d,%d).\r\n", SEVER_IP_FTP,
+			port >> 8, port & 255);
+	sendFtpResponse(clientState, strBuf1);
+	socklen_t sin_size;
+	struct sockaddr_storage their_addr;
+	sin_size = sizeof their_addr;
+	clientState->data_fd = accept(tempSock, (struct sockaddr *) &their_addr,
+			&sin_size);
+	if (clientState->data_fd == -1) {
+		perror("accept");
+	}
+	clientState->isDataConnectionOpen = 1;
 }
-
 
 void ftp_handleFtpRequest(redisContext *vfsContext,
 		ftpParserState_t *parserState, ftpClientState_t *clientState) {
@@ -157,71 +155,69 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	}
 }
 
-void handle_client( int client_fd ){
-unsigned int j;
-redisContext *c;
-redisReply *reply;
-const char *hostname = "127.0.0.1";
-int port = 6379;
-struct timeval timeout = { 1, 500000 }; // 1.5 seconds
-c = redisConnectWithTimeout(hostname, port, timeout);
-if (c == NULL || c->err) {
-if (c) {
-printf("REDIS Connection error: %s\n", c->errstr);
-redisFree(c);
-} else {
-printf("REDIS Connection error: can't allocate redis context\n");
+void handle_client(int client_fd) {
+	unsigned int j;
+	redisContext *c;
+	redisReply *reply;
+	const char *hostname = "127.0.0.1";
+	int port = 6379;
+	struct timeval timeout = { 1, 500000 }; // 1.5 seconds
+	c = redisConnectWithTimeout(hostname, port, timeout);
+	if (c == NULL || c->err) {
+		if (c) {
+			printf("REDIS Connection error: %s\n", c->errstr);
+			redisFree(c);
+		} else {
+			printf("REDIS Connection error: can't allocate redis context\n");
+		}
+		exit(1);
+	}
+	char buffer[MAX_PACKET_SIZE], pBuffer[MAX_PACKET_SIZE], usernameBuffer[100];
+	int sent, recieved;
+	ftpParserState_t parserState;
+	ftpClientState_t clientState;
+	ftp_newParserState(&parserState, pBuffer, MAX_PACKET_SIZE);
+	ftp_newClientState(&clientState, client_fd, usernameBuffer, 100);
+	sent = send(client_fd, VALID_GREETING, strlen(VALID_GREETING), 0);
+	while (1) {
+		recieved = recv(client_fd, buffer, MAX_PACKET_SIZE, 0);
+		printf("buffer: %.*s--\n", recieved, buffer);
+		ftp_parsePacket(buffer, recieved, &parserState, &clientState);
+		if (parserState.type == REQUEST_QUIT) {
+			printf("got a quit\n");
+			break;
+		}
+		ftp_handleFtpRequest(c, &parserState, &clientState);
+	}
+	close(client_fd);
+	printf("connection closed\n");
 }
-exit(1);
-}
-char buffer[MAX_PACKET_SIZE], pBuffer[MAX_PACKET_SIZE], usernameBuffer[100];
-int sent, recieved;
-ftpParserState_t parserState;
-ftpClientState_t clientState;
-ftp_newParserState(&parserState, pBuffer, MAX_PACKET_SIZE);
-ftp_newClientState(&clientState, client_fd, usernameBuffer, 100);
-sent = send(client_fd, VALID_GREETING, strlen(VALID_GREETING), 0);
-while(1){
-recieved = recv(client_fd, buffer, MAX_PACKET_SIZE, 0);
-printf("buffer: %.*s--\n", recieved, buffer);
-ftp_parsePacket(buffer, recieved, &parserState, &clientState);
-if(parserState.type == REQUEST_QUIT){
-printf("got a quit\n");
-break;
-}
-ftp_handleFtpRequest(c, &parserState, &clientState);
-}
-close(client_fd);
-printf("connection closed\n");
-}
-int main(int argc, char *argv[])
-{
-int sockfd = getListeningSocket(SERVER_LISTEN_PORT);
-int client_fd;
-socklen_t sin_size;
-struct sockaddr_storage their_addr;
-char s[INET6_ADDRSTRLEN];
-printf("server: waiting for connections...\n");
-while(1) { // main accept() loop
-sin_size = sizeof their_addr;
-client_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-if (client_fd == -1) {
-perror("accept");
-continue;
-}
-inet_ntop(their_addr.ss_family,
-get_in_addr((struct sockaddr *)&their_addr),
-s, sizeof s);
-printf("server: got connection from %s\n", s);
-if (!fork()) { // this is the child process
-close(sockfd); // child doesn't need the listener
-handle_client( client_fd );
-close(client_fd);
-//recv from client, now get a file from google
-exit(0);
-}
-close(client_fd); // parent doesn't need this
-}
-return 0;
+int main(int argc, char *argv[]) {
+	int sockfd = getListeningSocket(SERVER_LISTEN_PORT);
+	int client_fd;
+	socklen_t sin_size;
+	struct sockaddr_storage their_addr;
+	char s[INET6_ADDRSTRLEN];
+	printf("server: waiting for connections...\n");
+	while (1) { // main accept() loop
+		sin_size = sizeof their_addr;
+		client_fd = accept(sockfd, (struct sockaddr *) &their_addr, &sin_size);
+		if (client_fd == -1) {
+			perror("accept");
+			continue;
+		}
+		inet_ntop(their_addr.ss_family,
+				get_in_addr((struct sockaddr *) &their_addr), s, sizeof s);
+		printf("server: got connection from %s\n", s);
+		if (!fork()) { // this is the child process
+			close(sockfd); // child doesn't need the listener
+			handle_client(client_fd);
+			close(client_fd);
+			//recv from client, now get a file from google
+			exit(0);
+		}
+		close(client_fd); // parent doesn't need this
+	}
+	return 0;
 }
 

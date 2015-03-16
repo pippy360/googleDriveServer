@@ -24,12 +24,12 @@ realtimePacketParser.o: httpProcessing/realtimePacketParser.c
 createHTTPHeader.o: httpProcessing/createHTTPHeader.c
 	gcc -c httpProcessing/createHTTPHeader.c
 	
-ftpServer.out: ftpServer.o ftp.o vfs.o
-	gcc ftpServer.o ftp.o -o ftpServer.out
+ftpServer.out: ftpServer.o ftp.o vfs.o networking.o connection.o
+	gcc ftpServer.o ftp.o vfs.o networking.o connection.o -lcrypto -lssl ./virtualFileSystem/hiredis/*.o -o ftpServer.out
 
 ftpServer.o: ftpServer.c
 	gcc -c ftpServer.c
-	
+
 ftp.o: ftp/ftp.c
 	gcc -c ftp/ftp.c
 	

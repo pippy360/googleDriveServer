@@ -63,7 +63,7 @@ void ftp_newClientState(ftpClientState_t *clientState, int command_fd,
 
 void openDataConnection(ftpClientState_t *clientState) {
 	char strBuf1[1000]; //FIXME: hardcoded
-	int tempSock = get_listening_socket("5000"); //FIXME: WHAT DO I DO WITH TEMPSOCK ?????
+	int tempSock = getListeningSocket("5000"); //FIXME: WHAT DO I DO WITH TEMPSOCK ?????
 	clientState->data_fd2 = tempSock;
 	int port = getPort(tempSock);
 	sprintf(strBuf1, "227 Entering Passive Mode (%s,%d,%d).\r\n", SEVER_IP_FTP,

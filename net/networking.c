@@ -34,6 +34,19 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+int getPort(int fd){
+    struct sockaddr_in sa;
+    int sa_len;
+    sa_len = sizeof(sa);
+    /* Ask getsockname to fill in this socket's local */
+    /* address. */
+    if (getsockname(fd, &sa, &sa_len) == -1) {
+        perror("getsockname() failed");
+        return -1;
+    }
+    return (int) ntohs(sa.sin_port);
+}
+
 int getListeningSocket(const char* port){
 
     int sockfd;

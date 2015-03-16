@@ -21,7 +21,7 @@ void vfs_connect(redisContext **c){
 
     struct timeval timeout = { 1, 500000 }; // 1.5 seconds
     *c = redisConnectWithTimeout(hostname, port, timeout);
-    if (*c == NULL || c->err) {
+    if (*c == NULL || (*c)->err) {
         if (*c) {
             printf("Connection error: %s\n", (*c)->errstr);
             redisFree(*c);

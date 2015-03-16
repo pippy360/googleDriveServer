@@ -123,9 +123,6 @@ int chunkData(const void *inputData, const int inputDataLength,
 	tempPtr += inputDataLength;
 	memcpy(tempPtr, "\r\n\0", strlen("\r\n") + 1);
 	tempPtr += strlen("\r\n");
-
-	printf("the input data length %d\n", inputDataLength);
-
 	return tempPtr - (const char *) outputBuffer;
 }
 
@@ -155,8 +152,7 @@ int startFileDownload(char *inputUrl, Connection_t *con,
 //returns the amount of data downloaded INCLUDING HEADER
 int updateFileDownload(Connection_t *con, headerInfo_t *outputHInfo,
 		parserState_t *outputParserState, char *outputBuffer,
-		int outputBufferMaxLength, int *outputBufferLength,
-		char *extraHeaders) {
+		int outputBufferMaxLength, int *outputBufferLength, char *extraHeaders) {
 
 	int received;
 	char packetBuffer[MAX_PACKET_SIZE];
@@ -169,7 +165,8 @@ int updateFileDownload(Connection_t *con, headerInfo_t *outputHInfo,
 	received = net_recv(con, packetBuffer, MAX_PACKET_SIZE);
 
 	process_data(packetBuffer, received, outputParserState, outputBuffer,
-			outputBufferMaxLength, outputBufferLength, packetEnd_s, outputHInfo);
+			outputBufferMaxLength, outputBufferLength, packetEnd_s,
+			outputHInfo);
 
 	return received;
 }
@@ -194,7 +191,6 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	char chunkBuffer[MAX_PACKET_SIZE];
 
 	accessTokenHeader = getAccessTokenHeader(tokenState);
-	printf("acctoken header %s\n", accessTokenHeader);
 	/* get the url and size of the file using the name given by the url */
 	getDownloadUrlAndSize(tokenState, hInfoClientRecv->urlBuffer + 1, &url,
 			&size);
@@ -207,7 +203,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	while (!parserStateGoogle_response.headerFullyParsed) {
 		updateFileDownload(&con, &hInfoGoogle_response,
 				&parserStateGoogle_response, dataBuffer, MAX_PACKET_SIZE,
-				 &outputBufferLength, accessTokenHeader);
+				&outputBufferLength, accessTokenHeader);
 	}
 
 	/* reply to the client about the file */
@@ -216,13 +212,15 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	hInfoGoogle_response.isRequest = 0;
 	hInfoGoogle_response.transferType = TRANSFER_CHUNKED;
 	createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, &hInfoGoogle_response,
-			NULL);
+	NULL);
 
 	net_send(clientCon, packetBuffer, strlen(packetBuffer));
 
 	/* continue downloading and passing data onto the client */
 
+	//FIXME:
 	//send any data that might have been in the packets we fetched to get the whole header
+
 	/* keep updating while update doesn't return 0*/
 	while (1) {
 		received = updateFileDownload(&con, &hInfoGoogle_response,
@@ -232,10 +230,10 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 			break;
 		}
 		//now decrypt that date and send it on to the client (just chunk it)
-		//flipBits(dataBuffer, received);
+		flipBits(dataBuffer, received);
+		//hm.......we need to decrypt the data here
+
 		chunkSize = chunkData(dataBuffer, outputBufferLength, chunkBuffer);
-		printf("the chunk size was %d\n", chunkSize);
-		printf("sending chunk --%s--\n", chunkBuffer);
 		if (net_send(clientCon, chunkBuffer, chunkSize) == -1) {
 			break;
 		}
@@ -243,7 +241,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	}
 
 	/*clean up everything not covered by finish file download*/
-    net_send(clientCon, "0\r\n\r\n", strlen("0\r\n\r\n"));
+	net_send(clientCon, "0\r\n\r\n", strlen("0\r\n\r\n"));
 	finishFileDownload();
 	net_close(&con);
 }
@@ -307,14 +305,14 @@ int main(int argc, char *argv[]) {
 				get_in_addr((struct sockaddr *) &their_addr), s, sizeof s);
 		printf("server: got connection from %s\n", s);
 
-//		if (!fork()) { // this is the child process
-		close(sockfd); // child doesn't need the listener
+		if (!fork()) { // this is the child process
+			close(sockfd); // child doesn't need the listener
 
-		handle_client(&stateStruct, client_fd);
+			handle_client(&stateStruct, client_fd);
 
-		close(client_fd);
-		exit(0);
-//		}
+			close(client_fd);
+			exit(0);
+		}
 		close(client_fd);  // parent doesn't need this
 	}
 

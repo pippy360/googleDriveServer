@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "netDefines.h"
+#include "../commonDefines.h"
 #include "googleUpload.h"
 
 #define HEADER 	\

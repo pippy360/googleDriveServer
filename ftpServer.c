@@ -77,7 +77,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	case REQUEST_PWD:
 		vfs_getFolderPathFromId(vfsContext, clientState->cwdId, tempBuffer,
 				1000);
-		sprintf(strBuf1, "257 %s\r\n", tempBuffer);
+		sprintf(strBuf1, "257 \"%s\"\r\n", tempBuffer);
 		sendFtpResponse(clientState, strBuf1);
 		break;
 	case REQUEST_TYPE:
@@ -111,8 +111,9 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		sendFtpResponse(clientState,
 				"150 Here comes the directory listing.\r\n");
 		int i = 0;
+		char *dirList = vfs_listUnixStyle(vfsContext, clientState->cwdId);
 
-		send(clientState->data_fd, EXAMPLE_DIR, strlen(EXAMPLE_DIR), 0);
+		send(clientState->data_fd, dirList, strlen(dirList), 0);
 
 		for (i = 0; i < 2000000; i++)
 			;
@@ -127,8 +128,14 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		sendFtpResponse(clientState, "226 Directory send OK.\r\n");
 		break;
 	case REQUEST_CWD:
-		if ((id = vfs_getIdFromPath(vfsContext, parserState->paramBuffer))
-				== -1) {
+		if (!strcmp(parserState->paramBuffer, "..")){
+			clientState->cwdId = vfs_getParent(vfsContext, clientState->cwdId);
+			sendFtpResponse(clientState,
+								"250 Directory successfully changed.\r\n"); //success
+		}else if ((id = vfs_getIdFromPath(vfsContext, parserState->paramBuffer)) == -1
+				&& (id = vfs_getIdFromRelPath(vfsContext, clientState->cwdId, parserState->paramBuffer))
+						== -1) {
+
 			sendFtpResponse(clientState, "550 Failed to change directory.\r\n");
 		} else {
 			clientState->cwdId = id;
@@ -195,7 +202,7 @@ void handle_client(int client_fd, AccessTokenState_t *stateStruct) {
 	ftp_newClientState(&clientState, client_fd, usernameBuffer, 100);
 	sent = send(client_fd, VALID_GREETING, strlen(VALID_GREETING), 0);
 	while (1) {
-		if((recieved = recv(client_fd, buffer, MAX_PACKET_SIZE, 0)) == 0){
+		if ((recieved = recv(client_fd, buffer, MAX_PACKET_SIZE, 0)) == 0) {
 			break;
 		}
 		printf("buffer: %.*s--\n", recieved, buffer);

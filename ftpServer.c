@@ -18,8 +18,6 @@
 #include "google/googleAccessToken.h"
 #include "google/googleUpload.h"
 
-#define EXAMPLE_DIR "-rw-rw-r--. 1 lilo lilo 100 Feb 26 07:08 file1\r\n"
-
 #define SERVER_LISTEN_PORT "25001"
 #define FILE_SERVER_URL "localhost"
 #define VALID_GREETING "220 fuck yeah you've connected ! what are you looking for...?\r\n"
@@ -28,7 +26,7 @@
 
 void openDataConnection(ftpClientState_t *clientState) {
 	char strBuf1[1000]; //FIXME: hardcoded
-	int tempSock = getListeningSocket("5000"); //FIXME: WHAT DO I DO WITH TEMPSOCK ?????
+	int tempSock = getListeningSocket("0"); //FIXME: WHAT DO I DO WITH TEMPSOCK ?????
 	clientState->data_fd2 = tempSock;
 	int port = getPort(tempSock);
 	sprintf(strBuf1, "227 Entering Passive Mode (%s,%d,%d).\r\n", SEVER_IP_FTP,
@@ -128,13 +126,14 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		sendFtpResponse(clientState, "226 Directory send OK.\r\n");
 		break;
 	case REQUEST_CWD:
-		if (!strcmp(parserState->paramBuffer, "..")){
+		if (!strcmp(parserState->paramBuffer, "..")) {
 			clientState->cwdId = vfs_getParent(vfsContext, clientState->cwdId);
 			sendFtpResponse(clientState,
-								"250 Directory successfully changed.\r\n"); //success
-		}else if ((id = vfs_getIdFromPath(vfsContext, parserState->paramBuffer)) == -1
-				&& (id = vfs_getIdFromRelPath(vfsContext, clientState->cwdId, parserState->paramBuffer))
-						== -1) {
+					"250 Directory successfully changed.\r\n"); //success
+		} else if ((id = vfs_getIdFromPath(vfsContext, parserState->paramBuffer))
+				== -1
+				&& (id = vfs_getIdFromRelPath(vfsContext, clientState->cwdId,
+						parserState->paramBuffer)) == -1) {
 
 			sendFtpResponse(clientState, "550 Failed to change directory.\r\n");
 		} else {
@@ -143,12 +142,18 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 					"250 Directory successfully changed.\r\n"); //success
 		}
 		break;
+	case REQUEST_MKD:
+		vfs_mkdir(vfsContext, clientState->cwdId, parserState->paramBuffer);
+		sendFtpResponse(clientState, "257 MKDIR done\r\n");
+		break;
 	case REQUEST_STOR:
 		//get the file name
 		printf("trying to store file %s\n", parserState->paramBuffer);
+		sprintf(strBuf1, "\"title\": \"%s\"", parserState->paramBuffer);
 
-		googleUpload_init(&googleCon, accessTokenState,
-				"\"title\": \"some_test_upload_file.txt\"", "video/webm");
+		//check if the name is valid and get it's type
+
+		googleUpload_init(&googleCon, accessTokenState, strBuf1, "image/png");
 
 		//FIXME: make sure we have a connection open
 		sprintf(strBuf1, "150 FILE: /%s\r\n", parserState->paramBuffer);
@@ -160,7 +165,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 			//printf("recv'd:--%.*s--\n", received, tempBuffer);
 		}
 		googleUpload_end(&googleCon);
-
+		vfs_createFile(vfsContext, clientState->cwdId, parserState->paramBuffer, 1000);
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
 
 		if (close(clientState->data_fd) != 0) {
@@ -216,6 +221,7 @@ void handle_client(int client_fd, AccessTokenState_t *stateStruct) {
 	close(client_fd);
 	printf("connection closed\n");
 }
+
 int main(int argc, char *argv[]) {
 	AccessTokenState_t stateStruct;
 	gat_init_googleAccessToken(&stateStruct);

@@ -174,6 +174,7 @@ int utils_createHTTPHeaderFromUrl(char *inputUrl, char *output,
 	return createHTTPHeader(output, maxOutputLen, hInfo, extraHeaders);
 }
 
+//gets the whole next http packet
 //FIXME: handle cases where the outputBuffer isn't big enough
 //returns the amount of data written to outputData
 int utils_recvNextHttpPacket(Connection_t *con, headerInfo_t *outputHInfo,

@@ -14,7 +14,6 @@
 #include "googleUpload.h"
 #include "../utils.h"
 
-
 //0 if success, -1 otherwise
 int googleUpload_init(Connection_t *con, AccessTokenState_t *accessTokenState,
 		char *metadata, char *contentType) {
@@ -22,12 +21,13 @@ int googleUpload_init(Connection_t *con, AccessTokenState_t *accessTokenState,
 	char header[MAX_PACKET_SIZE];
 	char extraHeaders[MAX_PACKET_SIZE];
 	char metadataBuff[MAX_PACKET_SIZE];
-	char postData[] = "--foo_bar_baz\nContent-Type: application/json; charset=UTF-8\n\n"
-			"{\n"
-			"%s\n"
-			"}\n"
-			"--foo_bar_baz\n"
-			"Content-Type: %s\n\n";
+	char postData[] =
+			"--foo_bar_baz\nContent-Type: application/json; charset=UTF-8\n\n"
+					"{\n"
+					"%s\n"
+					"}\n"
+					"--foo_bar_baz\n"
+					"Content-Type: %s\n\n";
 	headerInfo_t hInfo;
 	set_new_header_info(&hInfo);
 	hInfo.transferType = TRANSFER_CHUNKED;
@@ -40,9 +40,11 @@ int googleUpload_init(Connection_t *con, AccessTokenState_t *accessTokenState,
 	utils_connectByUrl("https://www.googleapis.com"
 			"/upload/drive/v2/files?uploadType=multipart", con);
 
-	utils_createHTTPHeaderFromUrl("https://www.googleapis.com"
-			"/upload/drive/v2/files?uploadType=multipart", header,
-			MAX_PACKET_SIZE, &hInfo, REQUEST_POST, extraHeaders);
+	utils_createHTTPHeaderFromUrl(
+			"https://www.googleapis.com"
+					"/upload/drive/v2/files?uploadType=multipart"
+					"&fields=title,fileSize,fileExtension,id,downloadUrl,webContentLink",
+			header, MAX_PACKET_SIZE, &hInfo, REQUEST_POST, extraHeaders);
 
 	char outputData[MAX_PACKET_SIZE];
 	int outputDataLength;
@@ -51,10 +53,10 @@ int googleUpload_init(Connection_t *con, AccessTokenState_t *accessTokenState,
 	//send the header
 	net_send(con, header, strlen(header));
 
-
 	//and the meta data
 	sprintf(metadataBuff, postData, metadata, contentType);
-	outputDataLength = utils_chunkData(metadataBuff, strlen(metadataBuff), outputData);
+	outputDataLength = utils_chunkData(metadataBuff, strlen(metadataBuff),
+			outputData);
 	net_send(con, outputData, outputDataLength);
 
 	return 0;
@@ -72,12 +74,21 @@ int googleUpload_update(Connection_t *con, char *dataBuffer, int dataLength) {
 int googleUpload_end(Connection_t *con) {
 	char endData[] = "\n--foo_bar_baz--";
 	char outputData[MAX_PACKET_SIZE];
-	int outputDataLength = utils_chunkData(endData, strlen(endData), outputData);
+	headerInfo_t hInfo;
+	int received;
+	int outputDataLength = utils_chunkData(endData, strlen(endData),
+			outputData);
 	net_send(con, outputData, outputDataLength);
-	net_send(con, "0\r\n\r\n", strlen("0\r\n\r\n"));
 	//send the last chunk
-	int r = net_recv(con, outputData, MAX_PACKET_SIZE);
-	printf("reply from google %.*s\n", r, outputData);
+	net_send(con, "0\r\n\r\n", strlen("0\r\n\r\n"));
+
+	//now get all the return data and store it in
+	//FIXME: this output buffer really isn't big enough
+	received = utils_recvNextHttpPacket(con, &hInfo, outputData, MAX_PACKET_SIZE);
+
+	//you have to save this data !!
+	printf("the id of the uploaded file is: %s\n", shitty_get_json_value("id", outputData, received));
+
 	return 0;
 }
 

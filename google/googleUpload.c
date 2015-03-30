@@ -17,14 +17,16 @@
 //0 if success, -1 otherwise
 int googleUpload_init(Connection_t *con, AccessTokenState_t *accessTokenState,
 		char *metadata, char *contentType) {
-	printf("segfault test 0\n");
 	char header[MAX_PACKET_SIZE];
 	char extraHeaders[MAX_PACKET_SIZE];
 	char metadataBuff[MAX_PACKET_SIZE];
 	char postData[] =
 			"--foo_bar_baz\nContent-Type: application/json; charset=UTF-8\n\n"
 					"{\n"
-					"%s\n"
+					"%s,\n"
+					"\"parents\":"
+					"[{\"id\":\"0B7_KKsaOads4fkUyYzluV2hWcm90SGxoaUxURGdXUkE0QUJDQnIwT1hzMVVZcDJNX2lCX2M\","
+					"\"kind\":\"drive#parentReference\"}]"
 					"}\n"
 					"--foo_bar_baz\n"
 					"Content-Type: %s\n\n";
@@ -71,7 +73,7 @@ int googleUpload_update(Connection_t *con, char *dataBuffer, int dataLength) {
 }
 
 //0 if success, -1 otherwise
-int googleUpload_end(Connection_t *con) {
+int googleUpload_end(Connection_t *con, GoogleUploadState_t *fileState) {
 	char endData[] = "\n--foo_bar_baz--";
 	char outputData[MAX_PACKET_SIZE];
 	headerInfo_t hInfo;
@@ -84,10 +86,15 @@ int googleUpload_end(Connection_t *con) {
 
 	//now get all the return data and store it in
 	//FIXME: this output buffer really isn't big enough
-	received = utils_recvNextHttpPacket(con, &hInfo, outputData, MAX_PACKET_SIZE);
+	received = utils_recvNextHttpPacket(con, &hInfo, outputData,
+			MAX_PACKET_SIZE);
 
 	//you have to save this data !!
-	printf("the id of the uploaded file is: %s\n", shitty_get_json_value("id", outputData, received));
+	printf("the id of the uploaded file is: %s\n",
+			shitty_get_json_value("id", outputData, received));
+	fileState->id = shitty_get_json_value("id", outputData, received);
+	fileState->webUrl = shitty_get_json_value("webContentLink", outputData,
+			received);
 
 	return 0;
 }

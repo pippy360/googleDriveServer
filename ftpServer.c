@@ -20,7 +20,7 @@
 
 #define SERVER_LISTEN_PORT "25001"
 #define FILE_SERVER_URL "localhost"
-#define VALID_GREETING "220 fuck yeah you've connected ! what are you looking for...?\r\n"
+#define VALID_GREETING "220 Hey\r\n"
 
 #define SEVER_IP_FTP "127,0,0,1"
 
@@ -51,6 +51,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	char tempBuffer[2000]; //FIXME: hardcoded
 	long id, fileSize;
 	int received;
+	GoogleUploadState_t fileState;
 	Connection_t googleCon;
 
 	switch (parserState->type) {
@@ -164,8 +165,10 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 			googleUpload_update(&googleCon, tempBuffer, received);
 			//printf("recv'd:--%.*s--\n", received, tempBuffer);
 		}
-		googleUpload_end(&googleCon);
-		vfs_createFile(vfsContext, clientState->cwdId, parserState->paramBuffer, 1000);
+
+		googleUpload_end(&googleCon, &fileState);
+		vfs_createFile(vfsContext, clientState->cwdId, parserState->paramBuffer,
+				1000, fileState.id, fileState.webUrl);
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
 
 		if (close(clientState->data_fd) != 0) {

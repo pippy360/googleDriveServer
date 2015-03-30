@@ -117,21 +117,24 @@ long vfs_getParent(redisContext *context, long cwdId) {
 	return newId;
 }
 
-void __createFile(redisContext *context, long id, char *name, long size) {
+void __createFile(redisContext *context, long id, char *name, long size,
+		char *googleId, char *webUrl) {
 	redisReply *reply;
-	reply = redisCommand(context,
-			"HMSET FILE_%lu_info name \"%s\" size \"%lu\" createdData \"%s\" ",
-			id, name, size, "march 7th");
+	reply =
+			redisCommand(context,
+					"HMSET FILE_%lu_info name \"%s\" size \"%lu\" createdData \"%s\" id \"%s\" webUrl \"%s\" ",
+					id, name, size, "march 7th", googleId, webUrl);
 	freeReplyObject(reply);
 }
 
-long vfs_createFile(redisContext *context, long parentId, char *name, long size) {
+long vfs_createFile(redisContext *context, long parentId, char *name, long size,
+		char *googleId, char *webUrl) {
 	//add it to the file list of the dir
 	long id = getNewId(context);
 	redisReply *reply;
 	reply = redisCommand(context, "LPUSH FOLDER_%lu_files %lu", parentId, id);
 	freeReplyObject(reply);
-	__createFile(context, id, name, size);
+	__createFile(context, id, name, size, googleId, webUrl);
 	return id;
 }
 
@@ -299,7 +302,7 @@ long vfs_getIdFromPath(redisContext *context, char *path) {
 	return resultId;
 }
 
-long vfs_getIdFromRelPath(redisContext *vfsContext, long cwdId, char *relPath){
+long vfs_getIdFromRelPath(redisContext *vfsContext, long cwdId, char *relPath) {
 
 	char newPath[10000];
 	char newPath2[10000];
@@ -328,8 +331,9 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 		for (j = 0; j < reply->elements; j++) {
 			id = strtol(reply->element[j]->str, NULL, 10);
 			vfs_getFolderName(context, id, name, MAX_FILENAME_SIZE);
-			sprintf(line+strlen(line), "%s   1 %s %s %10lu Jan  1  1980 %s\r\n", "drwxrwxr-x",
-						"linux", "linux", (long) 24001, name);
+			sprintf(line + strlen(line),
+					"%s   1 %s %s %10lu Jan  1  1980 %s\r\n", "drwxrwxr-x",
+					"linux", "linux", (long) 24001, name);
 		}
 	}
 	freeReplyObject(reply);
@@ -339,15 +343,15 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 		for (j = 0; j < reply->elements; j++) {
 			long id = strtol(reply->element[j]->str, NULL, 10);
 			vfs_getFileName(context, id, name, MAX_FILENAME_SIZE);
-			sprintf(line+strlen(line), "%s   1 %s %s %10lu Jan  1  1980 %s\r\n", "-rwxrwxr-x",
-						"linux", "linux", (long) 24001, name);
+			sprintf(line + strlen(line),
+					"%s   1 %s %s %10lu Jan  1  1980 %s\r\n", "-rwxrwxr-x",
+					"linux", "linux", (long) 24001, name);
 		}
 	}
 	freeReplyObject(reply);
 
 	return line;
 }
-
 /*
 int main(int argc, char const *argv[]) {
 	unsigned int j;
@@ -370,9 +374,11 @@ int main(int argc, char const *argv[]) {
 
 	vfs_buildDatabase(c);
 	long newDirId = vfs_mkdir(c, 0, "new folder");
-	long newFileId = vfs_createFile(c, newDirId, "a_new_file.webm", 1000);
+	long newFileId = vfs_createFile(c, newDirId, "a_new_file.webm", 1000,
+			"something", "www.something.com");
 	newDirId = vfs_mkdir(c, newDirId, "foldhere");
-	newFileId = vfs_createFile(c, newDirId, "far_down_file.webm", 1000);
+	newFileId = vfs_createFile(c, newDirId, "far_down_file.webm", 1000,
+			"something", "www.something.com");
 
 	vfs_ls(c, 0);
 	vfs_ls(c, 1);

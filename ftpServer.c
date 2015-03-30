@@ -18,6 +18,8 @@
 #include "google/googleAccessToken.h"
 #include "google/googleUpload.h"
 
+#include "fileTransfer.h"
+
 #define SERVER_LISTEN_PORT "25001"
 #define FILE_SERVER_URL "localhost"
 #define VALID_GREETING "220 Hey\r\n"
@@ -50,9 +52,11 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	char strBuf1[2000]; //FIXME: hardcoded
 	char tempBuffer[2000]; //FIXME: hardcoded
 	long id, fileSize;
-	int received;
+	int received, dataLength;
 	GoogleUploadState_t fileState;
 	Connection_t googleCon;
+	headerInfo_t hInfo;
+	parserState_t googleParserState;
 
 	switch (parserState->type) {
 	case REQUEST_USER:
@@ -177,6 +181,32 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		if (close(clientState->data_fd2) != 0) {
 			perror("close:");
 		}
+
+		break;
+	case REQUEST_RETR:
+		//FIXME: make sure we have a connection open
+
+		//send a get request to the and then continue the download
+		//take the download out to it's own file
+		id = vfs_getFileIdByName(vfsContext, clientState->cwdId,
+				parserState->paramBuffer);
+		vfs_getFileWebUrl(vfsContext, id, strBuf1, 2000);
+		printf("the url of the file they're looking for is: %s\n", strBuf1);
+
+		startFileDownload(strBuf1, &googleCon, &hInfo, &googleParserState, "");
+		sendFtpResponse(clientState, "150 about to send file\r\n");
+		while (1) {
+			received = updateFileDownload(&googleCon, &hInfo, &googleParserState,
+					tempBuffer, 2000, &dataLength, "");
+			if (received == 0) {
+				break;
+			}
+			send(clientState->data_fd, tempBuffer, dataLength, 0);
+		}
+
+		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
+
+		//FIXME: finishFileDownload();
 
 		break;
 	default:

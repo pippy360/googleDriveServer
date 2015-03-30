@@ -83,6 +83,15 @@ void vfs_getFileName(redisContext *context, long id, char *outputNameBuffer,
 	freeReplyObject(reply);
 }
 
+void vfs_getFileWebUrl(redisContext *context, long id, char *outputNameBuffer,
+		int outputNameBufferLength) {
+	redisReply *reply;
+	reply = redisCommand(context, "HGET FILE_%lu_info webUrl", id);
+	sprintf(outputNameBuffer, "%.*s", (int) strlen(reply->str) - 2,
+			reply->str + 1);
+	freeReplyObject(reply);
+}
+
 long vfs_getFileSizeFromId(redisContext *context, long id) {
 	redisReply *reply;
 	reply = redisCommand(context, "HGET FILE_%lu_info size", id);

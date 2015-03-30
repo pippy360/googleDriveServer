@@ -1,7 +1,7 @@
-all: server.out ftpServer.out
+all: httpServer.out ftpServer.out
 
-server.out: connection.o networking.o googleAccessToken.o utils.o server.o realtimePacketParser.o createHTTPHeader.o
-	gcc realtimePacketParser.o connection.o googleAccessToken.o server.o createHTTPHeader.o utils.o networking.o -lssl -lcrypto -g -o server.out
+httpServer.out: fileTransfer.o connection.o networking.o googleAccessToken.o utils.o httpServer.o realtimePacketParser.o createHTTPHeader.o
+	gcc realtimePacketParser.o fileTransfer.o connection.o googleAccessToken.o httpServer.o createHTTPHeader.o utils.o networking.o -lssl -lcrypto -g -o httpServer.out
 
 networking.o: net/networking.c
 	gcc -c net/networking.c
@@ -9,8 +9,11 @@ networking.o: net/networking.c
 connection.o: net/connection.c
 	gcc -c net/connection.c
 
-server.o: server.c
-	gcc -c server.c
+httpServer.o: httpServer.c
+	gcc -c httpServer.c
+
+fileTransfer.o: fileTransfer.c
+	gcc -c fileTransfer.c
 
 googleAccessToken.o: google/googleAccessToken.c
 	gcc -c google/googleAccessToken.c
@@ -24,8 +27,8 @@ realtimePacketParser.o: httpProcessing/realtimePacketParser.c
 createHTTPHeader.o: httpProcessing/createHTTPHeader.c
 	gcc -c httpProcessing/createHTTPHeader.c
 	
-ftpServer.out: ftpServer.o createHTTPHeader.o ftpParser.o googleUpload.o realtimePacketParser.o ftp.o vfs.o networking.o utils.o connection.o googleAccessToken.o
-	gcc ftpServer.o googleUpload.o createHTTPHeader.o realtimePacketParser.o googleAccessToken.o ftp.o ftpParser.o vfs.o utils.o networking.o connection.o -lcrypto -lssl ./virtualFileSystem/hiredis/*.o -o ftpServer.out
+ftpServer.out: ftpServer.o createHTTPHeader.o fileTransfer.o ftpParser.o googleUpload.o realtimePacketParser.o ftp.o vfs.o networking.o utils.o connection.o googleAccessToken.o
+	gcc ftpServer.o googleUpload.o createHTTPHeader.o fileTransfer.o realtimePacketParser.o googleAccessToken.o ftp.o ftpParser.o vfs.o utils.o networking.o connection.o -lcrypto -lssl ./virtualFileSystem/hiredis/*.o -o ftpServer.out
 
 ftpServer.o: ftpServer.c
 	gcc -c ftpServer.c

@@ -60,7 +60,6 @@ int updateFileDownload(Connection_t *con, headerInfo_t *outputHInfo,
 	process_data(packetBuffer, received, outputParserState, outputBuffer,
 			outputBufferMaxLength, outputBufferLength, packetEnd_s,
 			outputHInfo);
-	printf("part of the reply: --%s--", outputBuffer);
 	return received;
 }
 

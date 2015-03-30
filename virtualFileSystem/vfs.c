@@ -83,10 +83,11 @@ void vfs_getFileName(redisContext *context, long id, char *outputNameBuffer,
 	freeReplyObject(reply);
 }
 
+//FIXME: FIXME: temporary fix here, change APIURL TO WEBURL
 void vfs_getFileWebUrl(redisContext *context, long id, char *outputNameBuffer,
 		int outputNameBufferLength) {
 	redisReply *reply;
-	reply = redisCommand(context, "HGET FILE_%lu_info webUrl", id);
+	reply = redisCommand(context, "HGET FILE_%lu_info apiUrl", id);
 	sprintf(outputNameBuffer, "%.*s", (int) strlen(reply->str) - 2,
 			reply->str + 1);
 	freeReplyObject(reply);
@@ -127,23 +128,23 @@ long vfs_getParent(redisContext *context, long cwdId) {
 }
 
 void __createFile(redisContext *context, long id, char *name, long size,
-		char *googleId, char *webUrl) {
+		char *googleId, char *webUrl, char *apiUrl) {
 	redisReply *reply;
 	reply =
 			redisCommand(context,
-					"HMSET FILE_%lu_info name \"%s\" size \"%lu\" createdData \"%s\" id \"%s\" webUrl \"%s\" ",
-					id, name, size, "march 7th", googleId, webUrl);
+					"HMSET FILE_%lu_info name \"%s\" size \"%lu\" createdData \"%s\" id \"%s\" webUrl \"%s\" apiUrl \"%s\" ",
+					id, name, size, "march 7th", googleId, webUrl, apiUrl);
 	freeReplyObject(reply);
 }
 
 long vfs_createFile(redisContext *context, long parentId, char *name, long size,
-		char *googleId, char *webUrl) {
+		char *googleId, char *webUrl, char *apiUrl) {
 	//add it to the file list of the dir
 	long id = getNewId(context);
 	redisReply *reply;
 	reply = redisCommand(context, "LPUSH FOLDER_%lu_files %lu", parentId, id);
 	freeReplyObject(reply);
-	__createFile(context, id, name, size, googleId, webUrl);
+	__createFile(context, id, name, size, googleId, webUrl, apiUrl);
 	return id;
 }
 
@@ -382,29 +383,29 @@ int main(int argc, char const *argv[]) {
 	}
 
 	vfs_buildDatabase(c);
-	long newDirId = vfs_mkdir(c, 0, "new folder");
-	long newFileId = vfs_createFile(c, newDirId, "a_new_file.webm", 1000,
-			"something", "www.something.com");
-	newDirId = vfs_mkdir(c, newDirId, "foldhere");
-	newFileId = vfs_createFile(c, newDirId, "far_down_file.webm", 1000,
-			"something", "www.something.com");
-
-	vfs_ls(c, 0);
-	vfs_ls(c, 1);
-	vfs_ls(c, 3);
-	signed long tempId;
-	tempId = vfs_getIdFromPath(c, "/");
-	printf("idFromPath: %s, id: %ld\n", "/", tempId);
-	char buffer[10000];
-	vfs_getFolderPathFromId(c, (long) 0, buffer, 10000);
-	printf("FolderPathFromId: %lu , path: \"%s\"\n", (long) 0, buffer);
-	//pretty print the files and folders
-	//list the parts !!
-	printf("calling pwd now\n");
-	printf("%s", vfs_listUnixStyle(c, 0));
-	vfs_ls(c, newDirId);
-	long newIdS = vfs_getIdFromRelPath(c, 1, "foldhere");
-	printf("%lu\n", newIdS);
+//	long newDirId = vfs_mkdir(c, 0, "new folder");
+//	long newFileId = vfs_createFile(c, newDirId, "a_new_file.webm", 1000,
+//			"something", "www.something.com", "");
+//	newDirId = vfs_mkdir(c, newDirId, "foldhere");
+//	newFileId = vfs_createFile(c, newDirId, "far_down_file.webm", 1000,
+//			"something", "www.something.com", "");
+//
+//	vfs_ls(c, 0);
+//	vfs_ls(c, 1);
+//	vfs_ls(c, 3);
+//	signed long tempId;
+//	tempId = vfs_getIdFromPath(c, "/");
+//	printf("idFromPath: %s, id: %ld\n", "/", tempId);
+//	char buffer[10000];
+//	vfs_getFolderPathFromId(c, (long) 0, buffer, 10000);
+//	printf("FolderPathFromId: %lu , path: \"%s\"\n", (long) 0, buffer);
+//	//pretty print the files and folders
+//	//list the parts !!
+//	printf("calling pwd now\n");
+//	printf("%s", vfs_listUnixStyle(c, 0));
+//	vfs_ls(c, newDirId);
+//	long newIdS = vfs_getIdFromRelPath(c, 1, "foldhere");
+//	printf("%lu\n", newIdS);
 	return 0;
 }
 */

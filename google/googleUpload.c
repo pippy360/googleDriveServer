@@ -95,6 +95,8 @@ int googleUpload_end(Connection_t *con, GoogleUploadState_t *fileState) {
 	fileState->id = shitty_get_json_value("id", outputData, received);
 	fileState->webUrl = shitty_get_json_value("webContentLink", outputData,
 			received);
+	fileState->apiUrl = shitty_get_json_value("downloadUrl", outputData,
+			received);
 
 	return 0;
 }

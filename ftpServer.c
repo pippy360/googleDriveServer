@@ -19,12 +19,22 @@
 #include "google/googleUpload.h"
 
 #include "fileTransfer.h"
+#include "utils.h"
 
 #define SERVER_LISTEN_PORT "25001"
 #define FILE_SERVER_URL "localhost"
 #define VALID_GREETING "220 Hey\r\n"
 
 #define SEVER_IP_FTP "127,0,0,1"
+
+
+void flipBits(void* packetData, int size) {
+	char* b = packetData;
+	int i;
+	for (i = 0; i < size; ++i) {
+		b[i] = ~(b[i]);
+	}
+}
 
 void openDataConnection(ftpClientState_t *clientState) {
 	char strBuf1[1000]; //FIXME: hardcoded
@@ -154,7 +164,8 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	case REQUEST_STOR:
 		//get the file name
 		printf("trying to store file %s\n", parserState->paramBuffer);
-		sprintf(strBuf1, "\"title\": \"%s\"", parserState->paramBuffer);
+		//sprintf(strBuf1, "\"title\": \"%s\"", parserState->paramBuffer);
+		sprintf(strBuf1, "\"title\": \"%s\"", "nuffin.bin");
 
 		//check if the name is valid and get it's type
 
@@ -166,13 +177,14 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 
 		//alright start reading in the file
 		while ((received = recv(clientState->data_fd, tempBuffer, 1800, 0)) > 0) {
+			flipBits(tempBuffer, received);
 			googleUpload_update(&googleCon, tempBuffer, received);
 			//printf("recv'd:--%.*s--\n", received, tempBuffer);
 		}
 
 		googleUpload_end(&googleCon, &fileState);
 		vfs_createFile(vfsContext, clientState->cwdId, parserState->paramBuffer,
-				1000, fileState.id, fileState.webUrl);
+				1000, fileState.id, fileState.webUrl, fileState.apiUrl);
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
 
 		if (close(clientState->data_fd) != 0) {
@@ -193,19 +205,26 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		vfs_getFileWebUrl(vfsContext, id, strBuf1, 2000);
 		printf("the url of the file they're looking for is: %s\n", strBuf1);
 
-		startFileDownload(strBuf1, &googleCon, &hInfo, &googleParserState, "");
+		startFileDownload(strBuf1, &googleCon, &hInfo, &googleParserState,
+				getAccessTokenHeader(accessTokenState));
 		sendFtpResponse(clientState, "150 about to send file\r\n");
 		while (1) {
-			received = updateFileDownload(&googleCon, &hInfo, &googleParserState,
-					tempBuffer, 2000, &dataLength, "");
+			received = updateFileDownload(&googleCon, &hInfo,
+					&googleParserState, tempBuffer, 2000, &dataLength, "");
 			if (received == 0) {
 				break;
 			}
+			flipBits(tempBuffer, dataLength);
 			send(clientState->data_fd, tempBuffer, dataLength, 0);
 		}
 
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
-
+		if (close(clientState->data_fd) != 0) {
+			perror("close:");
+		}
+		if (close(clientState->data_fd2) != 0) {
+			perror("close:");
+		}
 		//FIXME: finishFileDownload();
 
 		break;

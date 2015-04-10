@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <openssl/conf.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
@@ -15,15 +16,15 @@ void init_opensll() {
 //saltBuffer MUST BE 8 bytes
 //the input buffer doesn't have to have any data in it, it can be null
 //returns 0 if success, -1 otherwise
-int startEncryption(CryptoState_t *state, char *password, char *saltBuffer,
-		const char *inputBuffer, const int inputBufferSize, char *outputBuffer,
-		int *outputDataSize) {
+
+//control
+int startEncryption(CryptoState_t *state, char *password) {
 
 	int encLen = 0;
 
 	/* get the key, iv and salt*/
-	saltBuffer[2] = 'a';//randomly gen a salt, TODO:
-	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), saltBuffer, password,
+	state->salt[2] = 'a'; //randomly gen a salt, TODO:
+	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), state->salt, password,
 			strlen(password), 4, state->key, state->iv);
 
 	if (!(state->ctx = EVP_CIPHER_CTX_new()))
@@ -33,16 +34,7 @@ int startEncryption(CryptoState_t *state, char *password, char *saltBuffer,
 			state->iv) != 1)
 		return -1;
 
-	/* copy the salt to the outputBuffer and then encrypt any data in the inputBuffer */
-	memcpy(outputBuffer, saltBuffer, 8);
-	*outputDataSize = 8;
-	if(inputBufferSize > 0){
-		if (EVP_EncryptUpdate(state->ctx, outputBuffer+8, &encLen, inputBuffer,
-				inputBufferSize) != 1)
-			return -1;
-
-		*outputDataSize += encLen;
-	}
+	//TODO: FIXME: COPY STUFF TO THE CONTROL BUFFER
 	return 0;
 }
 
@@ -51,7 +43,7 @@ int updateEncryption(CryptoState_t *state, const char *inputBuffer,
 		const int inputBufferSize, char *outputBuffer, int *outputDataSize) {
 
 	if (EVP_EncryptUpdate(state->ctx, outputBuffer, outputDataSize, inputBuffer,
-			inputBufferSize) != 1){
+			inputBufferSize) != 1) {
 		return -1;
 	}
 
@@ -64,15 +56,16 @@ int finishEncryption(CryptoState_t *state, const char *inputBuffer,
 
 	int dataSentSoFar = 0, tempint;
 	//update one last time
-	if(inputBufferSize > 0){
-		if (EVP_EncryptUpdate(state->ctx, outputBuffer, &dataSentSoFar, inputBuffer,
-				inputBufferSize) != 1){
+	if (inputBufferSize > 0) {
+		if (EVP_EncryptUpdate(state->ctx, outputBuffer, &dataSentSoFar,
+				inputBuffer, inputBufferSize) != 1) {
 			printf("error\n");
 			return -1;
 		}
 	}
 
-	if (EVP_EncryptFinal_ex(state->ctx, outputBuffer+dataSentSoFar, &tempint) != 1)
+	if (EVP_EncryptFinal_ex(state->ctx, outputBuffer + dataSentSoFar, &tempint)
+			!= 1)
 		return -1;
 
 	printf("final called: %d\n", tempint);
@@ -84,10 +77,11 @@ int finishEncryption(CryptoState_t *state, const char *inputBuffer,
 }
 
 //0 if success, -1 otherwise
-int startDecryption(CryptoState_t *state, char *password, char *salt,
-		long byteStart, long byteEnd) {
 
-	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), salt, password,
+int startDecryption(CryptoState_t *state, char *password, char *iv, char *salt) {
+
+	//check if the char *iv is null, do something
+	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), controlBuffer, password,
 			strlen(password), 4, state->key, state->iv);
 
 	if (!(state->ctx = EVP_CIPHER_CTX_new()))
@@ -96,7 +90,6 @@ int startDecryption(CryptoState_t *state, char *password, char *salt,
 	if (EVP_DecryptInit_ex(state->ctx, EVP_aes_128_cbc(), NULL, state->key,
 			state->iv) != 1)
 		return -1;
-
 
 	return 0;
 }
@@ -118,9 +111,9 @@ int finishDecryption(CryptoState_t *state, const char *inputBuffer,
 
 	int dataSentSoFar = 0, tempint;
 	//update one last time
-	if(inputBufferSize > 0){
-		if (EVP_DecryptUpdate(state->ctx, outputBuffer, &dataSentSoFar, inputBuffer,
-				inputBufferSize) != 1)
+	if (inputBufferSize > 0) {
+		if (EVP_DecryptUpdate(state->ctx, outputBuffer, &dataSentSoFar,
+				inputBuffer, inputBufferSize) != 1)
 			return -1;
 	}
 
@@ -148,38 +141,25 @@ int main(int argc, char **argv) {
 	char stuffToEn[] = "0";
 	char stuffToEn2[] = "mine";
 	char stuffToEn3[] = "time";
-	char password[]  = "password";
+	char password[] = "password";
 
-	int returnCode;
-	returnCode = startEncryption(enState, password, saltBuff, stuffToEn3, 0, encStuff, &outputLen);
-	printf("the return code for start: %d and currPos: %d\n", returnCode, outputLen);
+	char ch;
+	FILE *txtFp, *cryptoFp;
 
+	txtFp = fopen("partialTest.txt", "r");
+	cryptoFp = fopen("crypto.txt", "w+");
 
-	returnCode = updateEncryption(enState, stuffToEn, strlen(stuffToEn), encStuff+8,
-			&outputLen);
-	currEnPos += outputLen;
-	printf("the return code: %d and currPos: %d\n", returnCode, currEnPos);
+	if (txtFp == NULL && cryptoFp == NULL) {
+		perror("Error while opening the file.\n");
+		exit(EXIT_FAILURE);
+	}
 
-	returnCode = updateEncryption(enState, stuffToEn2, strlen(stuffToEn2), encStuff+8 + currEnPos,
-			&outputLen);
-	currEnPos += outputLen;
-	printf("the return code: %d and currPos: %d\n", returnCode, currEnPos);
+	//read in 100 bytes or
+	fread(NULL, 100, 1, txtFp);
+	fwrite(NULL, 1000, 1, cryptoFp);
 
-	returnCode = finishEncryption(enState, stuffToEn3, 0, encStuff+8 + currEnPos,
-			&outputLen);
-	currEnPos += outputLen;
-	printf("the return code: %d and currPos: %d\n", returnCode, currEnPos);
-
-	/*      decryption         */
-	currDaPos = 0;
-	startDecryption(deState, password, saltBuff, 0, 0);
-	updateDecryption(deState, encStuff+8, currEnPos, final, &outputLen);
-	currDaPos += outputLen;
-	printf("outputLen after first dec update: %d\n", outputLen);
-	finishDecryption(deState, NULL, 0, final + outputLen,
-			&outputLen);
-	currDaPos += outputLen;
-	printf("outputLen after final dec update: %d\n", outputLen);
-	printf("final is: %.*s\n", currDaPos, final);
+	fclose(cryptoFp);
+	fclose(txtFp);
+	return 0;
 }
 

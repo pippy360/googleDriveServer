@@ -22,10 +22,11 @@ void init_opensll() {
 //must be at the start of file
 int startEncryption(CryptoState_t *state, char *password) {
 
+	int encLen = 0;
+
 	/* get the key, iv and salt*/
-	char salt[] = "12345678"; //randomly gen a salt, TODO:
-	memcpy(state->salt, salt, 8);
-	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), salt, password,
+	state->salt[2] = 'a'; //randomly gen a salt, TODO:
+	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), state->salt, password,
 			strlen(password), 4, state->key, state->iv);
 
 	if (!(state->ctx = EVP_CIPHER_CTX_new()))
@@ -77,11 +78,8 @@ int finishEncryption(CryptoState_t *state, const char *inputBuffer,
 
 //0 if success, -1 otherwise
 
-int startDecryption(CryptoState_t *state, char *password, char *iv) {
+int startDecryption(CryptoState_t *state, char *password, char *iv, char *salt) {
 
-	/* get the key, iv and salt*/
-	char salt[] = "12345678"; //randomly gen a salt, TODO:
-	memcpy(state->salt, salt, 8);
 	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), salt, password,
 			strlen(password), 4, state->key, state->iv);
 
@@ -95,7 +93,8 @@ int startDecryption(CryptoState_t *state, char *password, char *iv) {
 	if (!(state->ctx = EVP_CIPHER_CTX_new()))
 		return -1;
 
-	if (EVP_DecryptInit_ex(state->ctx, EVP_aes_128_cbc(), NULL, state->key, state->iv) != 1)
+	if (EVP_DecryptInit_ex(state->ctx, EVP_aes_128_cbc(), NULL, state->key,
+			iv) != 1)
 		return -1;
 
 	//printf("Key: %s iv: %s\n", state->key, state->iv);
@@ -145,12 +144,16 @@ int main(int argc, char **argv) {
 	char saltBuff[8];
 	char encStuff[20000];
 	char final[2000];
+	int currDaPos = 0;
+	int currEnPos = 0;
 	int outputLen;
+	char stuffToEn[] = "0";
+	char stuffToEn2[] = "mine";
+	char stuffToEn3[] = "time";
 	char password[] = "password";
 
 	char ch;
 	char readBuffer[1000];
-//	char readBuffer[] = "tom was here doing this and i'm ok with it test test stes test est est ";
 	char cryptoBuffer[1000];
 	FILE *txtFp, *cryptoFp;
 
@@ -163,9 +166,10 @@ int main(int argc, char **argv) {
 	}
 
 	//read in 100 bytes or
-	int readSize = 1000;
+	int readSize = 1;
 	int cryptoSize = 0;
 	fread(readBuffer, readSize, 1, txtFp);
+	printf("read in %s\n", readBuffer);
 
 	startEncryption(enState, "phone");
 
@@ -175,44 +179,29 @@ int main(int argc, char **argv) {
 	finishEncryption(enState, NULL, 0, cryptoBuffer+outputLen, &outputLen);
 	cryptoSize += outputLen;
 
-	cryptoFp = fopen("crypto.txt", "w+");
 	fwrite(cryptoBuffer, cryptoSize, 1, cryptoFp);
+	printf("the size of the crypto %d\n", cryptoSize);
 
 	fclose(cryptoFp);
 	fclose(txtFp);
 
-	/*^ done*/
 
-	int startPos = 30;
-	int endPos   = 100;
-	int blockSize = 16;
-
-	int actStart 	=  startPos - (startPos%blockSize);
-	int actEnd 		=  (endPos%blockSize == 0)? endPos: endPos + (blockSize - (endPos%blockSize));
-	int newReadSize  	= (actEnd - actStart);
-
-	printf("start: %d, end: %d\n", actStart, actEnd);
-
-	char inputBuffer[1000];
-	char outputBuffer[1000];
 
 	txtFp = fopen("crypto.txt", "r");
-	fseek( txtFp, (long) (actStart - blockSize), SEEK_SET );
-	fread(inputBuffer, newReadSize, 1, txtFp);
+	fread(readBuffer, cryptoSize, 1, txtFp);
 
-	if(actStart <= 0){
-		startDecryption(deState, "phone", NULL);
-	}else{
-		startDecryption(deState, "phone", inputBuffer );
-	}
+	startDecryption(deState, "phone", enState->iv, enState->salt);
+	int returnCode = updateDecryption(deState, readBuffer, cryptoSize, cryptoBuffer, &outputLen);
+	printf("de first %d, return code %d\n", outputLen, returnCode );
 
-	updateDecryption(deState, inputBuffer + blockSize, newReadSize - blockSize, outputBuffer, &outputLen);
+//	returnCode = updateDecryption(deState, readBuffer+100, cryptoSize, cryptoBuffer+outputLen, &outputLen);
+//	cryptoSize += outputLen;
+//	printf("cur1 %d, return code %d\n", outputLen, returnCode );
 
-	finishDecryption(deState, NULL, 0, cryptoBuffer+outputLen, &outputLen);
+	returnCode = finishDecryption(deState, NULL, 0, cryptoBuffer+outputLen, &outputLen);
+	printf("de second %d, return code %d\n", outputLen, returnCode );
 
-	printf("final result: %s\n", outputBuffer+(startPos-actStart));
-
-	//printf("readBuffer of size %d: %.*s\n", cryptoSize, outputLen, readBuffer);
+	printf("readBuffer of size %d: %.*s\n", cryptoSize, outputLen, readBuffer);
 	return 0;
 }
 

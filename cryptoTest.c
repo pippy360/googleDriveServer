@@ -91,37 +91,40 @@ int main(int argc, char **argv) {
 
 	EVP_CIPHER_CTX *ctx;
 	char key[32];
-	char iv[16];
+	char iv[16] = "";
 
 	int  someint, newSomeInt;
 	char server[10000];
-	char password[]  = "hang on a second here";
-	char plainText[] =
-			"sosdafsdafsdafdsafdsafds-----------------------------------afsdaf_";
-
+	char password[]  = "phone";
+	char plainText[] = "0123456789012345";
+//	char plainText[] = "sosdafsdafsdafdsafdsafdssss-----------------------------------afsdaf_";
 	/* Initialise the library */
 	ERR_load_crypto_strings();
 	OpenSSL_add_all_algorithms();
 	OPENSSL_config(NULL);
 
-	EVP_BytesToKey(EVP_aes_128_xts(), EVP_sha1(), "12345678", password,
-			strlen(password), 4, key, iv);
+	EVP_BytesToKey(EVP_aes_128_xts(), EVP_sha1(), "12345678", "phone",
+				strlen("phone"), 4, key, iv);
+	ctx = EVP_CIPHER_CTX_new();
+	EVP_EncryptInit_ex(ctx, EVP_aes_128_xts(), NULL, key, iv);
 
-	if (!(ctx = EVP_CIPHER_CTX_new()))
-		printf("error\n");
+	//check if key and iv match
+	printf("key: --%.*s--\n", 32, key);
+	printf("iv : --%.*s--\n", 16, iv );
 
-	if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_128_xts(), NULL, key, iv))
-		printf("error\n");
+	EVP_EncryptUpdate(ctx, server, &someint, plainText,
+					strlen(plainText)+1);
 
-	if (1
-			!= EVP_EncryptUpdate(ctx, server, &someint, plainText,
-					strlen(plainText)))
-		printf("error\n");
+	printf("after first update: %s\n", server);
+	printf("stats after first, offset: %d\n", someint);
 
 	if (1 != EVP_EncryptFinal_ex(ctx, server + someint, &newSomeInt))
 		printf("error\n");
+
 	printf("final called, value is: %d\n", newSomeInt);
 	someint += newSomeInt;
+
+	printf("after final update: %s\n", server);
 
 	/* Clean up */
 	EVP_CIPHER_CTX_free(ctx);
@@ -136,18 +139,12 @@ int main(int argc, char **argv) {
 	char output[10000];
 	int cryptoLen, newCryptoLen;
 
-	if (!(ctxNew = EVP_CIPHER_CTX_new()))
-		handleErrors();
+	ctxNew = EVP_CIPHER_CTX_new();
+	EVP_DecryptInit_ex(ctxNew, EVP_aes_128_xts(), NULL, key, iv);
 
-	if (1 != EVP_DecryptInit_ex(ctxNew, EVP_aes_128_xts(), NULL, key, iv))
-		handleErrors();
+	EVP_DecryptUpdate(ctx, output, &cryptoLen, server, someint);
 
-	if (1 != EVP_DecryptUpdate(ctx, output, &cryptoLen, server, someint))
-		handleErrors();
-
-
-	if (1 != EVP_DecryptFinal_ex(ctx, output + cryptoLen, &newCryptoLen))
-		handleErrors();
+	EVP_DecryptFinal_ex(ctx, output + cryptoLen, &newCryptoLen);
 
 	cryptoLen += newCryptoLen;
 

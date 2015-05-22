@@ -125,7 +125,9 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	char chunkBuffer[MAX_PACKET_SIZE];
 
 	accessTokenHeader = getAccessTokenHeader(tokenState);
+
 	/* get the url and size of the file using the name given by the url */
+
 	getDownloadUrlAndSize(tokenState, hInfoClientRecv->urlBuffer + 1, &url,
 			&size);
 	printf("File found, size: %s, url: %s\n", size, url);
@@ -194,6 +196,8 @@ void handle_client(AccessTokenState_t *stateStruct, int client_fd) {
 
 	getHeader(&httpCon, &parserStateClientRecv, outputDataBuffer,
 	MAXDATASIZE, &outputDataLength, &hInfoClientRecv);
+
+	printf("packet received from client: --%s--\n\n", outputDataBuffer);
 
 	/* check what the client wants by checking the URL*/
 	if (!strncmp(hInfoClientRecv.urlBuffer, "/pull/", strlen("/pull/"))) {

@@ -1,4 +1,5 @@
-int startFileDownload(char *inputUrl, Connection_t *con,
+int startFileDownload(char *inputUrl, char isRangedRequest, char isPartialRange,
+		long startRange, long endRange, Connection_t *con,
 		headerInfo_t *outputHInfo, parserState_t *outputParserState,
 		char *extraHeaders);
 

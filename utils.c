@@ -167,9 +167,6 @@ int utils_createHTTPHeaderFromUrl(char *inputUrl, char *output,
 		int maxOutputLen, headerInfo_t *hInfo,
 		const httpRequestTypes_t requestType, char *extraHeaders) {
 
-	printf("some\n");
-	hInfo->hostBuffer[1] = 'l';
-	printf("thing\n");
 	utils_setHInfoFromUrl(inputUrl, hInfo, requestType, extraHeaders);
 	return createHTTPHeader(output, maxOutputLen, hInfo, extraHeaders);
 }

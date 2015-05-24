@@ -22,8 +22,8 @@
 //this will download the full header
 //send the request to google to get the file
 int startFileDownload(char *inputUrl, char isRangedRequest, char isPartialRange,
-		long startRange, long endRange,
-		Connection_t *con, headerInfo_t *outputHInfo, parserState_t *outputParserState,
+		long startRange, long endRange, Connection_t *con,
+		headerInfo_t *outputHInfo, parserState_t *outputParserState,
 		char *extraHeaders) {
 
 	char packetBuffer[MAX_PACKET_SIZE];    //reused quite a bit
@@ -33,8 +33,14 @@ int startFileDownload(char *inputUrl, char isRangedRequest, char isPartialRange,
 	set_new_parser_state_struct(outputParserState);
 	/*create the header*/
 
-	utils_createHTTPHeaderFromUrl(inputUrl, packetBuffer, MAX_PACKET_SIZE,
-			outputHInfo, REQUEST_GET, extraHeaders);
+	utils_setHInfoFromUrl(inputUrl, outputHInfo, REQUEST_GET, extraHeaders);
+
+	outputHInfo->isRange = isRangedRequest;
+	outputHInfo->getContentRangeStart = startRange;
+	outputHInfo->getContentRangeEnd   = endRange;
+	outputHInfo->getEndRangeSet       = isPartialRange? 0: 1;
+
+	createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, outputHInfo, extraHeaders);
 
 	utils_connectByUrl(inputUrl, con);
 	net_send(con, packetBuffer, strlen(packetBuffer));

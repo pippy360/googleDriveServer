@@ -25,6 +25,7 @@
 #include "google/googleAccessToken.h"
 #include "utils.h"
 #include "fileTransfer.h"
+#include "crypt.h"
 //#include "googleUpload.h"
 //#include "parser.h"
 
@@ -115,7 +116,6 @@ void converFromRangedToContentLength(headerInfo_t *hInfo, long fileSize) {
 	}
 }
 
-
 //the header has already been parsed by this point, hence we need to pass in output data
 void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 		parserState_t *parserState, headerInfo_t *hInfoClientRecv,
@@ -129,7 +129,8 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	char packetBuffer[MAX_PACKET_SIZE];
 	char dataBuffer[MAX_PACKET_SIZE];
 	char chunkBuffer[MAX_PACKET_SIZE];
-
+	char isPartial, isRanged;
+	int startRange, endRange;
 
 	/* get the url and size of the file using the name given by the url */
 
@@ -138,23 +139,18 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	printf("File found, size: %s, url: %s\n", size, url);
 
 	accessTokenHeaders = getAccessTokenHeader(tokenState);
-	if(hInfoClientRecv->isRange){//TODO: CHECK IF IT'S RANGED
-		//TODO: set the ranges
-		int isRanged = 0;
-		if(hInfoClientRecv->getEndRangeSet){
-			int isPartial = 0;
-		}else{
-			int isPartial = 1;
-		}
-	}else{
-		int isRanged = 0;
-	}
 
 	//FIXME: here you'll need to recalc the start and end range to fit the crypto stuff
+	//FIXME: REMEMBER the encrypted file will be bigger than the unencrypted one
 	//FIXME: then in the response you'll have to make sure the range is set back the correct way
 
-	startFileDownload(url, isRanged, isPartial, startRange, endRange, &con, &hInfoGoogle_response,
-					&parserStateGoogle_response, accessTokenHeaders);
+	isPartial = (hInfoClientRecv->getEndRangeSet) ? 0 : 1;
+	startRange = hInfoClientRecv->getContentRangeStart;
+	endRange   = hInfoClientRecv->getContentRangeEnd;
+
+	startFileDownload(url, hInfoClientRecv->isRange, isPartial, startRange,
+			endRange, &con, &hInfoGoogle_response, &parserStateGoogle_response,
+			accessTokenHeaders);
 
 	/* get the header */
 	while (!parserStateGoogle_response.headerFullyParsed) {

@@ -25,8 +25,7 @@
 #include "google/googleAccessToken.h"
 #include "utils.h"
 #include "fileTransfer.h"
-#include "crypt.h"
-#include "virtualFileSystem/vfs.h"
+#include "crypto.h"
 //#include "googleUpload.h"
 //#include "parser.h"
 
@@ -103,14 +102,18 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 		parserState_t *parserState, headerInfo_t *hInfoClientRecv,
 		char *outputData, int outputDataLength) {
 
+	CryptoState_t deStateNonPtr;
+	CryptoState_t *deState = &deStateNonPtr;
 	int received, chunkSize, outputBufferLength;
 	char *url, *size, *accessTokenHeaders;
 	headerInfo_t hInfoGoogle_response, hInfoClient_response;
 	parserState_t parserStateGoogle_response;
 	Connection_t con;
+	int decryptionOutputLen;
 	char packetBuffer[MAX_PACKET_SIZE];
 	char dataBuffer[MAX_PACKET_SIZE];
 	char chunkBuffer[MAX_PACKET_SIZE];
+	char decryptionOutputBuffer[MAX_PACKET_SIZE];
 	char isPartial, isRanged;
 	int startRange, endRange;
 
@@ -128,7 +131,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 
 	isPartial = (hInfoClientRecv->getEndRangeSet) ? 0 : 1;
 	startRange = hInfoClientRecv->getContentRangeStart;
-	endRange   = hInfoClientRecv->getContentRangeEnd;
+	endRange = hInfoClientRecv->getContentRangeEnd;
 
 	startFileDownload(url, hInfoClientRecv->isRange, isPartial, startRange,
 			endRange, &con, &hInfoGoogle_response, &parserStateGoogle_response,
@@ -151,10 +154,11 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 
 	net_send(clientCon, packetBuffer, strlen(packetBuffer));
 
+	startDecryption(deState, "phone", NULL);
+
 	/* continue downloading and passing data onto the client */
 
-	//FIXME:
-	//send any data that might have been in the packets we fetched to get the whole header
+	//FIXME: send any data that might have been in the packets we fetched to get the whole header
 	/* keep updating while update doesn't return 0*/
 	while (1) {
 		received = updateFileDownload(&con, &hInfoGoogle_response,
@@ -163,17 +167,25 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 		if (received == 0) {
 			break;
 		}
-		//now decrypt that date and send it on to the client (just chunk it)
-		flipBits(dataBuffer, received);
-		//hm.......we need to decrypt the data here
 
-		chunkSize = utils_chunkData(dataBuffer, outputBufferLength,
+		/*now decrypt that date and chunk it and send it*/
+		updateDecryption(deState, dataBuffer, outputBufferLength,
+				decryptionOutputBuffer, &decryptionOutputLen);
+
+		chunkSize = utils_chunkData(decryptionOutputBuffer, decryptionOutputLen,
 				chunkBuffer);
 		if (net_send(clientCon, chunkBuffer, chunkSize) == -1) {
 			break;
 		}
 		outputData[0] = '\0';
 	}
+
+	/*finish up the decryption*/
+	finishDecryption(deState, NULL, 0, decryptionOutputBuffer,
+			&decryptionOutputLen);
+	chunkSize = utils_chunkData(decryptionOutputBuffer, decryptionOutputLen,
+			chunkBuffer);
+	net_send(clientCon, chunkBuffer, chunkSize);
 
 	/*clean up everything not covered by finish file download*/
 	net_send(clientCon, "0\r\n\r\n", strlen("0\r\n\r\n"));

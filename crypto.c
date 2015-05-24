@@ -140,7 +140,7 @@ int finishDecryption(CryptoState_t *state, const char *inputBuffer,
 /*
  * LET'S ENCRYPT OUTPUT3.WEBM
  * */
-
+/*
 int main(int argc, char **argv) {
 
 	//NOW ENCRYPT/DECRYPT A FILE
@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
 	char password[] = "password";
 
 
-	char inputFile[] = "../output.webm";
+	char* inputFile = argv[1];
 	char ch;
 	char readBuffer[1000];
 //	char readBuffer[] = "tom was here doing this and i'm ok with it test test stes test est est ";
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
 	printf("finished encryption\n");
 
 	//^ done part one
-	/*now open and decrypt*/
+	//now open and decrypt
 
 	int startPos = 0;
 	int endPos = 0;
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
 
 	orgCrypto = fopen("outputCrypto", "r");
 	finalOutput = fopen("finalOutput", "w+");
-	/*seek to where the download would start*/
+	//seek to where the download would start
 
 	//read the first chunk
 	newBytesRead = fread(inputBuffer, 1, chunkSize, orgCrypto);
@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
 	updateDecryption(deState, inputBuffer, newBytesRead, outputBuffer, &outputLen);
 	fwrite(outputBuffer, outputLen, 1, finalOutput);
 
-	/*while until we have finished reading the file or until we've processed enough data to hit our read limit*/
+	//while until we have finished reading the file or until we've processed enough data to hit our read limit
 	while ((newBytesRead = fread(inputBuffer, 1, chunkSize, orgCrypto)) > 0) {
 		updateDecryption(deState, inputBuffer, newBytesRead, outputBuffer,
 				&outputLen);
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
 	close(finalOutput);
 	return 0;
 }
-
+*/
 /* SOME TEST CASES
  int main(int argc, char **argv) {
 

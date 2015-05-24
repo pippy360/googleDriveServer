@@ -23,10 +23,11 @@ typedef enum {
 	TRANSFER_CONTENT_LENGTH
 } packetDataTypes_t;
 
+//TODO: FIXME: this contentRange stuff is a mess, fix it !
 typedef struct {
 	long getContentRangeStart;
 	long getContentRangeEnd;
-	char getContentRangeEndSet;//a bool to check if we got a "getContentRangeEnd"
+	char getEndRangeSet;//if this value is 0 then the format is Range: bytes=X-\r\n
 	long sentContentRangeStart;
 	long sentContentRangeEnd;
 	long sentContentRangeFull;
@@ -34,7 +35,7 @@ typedef struct {
 	packetDataTypes_t transferType;
 	httpRequestTypes_t requestType;
 	char isRequest;
-	char isRange;
+	char isRange;//FIXME: is this true for both ranged requests and responses ?
 	int  statusCode;
 	char *statusStringBuffer;
 	char *urlBuffer;//

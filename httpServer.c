@@ -71,6 +71,8 @@ void getDownloadUrlAndSize(AccessTokenState_t *tokenState, char *filename,
 	free(accessToken);
 }
 
+//pass in a Connectoin_t, and this will recv until you have the whole header
+//it will discard any packet data
 //returns 0 if success, non-0 otherwise
 int getHeader(Connection_t *con, parserState_t *parserStateBuf,
 		char *outputData, int outputDataMaxSize, int *outputDataLength,
@@ -83,10 +85,13 @@ int getHeader(Connection_t *con, parserState_t *parserStateBuf,
 	while (!parserStateBuf->headerFullyParsed) {
 		int recvd = net_recv(con, packetBuf, MAX_PACKET_SIZE);
 		packetBuf[recvd] = '\0';
+
+		printf("packet received from client: --%s--\n\n", packetBuf);
+
 		process_data(packetBuf, recvd, parserStateBuf, outputData,
 				outputDataMaxSize, outputDataLength, packetEnd_s,
 				headerInfoBuf);
-		//todo: check for errors
+		//TODO: check for errors
 	}
 	return 0;
 }
@@ -110,13 +115,14 @@ void converFromRangedToContentLength(headerInfo_t *hInfo, long fileSize) {
 	}
 }
 
+
 //the header has already been parsed by this point, hence we need to pass in output data
 void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 		parserState_t *parserState, headerInfo_t *hInfoClientRecv,
 		char *outputData, int outputDataLength) {
 
 	int received, chunkSize, outputBufferLength;
-	char *url, *size, *accessTokenHeader;
+	char *url, *size, *accessTokenHeaders;
 	headerInfo_t hInfoGoogle_response, hInfoClient_response;
 	parserState_t parserStateGoogle_response;
 	Connection_t con;
@@ -124,7 +130,6 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	char dataBuffer[MAX_PACKET_SIZE];
 	char chunkBuffer[MAX_PACKET_SIZE];
 
-	accessTokenHeader = getAccessTokenHeader(tokenState);
 
 	/* get the url and size of the file using the name given by the url */
 
@@ -132,14 +137,30 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 			&size);
 	printf("File found, size: %s, url: %s\n", size, url);
 
-	startFileDownload(url, &con, &hInfoGoogle_response,
-			&parserStateGoogle_response, accessTokenHeader);
+	accessTokenHeaders = getAccessTokenHeader(tokenState);
+	if(hInfoClientRecv->isRange){//TODO: CHECK IF IT'S RANGED
+		//TODO: set the ranges
+		int isRanged = 0;
+		if(hInfoClientRecv->getEndRangeSet){
+			int isPartial = 0;
+		}else{
+			int isPartial = 1;
+		}
+	}else{
+		int isRanged = 0;
+	}
+
+	//FIXME: here you'll need to recalc the start and end range to fit the crypto stuff
+	//FIXME: then in the response you'll have to make sure the range is set back the correct way
+
+	startFileDownload(url, isRanged, isPartial, startRange, endRange, &con, &hInfoGoogle_response,
+					&parserStateGoogle_response, accessTokenHeaders);
 
 	/* get the header */
 	while (!parserStateGoogle_response.headerFullyParsed) {
 		updateFileDownload(&con, &hInfoGoogle_response,
 				&parserStateGoogle_response, dataBuffer, MAX_PACKET_SIZE,
-				&outputBufferLength, accessTokenHeader);
+				&outputBufferLength, accessTokenHeaders);
 	}
 
 	/* reply to the client about the file */
@@ -156,12 +177,11 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 
 	//FIXME:
 	//send any data that might have been in the packets we fetched to get the whole header
-
 	/* keep updating while update doesn't return 0*/
 	while (1) {
 		received = updateFileDownload(&con, &hInfoGoogle_response,
 				&parserStateGoogle_response, dataBuffer, MAX_PACKET_SIZE,
-				&outputBufferLength, accessTokenHeader);
+				&outputBufferLength, accessTokenHeaders);
 		if (received == 0) {
 			break;
 		}
@@ -169,7 +189,8 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 		flipBits(dataBuffer, received);
 		//hm.......we need to decrypt the data here
 
-		chunkSize = utils_chunkData(dataBuffer, outputBufferLength, chunkBuffer);
+		chunkSize = utils_chunkData(dataBuffer, outputBufferLength,
+				chunkBuffer);
 		if (net_send(clientCon, chunkBuffer, chunkSize) == -1) {
 			break;
 		}
@@ -196,8 +217,6 @@ void handle_client(AccessTokenState_t *stateStruct, int client_fd) {
 
 	getHeader(&httpCon, &parserStateClientRecv, outputDataBuffer,
 	MAXDATASIZE, &outputDataLength, &hInfoClientRecv);
-
-	printf("packet received from client: --%s--\n\n", outputDataBuffer);
 
 	/* check what the client wants by checking the URL*/
 	if (!strncmp(hInfoClientRecv.urlBuffer, "/pull/", strlen("/pull/"))) {

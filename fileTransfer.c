@@ -21,8 +21,9 @@
 
 //this will download the full header
 //send the request to google to get the file
-int startFileDownload(char *inputUrl, Connection_t *con,
-		headerInfo_t *outputHInfo, parserState_t *outputParserState,
+int startFileDownload(char *inputUrl, char isRangedRequest, char isPartialRange,
+		long startRange, long endRange,
+		Connection_t *con, headerInfo_t *outputHInfo, parserState_t *outputParserState,
 		char *extraHeaders) {
 
 	char packetBuffer[MAX_PACKET_SIZE];    //reused quite a bit
@@ -30,7 +31,6 @@ int startFileDownload(char *inputUrl, Connection_t *con,
 	/* request the file from google */
 	set_new_header_info(outputHInfo);
 	set_new_parser_state_struct(outputParserState);
-	printf("we're here now\n");
 	/*create the header*/
 
 	utils_createHTTPHeaderFromUrl(inputUrl, packetBuffer, MAX_PACKET_SIZE,
@@ -38,7 +38,9 @@ int startFileDownload(char *inputUrl, Connection_t *con,
 
 	utils_connectByUrl(inputUrl, con);
 	net_send(con, packetBuffer, strlen(packetBuffer));
-	printf("data sent to google %s", packetBuffer);
+
+	printf("data sent to google --%s--\n\n", packetBuffer);
+
 	return 0;
 }
 

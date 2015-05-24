@@ -87,7 +87,7 @@ int startDecryption(CryptoState_t *state, char *password, char *iv) {
 
 	/* copy the salt and iv */
 	memcpy(state->salt, salt, 8);
-	if(iv != NULL){
+	if (iv != NULL) {
 		memcpy(state->iv, iv, IV_LENGTH);
 	}
 
@@ -95,7 +95,8 @@ int startDecryption(CryptoState_t *state, char *password, char *iv) {
 	if (!(state->ctx = EVP_CIPHER_CTX_new()))
 		return -1;
 
-	if (EVP_DecryptInit_ex(state->ctx, EVP_aes_128_cbc(), NULL, state->key, state->iv) != 1)
+	if (EVP_DecryptInit_ex(state->ctx, EVP_aes_128_cbc(), NULL, state->key,
+			state->iv) != 1)
 		return -1;
 
 	//printf("Key: %s iv: %s\n", state->key, state->iv);
@@ -125,7 +126,7 @@ int finishDecryption(CryptoState_t *state, const char *inputBuffer,
 			return -1;
 	}
 
-	if (EVP_DecryptFinal_ex(state->ctx, outputBuffer, &tempint) != 1){
+	if (EVP_DecryptFinal_ex(state->ctx, outputBuffer, &tempint) != 1) {
 		printf("error when calling final decrypt\n");
 		return -1;
 	}
@@ -135,6 +136,10 @@ int finishDecryption(CryptoState_t *state, const char *inputBuffer,
 	//EVP_CIPHER_CTX_free(state->ctx);
 	return 0;
 }
+
+/*
+ * LET'S ENCRYPT OUTPUT3.WEBM
+ * */
 
 int main(int argc, char **argv) {
 
@@ -148,71 +153,182 @@ int main(int argc, char **argv) {
 	int outputLen;
 	char password[] = "password";
 
+
+	char inputFile[] = "../output.webm";
 	char ch;
 	char readBuffer[1000];
 //	char readBuffer[] = "tom was here doing this and i'm ok with it test test stes test est est ";
 	char cryptoBuffer[1000];
 	FILE *txtFp, *cryptoFp;
 
-	txtFp = fopen("partialTest.txt", "r");
-	cryptoFp = fopen("crypto.txt", "w+");
-
+	txtFp = fopen(inputFile, "r");
 	if (txtFp == NULL && cryptoFp == NULL) {
 		perror("Error while opening the file.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	//read in 100 bytes or
-	int readSize = 1000;
+	int readSize = 900;
 	int cryptoSize = 0;
-	fread(readBuffer, readSize, 1, txtFp);
 
 	startEncryption(enState, "phone");
+	cryptoFp = fopen("outputCrypto", "w+");
 
-	updateEncryption(enState, readBuffer, readSize, cryptoBuffer, &outputLen);
+	int bytesRead;
+	while ((bytesRead = fread(readBuffer, 1, readSize, txtFp)) > 0) {
+		updateEncryption(enState, readBuffer, bytesRead, cryptoBuffer,
+				&outputLen);
+		fwrite(cryptoBuffer, outputLen, 1, cryptoFp);
+		cryptoSize += outputLen;
+	}
+	if (!feof(txtFp)) {
+		perror("we got some error while reading the file O_o");
+	}
+
+	finishEncryption(enState, NULL, 0, cryptoBuffer, &outputLen);
+	fwrite(cryptoBuffer, outputLen, 1, cryptoFp);
 	cryptoSize += outputLen;
-
-	finishEncryption(enState, NULL, 0, cryptoBuffer+outputLen, &outputLen);
-	cryptoSize += outputLen;
-
-	cryptoFp = fopen("crypto.txt", "w+");
-	fwrite(cryptoBuffer, cryptoSize, 1, cryptoFp);
+	printf("done: %d, %d\n", cryptoSize, outputLen);
 
 	fclose(cryptoFp);
 	fclose(txtFp);
 
-	/*^ done*/
+	printf("finished encryption\n");
 
-	int startPos = 30;
-	int endPos   = 100;
+	//^ done part one
+	/*now open and decrypt*/
+
+	int startPos = 0;
+	int endPos = 0;
+	int chunkSize = 500; //we will read the crypted file in chunks
 	int blockSize = 16;
 
-	int actStart 	=  startPos - (startPos%blockSize);
-	int actEnd 		=  (endPos%blockSize == 0)? endPos: endPos + (blockSize - (endPos%blockSize));
-	int newReadSize  	= (actEnd - actStart);
+	int actStart = startPos - (startPos % blockSize);
+	int actEnd =
+			(endPos % blockSize == 0) ?
+					endPos : endPos + (blockSize - (endPos % blockSize));
+
+	int newReadSize = (actEnd - actStart);
+	char inputBuffer[1000];
+	char outputBuffer[1000];
+	int newBytesRead;
+	FILE *orgCrypto, *finalOutput;
 
 	printf("start: %d, end: %d\n", actStart, actEnd);
 
-	char inputBuffer[1000];
-	char outputBuffer[1000];
+	orgCrypto = fopen("outputCrypto", "r");
+	finalOutput = fopen("finalOutput", "w+");
+	/*seek to where the download would start*/
 
-	txtFp = fopen("crypto.txt", "r");
-	fseek( txtFp, (long) (actStart - blockSize), SEEK_SET );
-	fread(inputBuffer, newReadSize, 1, txtFp);
+	//read the first chunk
+	newBytesRead = fread(inputBuffer, 1, chunkSize, orgCrypto);
 
-	if(actStart <= 0){
+	if (actStart <= 0) {
 		startDecryption(deState, "phone", NULL);
-	}else{
-		startDecryption(deState, "phone", inputBuffer );
+	} else {
+		startDecryption(deState, "phone", inputBuffer);
 	}
 
-	updateDecryption(deState, inputBuffer + blockSize, newReadSize - blockSize, outputBuffer, &outputLen);
+	updateDecryption(deState, inputBuffer, newBytesRead, outputBuffer, &outputLen);
+	fwrite(outputBuffer, outputLen, 1, finalOutput);
 
-	finishDecryption(deState, NULL, 0, cryptoBuffer+outputLen, &outputLen);
+	/*while until we have finished reading the file or until we've processed enough data to hit our read limit*/
+	while ((newBytesRead = fread(inputBuffer, 1, chunkSize, orgCrypto)) > 0) {
+		updateDecryption(deState, inputBuffer, newBytesRead, outputBuffer,
+				&outputLen);
 
-	printf("final result: %s\n", outputBuffer+(startPos-actStart));
+		fwrite(outputBuffer, outputLen, 1, finalOutput);
+	}
+	if (!feof(orgCrypto)) {
+		perror("NO.2 we got some error while reading the file O_o");
+	}
+	finishDecryption(deState, NULL, 0, outputBuffer, &outputLen);
+	fwrite(outputBuffer, outputLen, 1, finalOutput);
 
-	//printf("readBuffer of size %d: %.*s\n", cryptoSize, outputLen, readBuffer);
+	//close all the files
+	close(orgCrypto);
+	close(finalOutput);
 	return 0;
 }
 
+/* SOME TEST CASES
+ int main(int argc, char **argv) {
+
+ //NOW ENCRYPT/DECRYPT A FILE
+ CryptoState_t one, two;
+ CryptoState_t *enState = &one;
+ CryptoState_t *deState = &two;
+ char saltBuff[8];
+ char encStuff[20000];
+ char final[2000];
+ int outputLen;
+ char password[] = "password";
+
+ char ch;
+ char readBuffer[1000];
+ //	char readBuffer[] = "tom was here doing this and i'm ok with it test test stes test est est ";
+ char cryptoBuffer[1000];
+ FILE *txtFp, *cryptoFp;
+
+ txtFp = fopen("partialTest.txt", "r");
+ cryptoFp = fopen("crypto.txt", "w+");
+
+ if (txtFp == NULL && cryptoFp == NULL) {
+ perror("Error while opening the file.\n");
+ exit(EXIT_FAILURE);
+ }
+
+ //read in 100 bytes or
+ int readSize = 1000;
+ int cryptoSize = 0;
+ fread(readBuffer, readSize, 1, txtFp);
+
+ startEncryption(enState, "phone");
+
+ updateEncryption(enState, readBuffer, readSize, cryptoBuffer, &outputLen);
+ cryptoSize += outputLen;
+
+ finishEncryption(enState, NULL, 0, cryptoBuffer+outputLen, &outputLen);
+ cryptoSize += outputLen;
+
+ cryptoFp = fopen("crypto.txt", "w+");
+ fwrite(cryptoBuffer, cryptoSize, 1, cryptoFp);
+
+ fclose(cryptoFp);
+ fclose(txtFp);
+
+ //^ done part one
+
+ int startPos = 30;
+ int endPos   = 100;
+ int blockSize = 16;
+
+ int actStart 	=  startPos - (startPos%blockSize);
+ int actEnd 		=  (endPos%blockSize == 0)? endPos: endPos + (blockSize - (endPos%blockSize));
+ int newReadSize  	= (actEnd - actStart);
+
+ printf("start: %d, end: %d\n", actStart, actEnd);
+
+ char inputBuffer[1000];
+ char outputBuffer[1000];
+
+ txtFp = fopen("crypto.txt", "r");
+ fseek( txtFp, (long) (actStart - blockSize), SEEK_SET );
+ fread(inputBuffer, newReadSize, 1, txtFp);
+
+ if(actStart <= 0){
+ startDecryption(deState, "phone", NULL);
+ }else{
+ startDecryption(deState, "phone", inputBuffer );
+ }
+
+ updateDecryption(deState, inputBuffer + blockSize, newReadSize - blockSize, outputBuffer, &outputLen);
+
+ finishDecryption(deState, NULL, 0, cryptoBuffer+outputLen, &outputLen);
+
+ printf("final result: %s\n", outputBuffer+(startPos-actStart));
+
+ //printf("readBuffer of size %d: %.*s\n", cryptoSize, outputLen, readBuffer);
+ return 0;
+ }
+ */

@@ -26,6 +26,7 @@
 #include "utils.h"
 #include "fileTransfer.h"
 #include "crypt.h"
+#include "virtualFileSystem/vfs.h"
 //#include "googleUpload.h"
 //#include "parser.h"
 
@@ -95,25 +96,6 @@ int getHeader(Connection_t *con, parserState_t *parserStateBuf,
 		//TODO: check for errors
 	}
 	return 0;
-}
-
-//TODO: what does this do ?????
-void converFromRangedToContentLength(headerInfo_t *hInfo, long fileSize) {
-	if (!hInfo->isRange) {
-		if (hInfo->transferType == TRANSFER_CHUNKED) {
-			hInfo->transferType = TRANSFER_CONTENT_LENGTH;
-			hInfo->contentLength = fileSize;
-			/* sending the whole file */
-		} else {
-			printf("it's good the way it is\n\n");
-		}
-	} else {
-		printf("google is sending us a ranged file, this is trouble "
-				"because of how we deal with chunking\n");
-		hInfo->transferType = TRANSFER_CONTENT_LENGTH;
-		hInfo->contentLength = (hInfo->sentContentRangeEnd + 1)
-				- hInfo->sentContentRangeStart;
-	}
 }
 
 //the header has already been parsed by this point, hence we need to pass in output data

@@ -142,7 +142,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	end = hInfoClientRecv->getContentRangeEnd;
 	downloadEnd =
 			(end % blocksize == 0) ?
-					end : end + (blocksize - (end % blocksize));
+					end - 1 : end + (blocksize - (end % blocksize)) - 1;
 
 	startFileDownload(url, hInfoClientRecv->isRange, isPartial, downloadStart,
 			downloadEnd, &con, &hInfoGoogle_response,
@@ -182,7 +182,10 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	hInfoGoogle_response.isRequest = 0;
 	hInfoGoogle_response.transferType = TRANSFER_CHUNKED;
 	hInfoGoogle_response.sentContentRangeStart = start;
-	hInfoGoogle_response.sentContentRangeEnd = strtol(size, NULL, 10)-1;
+	if(hInfoClientRecv->getEndRangeSet)
+		hInfoGoogle_response.sentContentRangeEnd = hInfoClientRecv->getContentRangeEnd;
+	else
+		hInfoGoogle_response.sentContentRangeEnd = strtol(size, NULL, 10)-1;
 	hInfoGoogle_response.sentContentRangeFull = strtol(size, NULL, 10);
 	createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, &hInfoGoogle_response,
 			NULL);
@@ -190,7 +193,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	printf("header sent to client: --%s--\n", packetBuffer);
 
 	net_send(clientCon, packetBuffer, strlen(packetBuffer));
-
+	printf("\n\nsome data sent to client --%s--\n\n", packetBuffer);
 	/*FIXME: you need to get the first bit of data then ignore it*/
 
 	if (hInfoClientRecv->isRange && downloadStart > 0) {
@@ -219,6 +222,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	if (net_send(clientCon, chunkBuffer, chunkSize) == -1) {
 		printf("sending failed here, 203\n");
 	}
+	printf("\n\nsome data sent to client 1 --%s--\n\n", chunkBuffer);
 	outputData[0] = '\0';
 	/* continue downloading and passing data onto the client */
 
@@ -241,22 +245,32 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 		if (net_send(clientCon, chunkBuffer, chunkSize) == -1) {
 			break;
 		}
+		printf("\n\nsome data sent to client 2 --%s--\n\n", chunkBuffer);
 		outputData[0] = '\0';
 	}
+	printf("we've finished the while loop\n");
 
 	/*finish up the decryption*/
 	finishDecryption(deState, NULL, 0, decryptionOutputBuffer,
 			&decryptionOutputLen);
 
-	int endNegativeOffset = (blocksize - (end % blocksize));
-	int dataLen = decryptionOutputLen-endNegativeOffset;
+	printf("we've finished the decryption\n");
+	if(decryptionOutputLen > 0){
 
-	chunkSize = utils_chunkData(decryptionOutputBuffer, dataLen,
-			chunkBuffer);
-	net_send(clientCon, chunkBuffer, chunkSize);
+		chunkSize = utils_chunkData(decryptionOutputBuffer, decryptionOutputLen,
+				chunkBuffer);
 
+		printf("we've finished the chunking\n");
+
+		net_send(clientCon, chunkBuffer, chunkSize);
+		printf("\n\nsome data sent to client 3 --%s--\n\n", chunkBuffer);
+
+	}
 	/*clean up everything not covered by finish file download*/
 	net_send(clientCon, "0\r\n\r\n", strlen("0\r\n\r\n"));
+
+	printf("we've finished everything\n");
+
 	finishFileDownload();
 	net_close(&con);
 }

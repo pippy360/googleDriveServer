@@ -54,7 +54,7 @@ int createHTTPHeader(char *output, const int maxOutputLen, const headerInfo_t *h
 		l += strlen(REQUEST_HEADERS);
 		//"Range: bytes=106717810-114836737\r\n"
 		if( hInfo->isRange ){
-			if (hInfo->getContentRangeEndSet){
+			if (hInfo->getEndRangeSet){
 				sprintf( output+l, "Range: bytes=%lu-%lu\r\n", hInfo->getContentRangeStart, 
 						hInfo->getContentRangeEnd);
 			}else{				

@@ -1,0 +1,480 @@
+we're here now2
+we're here now3
+client: connecting to 216.58.211.141
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+packet received from client: --GET /pull/outputCrypto HTTP/1.1
+Host: localhost:25001
+Connection: keep-alive
+Cache-Control: max-age=0
+Accept-Encoding: identity;q=1, *;q=0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Accept: */*
+Referer: http://localhost:25001/pull/outputCrypto
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Range: bytes=0-
+
+--
+
+we're downloading a file
+client: connecting to 74.125.24.95
+we're here now2
+we're here now3
+it's content length : 304
+Json received --{
+ "items": [
+  {
+   "downloadUrl": "https://doc-00-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true",
+   "fileSize": "186908080"
+  }
+ ]
+}
+--File found, size: 186908080, url: https://doc-00-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true
+start is: 0
+we're here now2
+we're here now3
+client: connecting to 216.58.211.129
+data sent to google --GET /docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true HTTP/1.1
+Host: doc-00-ak-docs.googleusercontent.com
+Connection: keep-alive
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Connection: keep-alive
+Accept-Encoding: identity;q=1, *;q=0
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Range: bytes=0-
+Authorization: Bearer ya29.fgH-PD-eUm9fre7nXyv5i803z3Hj1cke1cF941LjEoW4rg_Vp0GSZDnK26vO9BZmQxcyyovfwYRm_g
+
+--
+
+updateFileDownload called, this is the data --HTTP/1.1 206 Partial Content
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: false
+Access-Control-Allow-Headers: Accept, Accept-Language, Authorization, Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Content-Length, Content-MD5, Content-Range, Content-Type, Date, GData-Version, Host, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Origin, OriginToken, Pragma, Range, Slug, Transfer-Encoding, X-ClientDetails, X-GData-Client, X-GData-Key, X-Goog-AuthUser, X-Goog-PageId, X-Goog-Encode-Response-If-Executable, X-Goog-Correlation-Id, X-Goog-Request-Info, X-Goog-Experiments, x-goog-iam-role, x-goog-iam-authorization-token, X-Goog-Spatula, X-Goog-Upload-Command, X-Goog-Upload-Content-Disposition, X-Goog-Upload-Content-Length, X-Goog-Upload-Content-Type, X-Goog-Upload-File-Name, X-Goog-Upload-Offset, X-Goog-Upload-Protocol, X-Goog-Visitor-Id, X-HTTP-Method-Override, X-JavaScript-User-Agent, X-Pan-Versionid, X-Origin, X-Referer, X-Upload-Content-Length, X-Upload-Content-Type, X-Use-HTTP-Status-Code-Override, X-YouTube-VVT, X-YouTube-Page-CL, X-YouTube-Page-Timestamp
+Access-Control-Allow-Methods: GET,OPTIONS
+Content-Range: bytes 0-186908079/186908080
+Content-Type: application/octet-stream
+Content-Disposition: attachment;filename="outputCrypto";filename*=UTF-8''outputCrypto
+Date: Mon, 25 May 2015 20:39:35 GMT
+Expires: Mon, 25 May 2015 20:39:35 GMT
+Cache-Control: private, max-age=0
+X-Goog-Hash: crc32c=ZVzeFQ==
+Transfer-Encoding: chunked
+Server: UploadServer ("Built on May 15 2015 16:38:39 (1431733119)")
+Alternate-Protocol: 443:quic,p=1
+
+--
+it's chunked
+amount of data downloaded after the header: 0
+amount of data downloaded after the second requesting part: 1616
+
+
+
+ok does it fail after this
+
+
+header sent to client: --HTTP/1.1 206 Partial Content
+Server: nginx/1.4.6 (Ubuntu)
+Connection: keep-alive
+Accept-Ranges:we're here now2
+we're here now3
+client: connecting to 216.58.211.141
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+packet received from client: --GET /favicon.ico HTTP/1.1
+Host: localhost:25001
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+
+--
+
+we're done apparently
+we're here now2
+we're here now3
+client: connecting to 216.58.211.141
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+packet received from client: --GET /favicon.ico HTTP/1.1
+Host: localhost:25001
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+
+--
+
+we're done apparently
+we're here now2
+we're here now3
+client: connecting to 216.58.211.141
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+packet received from client: --GET /favicon.ico HTTP/1.1
+Host: localhost:25001
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+
+--
+
+we're done apparently
+we're here now2
+we're here now3
+client: connecting to 216.58.211.141
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+packet received from client: --GET /favicon.ico HTTP/1.1
+Host: localhost:25001
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+
+--
+
+we're done apparently
+we're here now2
+we're here now3
+client: connecting to 216.58.211.141
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+packet received from client: --GET /favicon.ico HTTP/1.1
+Host: localhost:25001
+Connection: keep-alive
+Accept: */*
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Accept-Encoding: gzip,deflate,sdch
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+
+--
+
+we're done apparently
+we're here now2
+we're here now3
+client: connecting to 216.58.211.141
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+packet received from client: --GET /pull/outputCrypto HTTP/1.1
+Host: localhost:25001
+Connection: keep-alive
+Accept-Encoding: identity;q=1, *;q=0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Accept: */*
+Referer: http://localhost:25001/pull/outputCrypto
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Range: bytes=186896679-
+
+--
+
+we're downloading a file
+client: connecting to 74.125.24.95
+we're here now2
+we're here now3
+it's content length : 304
+Json received --{
+ "items": [
+  {
+   "downloadUrl": "https://doc-00-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true",
+   "fileSize": "186908080"
+  }
+ ]
+}
+--File found, size: 186908080, url: https://doc-00-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true
+start is: 186896679
+we're here now2
+we're here now3
+client: connecting to 216.58.211.129
+data sent to google --GET /docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true HTTP/1.1
+Host: doc-00-ak-docs.googleusercontent.com
+Connection: keep-alive
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Connection: keep-alive
+Accept-Encoding: identity;q=1, *;q=0
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Range: bytes=186896656-
+Authorization: Bearer ya29.fgH-PD-eUm9fre7nXyv5i803z3Hj1cke1cF941LjEoW4rg_Vp0GSZDnK26vO9BZmQxcyyovfwYRm_g
+
+--
+
+updateFileDownload called, this is the data --HTTP/1.1 206 Partial Content
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: false
+Access-Control-Allow-Headers: Accept, Accept-Language, Authorization, Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Content-Length, Content-MD5, Content-Range, Content-Type, Date, GData-Version, Host, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Origin, OriginToken, Pragma, Range, Slug, Transfer-Encoding, X-ClientDetails, X-GData-Client, X-GData-Key, X-Goog-AuthUser, X-Goog-PageId, X-Goog-Encode-Response-If-Executable, X-Goog-Correlation-Id, X-Goog-Request-Info, X-Goog-Experiments, x-goog-iam-role, x-goog-iam-authorization-token, X-Goog-Spatula, X-Goog-Upload-Command, X-Goog-Upload-Content-Disposition, X-Goog-Upload-Content-Length, X-Goog-Upload-Content-Type, X-Goog-Upload-File-Name, X-Goog-Upload-Offset, X-Goog-Upload-Protocol, X-Goog-Visitor-Id, X-HTTP-Method-Override, X-JavaScript-User-Agent, X-Pan-Versionid, X-Origin, X-Referer, X-Upload-Content-Length, X-Upload-Content-Type, X-Use-HTTP-Status-Code-Override, X-YouTube-VVT, X-YouTube-Page-CL, X-YouTube-Page-Timestamp
+Access-Control-Allow-Methods: GET,OPTIONS
+Content-Range: bytes 186896656-186908079/186908080
+Content-Type: application/octet-stream
+Content-Disposition: attachment;filename="outputCrypto";filename*=UTF-8''outputCrypto
+Date: Mon, 25 May 2015 20:39:37 GMT
+Expires: Mon, 25 May 2015 20:39:37 GMT
+Cache-Control: private, max-age=0
+Content-Length: 11424
+Server: UploadServer ("Built on May 15 2015 16:38:39 (1431733119)")
+Alternate-Protocol: 443:quic,p=1
+
+--
+it's content length : 11424
+amount of data downloaded after the header: 0
+amountwe're here now2
+we're here now3
+client: connecting to 216.58.211.141
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+packet received from client: --GET /pull/outputCrypto HTTP/1.1
+Host: localhost:25001
+Connection: keep-alive
+Accept-Encoding: identity;q=1, *;q=0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Accept: */*
+Referer: http://localhost:25001/pull/outputCrypto
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Range: bytes=55-
+
+--
+
+we're downloading a file
+client: connecting to 74.125.24.95
+we're here now2
+we're here now3
+it's content length : 304
+Json received --{
+ "items": [
+  {
+   "downloadUrl": "https://doc-00-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true",
+   "fileSize": "186908080"
+  }
+ ]
+}
+--File found, size: 186908080, url: https://doc-00-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true
+start is: 55
+we're here now2
+we're here now3
+client: connecting to 216.58.211.129
+data sent to google --GET /docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true HTTP/1.1
+Host: doc-00-ak-docs.googleusercontent.com
+Connection: keep-alive
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Connection: keep-alive
+Accept-Encoding: identity;q=1, *;q=0
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Range: bytes=32-
+Authorization: Bearer ya29.fgH-PD-eUm9fre7nXyv5i803z3Hj1cke1cF941LjEoW4rg_Vp0GSZDnK26vO9BZmQxcyyovfwYRm_g
+
+--
+
+updateFileDownload called, this is the data --HTTP/1.1 206 Partial Content
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: false
+Access-Control-Allow-Headers: Accept, Accept-Language, Authorization, Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Content-Length, Content-MD5, Content-Range, Content-Type, Date, GData-Version, Host, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Origin, OriginToken, Pragma, Range, Slug, Transfer-Encoding, X-ClientDetails, X-GData-Client, X-GData-Key, X-Goog-AuthUser, X-Goog-PageId, X-Goog-Encode-Response-If-Executable, X-Goog-Correlation-Id, X-Goog-Request-Info, X-Goog-Experiments, x-goog-iam-role, x-goog-iam-authorization-token, X-Goog-Spatula, X-Goog-Upload-Command, X-Goog-Upload-Content-Disposition, X-Goog-Upload-Content-Length, X-Goog-Upload-Content-Type, X-Goog-Upload-File-Name, X-Goog-Upload-Offset, X-Goog-Upload-Protocol, X-Goog-Visitor-Id, X-HTTP-Method-Override, X-JavaScript-User-Agent, X-Pan-Versionid, X-Origin, X-Referer, X-Upload-Content-Length, X-Upload-Content-Type, X-Use-HTTP-Status-Code-Override, X-YouTube-VVT, X-YouTube-Page-CL, X-YouTube-Page-Timestamp
+Access-Control-Allow-Methods: GET,OPTIONS
+Content-Range: bytes 32-186908079/186908080
+Content-Type: application/octet-stream
+Content-Disposition: attachment;filename="outputCrypto";filename*=UTF-8''outputCrypto
+Date: Mon, 25 May 2015 20:39:38 GMT
+Expires: Mon, 25 May 2015 20:39:38 GMT
+Cache-Control: private, max-age=0
+Transfer-Encoding: chunked
+Server: UploadServer ("Built on May 15 2015 16:38:39 (1431733119)")
+Alternate-Protocol: 443:quic,p=1
+
+--
+it's chunked
+amount of data downloaded after the header: 0
+amountwe're here now2
+we're here now3
+client: connecting to 216.58.211.141
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+packet received from client: --GET /pull/outputCrypto HTTP/1.1
+Host: localhost:25001
+Connection: keep-alive
+Accept-Encoding: identity;q=1, *;q=0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Accept: */*
+Referer: http://localhost:25001/pull/outputCrypto
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Range: bytes=24721159-
+
+--
+
+we're downloading a file
+client: connecting to 74.125.24.95
+we're here now2
+we're here now3
+it's content length : 304
+Json received --{
+ "items": [
+  {
+   "downloadUrl": "https://doc-00-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true",
+   "fileSize": "186908080"
+  }
+ ]
+}
+--File found, size: 186908080, url: https://doc-00-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true
+start is: 24721159
+we're here now2
+we're here now3
+client: connecting to 216.58.211.129
+data sent to google --GET /docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true HTTP/1.1
+Host: doc-00-ak-docs.googleusercontent.com
+Connection: keep-alive
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Connection: keep-alive
+Accept-Encoding: identity;q=1, *;q=0
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Range: bytes=24721136-
+Authorization: Bearer ya29.fgH-PD-eUm9fre7nXyv5i803z3Hj1cke1cF941LjEoW4rg_Vp0GSZDnK26vO9BZmQxcyyovfwYRm_g
+
+--
+
+updateFileDownload called, this is the data --HTTP/1.1 206 Partial Content
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: false
+Access-Control-Allow-Headers: Accept, Accept-Language, Authorization, Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Content-Length, Content-MD5, Content-Range, Content-Type, Date, GData-Version, Host, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Origin, OriginToken, Pragma, Range, Slug, Transfer-Encoding, X-ClientDetails, X-GData-Client, X-GData-Key, X-Goog-AuthUser, X-Goog-PageId, X-Goog-Encode-Response-If-Executable, X-Goog-Correlation-Id, X-Goog-Request-Info, X-Goog-Experiments, x-goog-iam-role, x-goog-iam-authorization-token, X-Goog-Spatula, X-Goog-Upload-Command, X-Goog-Upload-Content-Disposition, X-Goog-Upload-Content-Length, X-Goog-Upload-Content-Type, X-Goog-Upload-File-Name, X-Goog-Upload-Offset, X-Goog-Upload-Protocol, X-Goog-Visitor-Id, X-HTTP-Method-Override, X-JavaScript-User-Agent, X-Pan-Versionid, X-Origin, X-Referer, X-Upload-Content-Length, X-Upload-Content-Type, X-Use-HTTP-Status-Code-Override, X-YouTube-VVT, X-YouTube-Page-CL, X-YouTube-Page-Timestamp
+Access-Control-Allow-Methods: GET,OPTIONS
+Content-Range: bytes 24721136-186908079/186908080
+Content-Type: application/octet-stream
+Content-Disposition: attachment;filename="outputCrypto";filename*=UTF-8''outputCrypto
+Date: Mon, 25 May 2015 20:40:08 GMT
+Expires: Mon, 25 May 2015 20:40:08 GMT
+Cache-Control: private, max-age=0
+Transfer-Encoding: chunked
+Server: UploadServer ("Built on May 15 2015 16:38:39 (1431733119)")
+Alternate-Protocol: 443:quic,p=1
+
+‘’Èÿ-we're here now2
+we're here now3
+client: connecting to 216.58.211.141
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+packet received from client: --GET /pull/outputCrypto HTTP/1.1
+Host: localhost:25001
+Connection: keep-alive
+Accept-Encoding: identity;q=1, *;q=0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Accept: */*
+Referer: http://localhost:25001/pull/outputCrypto
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Range: bytes=67344148-
+
+--
+
+we're downloading a file
+client: connecting to 74.125.24.95
+we're here now2
+we're here now3
+it's content length : 304
+Json received --{
+ "items": [
+  {
+   "downloadUrl": "https://doc-00-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true",
+   "fileSize": "186908080"
+  }
+ ]
+}
+--File found, size: 186908080, url: https://doc-00-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true
+start is: 67344148
+we're here now2
+we're here now3
+client: connecting to 216.58.211.129
+data sent to google --GET /docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/896tmbdb02lcqhi50gtctf4j0hk64eee/1432584000000/00377112155790015384/00377112155790015384/0B7_KKsaOads4ZFlXNDgwbzNXQ00?e=download&gd=true HTTP/1.1
+Host: doc-00-ak-docs.googleusercontent.com
+Connection: keep-alive
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Connection: keep-alive
+Accept-Encoding: identity;q=1, *;q=0
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Range: bytes=67344128-
+Authorization: Bearer ya29.fgH-PD-eUm9fre7nXyv5i803z3Hj1cke1cF941LjEoW4rg_Vp0GSZDnK26vO9BZmQxcyyovfwYRm_g
+
+--
+
+updateFileDownload called, this is the data --HTTP/1.1 206 Partial Content
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: false
+Access-Control-Allow-Headers: Accept, Accept-Language, Authorization, Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Content-Length, Content-MD5, Content-Range, Content-Type, Date, GData-Version, Host, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Origin, OriginToken, Pragma, Range, Slug, Transfer-Encoding, X-ClientDetails, X-GData-Client, X-GData-Key, X-Goog-AuthUser, X-Goog-PageId, X-Goog-Encode-Response-If-Executable, X-Goog-Correlation-Id, X-Goog-Request-Info, X-Goog-Experiments, x-goog-iam-role, x-goog-iam-authorization-token, X-Goog-Spatula, X-Goog-Upload-Command, X-Goog-Upload-Content-Disposition, X-Goog-Upload-Content-Length, X-Goog-Upload-Content-Type, X-Goog-Upload-File-Name, X-Goog-Upload-Offset, X-Goog-Upload-Protocol, X-Goog-Visitor-Id, X-HTTP-Method-Override, X-JavaScript-User-Agent, X-Pan-Versionid, X-Origin, X-Referer, X-Upload-Content-Length, X-Upload-Content-Type, X-Use-HTTP-Status-Code-Override, X-YouTube-VVT, X-YouTube-Page-CL, X-YouTube-Page-Timestamp
+Access-Control-Allow-Methods: GET,OPTIONS
+Content-Range: bytes 67344128-186908079/186908080
+Content-Type: application/octet-stream
+Content-Disposition: attachment;filename="outputCrypto";filename*=UTF-8''outputCrypto
+Date: Mon, 25 May 2015 20:40:12 GMT
+Expires: Mon, 25 May 2015 20:40:12 GMT
+Cache-Control: private, max-age=0
+Transfer-Encoding: chunked
+Server: UploadServer ("Built on May 15 2015 16:38:39 (1431733119)")
+Alte

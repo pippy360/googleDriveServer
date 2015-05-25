@@ -205,7 +205,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		vfs_getFileWebUrl(vfsContext, id, strBuf1, 2000);
 		printf("the url of the file they're looking for is: %s\n", strBuf1);
 
-		startFileDownload(strBuf1, &googleCon, &hInfo, &googleParserState,
+		startFileDownload(strBuf1, 0, 0, 0, 0, &googleCon, &hInfo, &googleParserState,
 				getAccessTokenHeader(accessTokenState));
 		sendFtpResponse(clientState, "150 about to send file\r\n");
 		while (1) {

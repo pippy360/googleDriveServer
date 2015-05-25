@@ -97,6 +97,7 @@ int getHeader(Connection_t *con, parserState_t *parserStateBuf,
 	return 0;
 }
 
+//FIXME: use a define for the blocksize variable
 //the header has already been parsed by this point, hence we need to pass in output data
 void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 		parserState_t *parserState, headerInfo_t *hInfoClientRecv,
@@ -115,7 +116,8 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	char chunkBuffer[MAX_PACKET_SIZE];
 	char decryptionOutputBuffer[MAX_PACKET_SIZE];
 	char isPartial, isRanged;
-	int startRange, endRange;
+	int downloadStart, downloadEnd, start, end;
+	int blocksize = 16;
 
 	/* get the url and size of the file using the name given by the url */
 
@@ -130,35 +132,97 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	//FIXME: then in the response you'll have to make sure the range is set back the correct way
 
 	isPartial = (hInfoClientRecv->getEndRangeSet) ? 0 : 1;
-	startRange = hInfoClientRecv->getContentRangeStart;
-	endRange = hInfoClientRecv->getContentRangeEnd;
 
-	startFileDownload(url, hInfoClientRecv->isRange, isPartial, startRange,
-			endRange, &con, &hInfoGoogle_response, &parserStateGoogle_response,
-			accessTokenHeaders);
+	printf("start is: %lu\n", hInfoClientRecv->getContentRangeStart);
+
+	start = hInfoClientRecv->getContentRangeStart;
+	downloadStart = start - (start % blocksize);
+	//check if we need an extra block before the start for the IV
+	downloadStart = (downloadStart <= 0) ? 0 : downloadStart - blocksize;
+	end = hInfoClientRecv->getContentRangeEnd;
+	downloadEnd =
+			(end % blocksize == 0) ?
+					end : end + (blocksize - (end % blocksize));
+
+	startFileDownload(url, hInfoClientRecv->isRange, isPartial, downloadStart,
+			downloadEnd, &con, &hInfoGoogle_response,
+			&parserStateGoogle_response, accessTokenHeaders);
+
+	int dataDownloadedFromGoogle = 0;//the amount of the FILE (excluding headers) downloaded from google
 
 	/* get the header */
 	while (!parserStateGoogle_response.headerFullyParsed) {
 		updateFileDownload(&con, &hInfoGoogle_response,
 				&parserStateGoogle_response, dataBuffer, MAX_PACKET_SIZE,
 				&outputBufferLength, accessTokenHeaders);
+		dataDownloadedFromGoogle += outputBufferLength;
 	}
+
+	printf("amount of data downloaded after the header: %d\n",
+			dataDownloadedFromGoogle);
+
+	while (dataDownloadedFromGoogle < blocksize) {
+		updateFileDownload(&con, &hInfoGoogle_response,
+				&parserStateGoogle_response,
+				dataBuffer + dataDownloadedFromGoogle,
+				MAX_PACKET_SIZE - dataDownloadedFromGoogle, &outputBufferLength,
+				accessTokenHeaders);
+		dataDownloadedFromGoogle += outputBufferLength;
+	}
+
+	printf("amount of data downloaded after the second requesting part: %d\n",
+			dataDownloadedFromGoogle);
+
+
 
 	/* reply to the client about the file */
 
 	//tell the client it's chunked and then send them the header
+	printf("\n\n\nok does it fail after this\n\n\n");
 	hInfoGoogle_response.isRequest = 0;
 	hInfoGoogle_response.transferType = TRANSFER_CHUNKED;
+	hInfoGoogle_response.sentContentRangeStart = start;
+	hInfoGoogle_response.sentContentRangeEnd = strtol(size, NULL, 10)-1;
+	hInfoGoogle_response.sentContentRangeFull = strtol(size, NULL, 10);
 	createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, &hInfoGoogle_response,
-	NULL);
+			NULL);
+
+	printf("header sent to client: --%s--\n", packetBuffer);
 
 	net_send(clientCon, packetBuffer, strlen(packetBuffer));
 
-	startDecryption(deState, "phone", NULL);
+	/*FIXME: you need to get the first bit of data then ignore it*/
 
+	if (hInfoClientRecv->isRange && downloadStart > 0) {
+		startDecryption(deState, "phone", dataBuffer);
+	} else {
+		printf("no IV needed\n");
+		startDecryption(deState, "phone", NULL);
+	}
+	char *decryptStart;
+	if(downloadStart <= 0){
+		decryptStart = dataBuffer;
+	}else{
+		decryptStart = dataBuffer+blocksize;
+		outputBufferLength -= blocksize;
+	}
+
+	updateDecryption(deState, decryptStart, outputBufferLength,
+						decryptionOutputBuffer, &decryptionOutputLen);
+
+	/*now decrypt that date and chunk it and send it*/
+
+	char *startPositionOfData = decryptionOutputBuffer + (start%blocksize);
+
+	chunkSize = utils_chunkData(decryptionOutputBuffer+(start%blocksize), decryptionOutputLen-(start%blocksize),
+			chunkBuffer);
+	if (net_send(clientCon, chunkBuffer, chunkSize) == -1) {
+		printf("sending failed here, 203\n");
+	}
+	outputData[0] = '\0';
 	/* continue downloading and passing data onto the client */
 
-	//FIXME: send any data that might have been in the packets we fetched to get the whole header
+//FIXME: send any data that might have been in the packets we fetched to get the whole header
 	/* keep updating while update doesn't return 0*/
 	while (1) {
 		received = updateFileDownload(&con, &hInfoGoogle_response,
@@ -183,7 +247,11 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	/*finish up the decryption*/
 	finishDecryption(deState, NULL, 0, decryptionOutputBuffer,
 			&decryptionOutputLen);
-	chunkSize = utils_chunkData(decryptionOutputBuffer, decryptionOutputLen,
+
+	int endNegativeOffset = (blocksize - (end % blocksize));
+	int dataLen = decryptionOutputLen-endNegativeOffset;
+
+	chunkSize = utils_chunkData(decryptionOutputBuffer, dataLen,
 			chunkBuffer);
 	net_send(clientCon, chunkBuffer, chunkSize);
 
@@ -228,7 +296,7 @@ void handle_client(AccessTokenState_t *stateStruct, int client_fd) {
 }
 
 int main(int argc, char *argv[]) {
-	//google_init();
+//google_init();
 	AccessTokenState_t stateStruct;
 	gat_init_googleAccessToken(&stateStruct);
 

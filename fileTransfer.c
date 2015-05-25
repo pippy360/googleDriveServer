@@ -62,8 +62,12 @@ int updateFileDownload(Connection_t *con, headerInfo_t *outputHInfo,
 		return 0;
 	}
 
+
 	/* load the next packet and parse it*/
 	received = net_recv(con, packetBuffer, MAX_PACKET_SIZE);
+
+	if(!outputParserState->headerFullyParsed)
+		printf("updateFileDownload called, this is the data --%s--\n", packetBuffer);
 
 	process_data(packetBuffer, received, outputParserState, outputBuffer,
 			outputBufferMaxLength, outputBufferLength, packetEnd_s,

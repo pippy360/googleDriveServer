@@ -107,7 +107,6 @@ void utils_getAccessTokenHeader() {
 //    return tokenHeader;
 }
 
-
 //creates a hIfno get request for the the url
 void utils_setHInfoFromUrl(char *inputUrl, headerInfo_t *hInfo,
 		const httpRequestTypes_t requestType, char *extraHeaders) {
@@ -128,7 +127,6 @@ void utils_setHInfoFromUrl(char *inputUrl, headerInfo_t *hInfo,
 	hInfo->hostBuffer[domainLength] = '\0';
 	printf("we're here now3\n");
 }
-
 
 //FIXME: CONST THIS STUFF !
 void getConnectionStructByUrl(char *inputUrl, Connection_t *con) {
@@ -188,8 +186,8 @@ int utils_recvNextHttpPacket(Connection_t *con, headerInfo_t *outputHInfo,
 	while (parserState.currentState != packetEnd_s) {
 
 		received = net_recv(con, packetBuffer, MAX_PACKET_SIZE);
-		process_data(packetBuffer, received, &parserState, tempPtr,
-				10000, &outputDataLength, packetEnd_s, outputHInfo);
+		process_data(packetBuffer, received, &parserState, tempPtr, 10000,
+				&outputDataLength, packetEnd_s, outputHInfo);
 		tempPtr += outputDataLength;
 	}
 	return tempPtr - outputBuffer;
@@ -222,23 +220,24 @@ int utils_downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength,
 #define FORMAT "\"%s\" : "
 #define FORMAT2 "\"%s\": "
 
-int isJsonChar( char inputChar ){
-	if ( ('a' <= inputChar && inputChar <= 'z') || ('A' <= inputChar && inputChar <= 'Z')
-		|| ( '0' <= inputChar && inputChar <= '9' ) || ( '"' == inputChar ) ){
+int isJsonChar(char inputChar) {
+	if (('a' <= inputChar && inputChar <= 'z')
+			|| ('A' <= inputChar && inputChar <= 'Z')
+			|| ('0' <= inputChar && inputChar <= '9') || ('"' == inputChar)) {
 		return 1;
-	}else{
+	} else {
 		return 0;
 	}
 }
 
-char *getAccessTokenHeader(AccessTokenState_t *tokenState){
-    char headerStub[]  = "Authorization: Bearer %s\r\n";
-    int size = strlen(headerStub) + strlen(tokenState->accessTokenStr);
-    char *tokenHeader = malloc(size);
+char *getAccessTokenHeader(AccessTokenState_t *tokenState) {
+	char headerStub[] = "Authorization: Bearer %s\r\n";
+	int size = strlen(headerStub) + strlen(tokenState->accessTokenStr);
+	char *tokenHeader = malloc(size);
 
-    sprintf(tokenHeader, headerStub, tokenState->accessTokenStr);
+	sprintf(tokenHeader, headerStub, tokenState->accessTokenStr);
 
-    return tokenHeader;
+	return tokenHeader;
 }
 
 //TEST: make sure count/the return value is as expected
@@ -258,50 +257,54 @@ int utils_chunkData(const void *inputData, const int inputDataLength,
 	return tempPtr - (const char *) outputBuffer;
 }
 
+int utils_chunkAndSend(Connection_t *clientCon, char *dataBuffer,
+		int dataBufferLen) {
+	char chunkBuffer[MAX_PACKET_SIZE + 100];
+	int chunkSize = utils_chunkData(dataBuffer, dataBufferLen, chunkBuffer);
+	return net_send(clientCon, chunkBuffer, chunkSize);
+}
 
 //FIXME: DIRTY HACKS EVERYWHERE !
-char* shitty_get_json_value(char* inputName, char* jsonData, int jsonDataSize){
+char* shitty_get_json_value(char* inputName, char* jsonData, int jsonDataSize) {
 	//find the area, get the value
 	char needle[MAX_STRING_SIZE];
-	sprintf( needle, FORMAT, inputName);
+	sprintf(needle, FORMAT, inputName);
 	char* ptr;
 
-	if((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL){
-		sprintf( needle, FORMAT2, inputName);
-		if((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL){
+	if ((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL) {
+		sprintf(needle, FORMAT2, inputName);
+		if ((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL) {
 			return NULL;
 		}
-		ptr += strlen( inputName ) + strlen( FORMAT2 ) - strlen("%s");
-	}else{
-		ptr += strlen( inputName ) + strlen( FORMAT ) - strlen("%s");
+		ptr += strlen(inputName) + strlen( FORMAT2) - strlen("%s");
+	} else {
+		ptr += strlen(inputName) + strlen( FORMAT) - strlen("%s");
 	}
-
 
 	//now find the value
 
 	//get the starting char
-	for( ; !isJsonChar( *ptr ); ptr++ )
+	for (; !isJsonChar(*ptr); ptr++)
 		;
 
 	int isString = 0;
-	if (*ptr == '\"'){
+	if (*ptr == '\"') {
 		isString = 1;
 		ptr++;
 	}
 
 	char *endPtr;
-	if ( isString )
-	{
-		for( endPtr = ptr+1; *endPtr != '\"'; endPtr++ )
+	if (isString) {
+		for (endPtr = ptr + 1; *endPtr != '\"'; endPtr++)
 			;
-	}else{
-		for( endPtr = ptr; *endPtr != ',' && *endPtr != '\n'; endPtr++ )
+	} else {
+		for (endPtr = ptr; *endPtr != ',' && *endPtr != '\n'; endPtr++)
 			;
 	}
 
 	int outputLength = endPtr - ptr;
-	char* output = malloc( outputLength + 1 );
-	memcpy(output, ptr, outputLength );
-	output[ outputLength ] = '\0';
+	char* output = malloc(outputLength + 1);
+	memcpy(output, ptr, outputLength);
+	output[outputLength] = '\0';
 	return output;
 }

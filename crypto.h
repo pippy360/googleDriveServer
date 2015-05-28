@@ -1,3 +1,5 @@
+#define AES_BLOCK_SIZE 16//TODO: replace with the openssl block size define
+
 typedef struct {
 	long startBytePos;
 	long endBytePos;

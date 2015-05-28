@@ -18,10 +18,117 @@
 #include "net/connection.h"
 #include "google/googleAccessToken.h"
 #include "utils.h"
+#include "crypto.h"
+#include "fileTransfer.h"
+
+int startEncryptedFileDownload(CryptoFileDownloadState_t *encState,
+		char *inputUrl, char isRangedRequest, char isEndRangeSet,
+		long startRange, long endRange, Connection_t *con,
+		headerInfo_t *outputHInfo, parserState_t *outputParserState,
+		char *extraHeaders) {
+
+	/*calculate the encrypted data we need to request to get the requested decrypted data*/
+	long encFileStart, encFileEnd;
+	if (startRange < AES_BLOCK_SIZE) {
+		encFileStart = 0;
+	} else {
+		encFileStart = startRange - (startRange % AES_BLOCK_SIZE);
+		/*if the startRange isn't in the first block then we need the previous block for the IV*/
+		encFileStart -= AES_BLOCK_SIZE;
+	}
+	encFileEnd = endRange + (AES_BLOCK_SIZE - (endRange % AES_BLOCK_SIZE)) - 1;
+
+	encState->clientRangeStart = startRange;
+	encState->clientRangeEnd = endRange;
+	encState->encryptedRangeStart = encFileEnd;
+	encState->encryptedRangeEnd = encFileStart;
+	encState->encryptedDataDownloaded = 0;
+
+	return startFileDownload(inputUrl, isRangedRequest, isEndRangeSet,
+			encFileStart, encFileEnd, con, outputHInfo, outputParserState,
+			extraHeaders);
+}
+
+//returns the amount of data in the outputBuffer
+//this will ONLY return 0 if the connection has been close AND it cannot return any data
+int updateEncryptedFileDownload(CryptoFileDownloadState_t *encState,
+		Connection_t *con, headerInfo_t *outputHInfo,
+		parserState_t *outputParserState, char *outputBuffer,
+		int outputBufferMaxLength, int *outputBufferLength, char *extraHeaders) {
+
+	*outputBufferLength = 0; //the amount of data downloaded during this function call (including header)
+	int result; //use to store the return of updateFileDownload
+	char packetBuffer[MAX_PACKET_SIZE];
+	char *encryptedPacketBuffer;
+	char *currDataPos = encryptedPacketBuffer;
+	int dataLength, encryptedPacketLength, encryptedDataOffset;
+
+	result = updateFileDownload(con, outputHInfo, outputParserState,
+			currDataPos, MAX_PACKET_SIZE, &dataLength, extraHeaders);
+	if (result == 0) {
+		/*file server closed the connection*/
+		return 0;
+	}
+	encState->encryptedDataDownloaded += dataLength;
+	encryptedPacketLength += dataLength;
+	currDataPos += dataLength;
+
+	if (encState->encryptedDataDownloaded == 0) {
+		if (encState->encryptedRangeStart < AES_BLOCK_SIZE) {
+			encryptedDataOffset = 0;
+			startDecryption(&(encState->cryptoState), "phone", NULL);
+		} else {
+			/*get the IV*/
+			while (encState->encryptedDataDownloaded < AES_BLOCK_SIZE) {
+				encryptedDataOffset = AES_BLOCK_SIZE;
+				result = updateFileDownload(con, outputHInfo, outputParserState,
+						currDataPos, MAX_PACKET_SIZE, &dataLength, extraHeaders);
+				if (result == 0) {
+					/*file server closed the connection*/
+					return *outputBufferLength;
+				}
+				encState->encryptedDataDownloaded += dataLength;
+				encryptedPacketLength += dataLength;
+				currDataPos += dataLength;
+			}
+			startDecryption(&(encState->cryptoState), "phone",
+					encryptedPacketBuffer);
+		}
+	}
+
+	updateDecryption(&(encState->cryptoState), encryptedPacketBuffer + encryptedDataOffset,
+			encryptedPacketLength-encryptedDataOffset, outputBuffer, outputBufferLength);
+
+	while (*outputBufferLength == 0) {
+		//if it fails updateDOWN
+		result = updateFileDownload(con, outputHInfo, outputParserState,
+				encryptedPacketBuffer, MAX_PACKET_SIZE, &dataLength, extraHeaders);
+		currDataPos += dataLength;
+		if(result == 0){
+			/*file server closed the connection*/
+			return 0;
+		}
+
+		updateDecryption(&(encState->cryptoState), encryptedPacketBuffer,
+					encryptedPacketLength, outputBuffer+(*outputBufferLength), dataLength);
+		outputBufferLength += dataLength;
+	}
+
+	//the final stuff
+
+	return *outputBufferLength;
+}
+
+void finishEncryptedFileDownload(CryptoFileDownloadState_t *encState) {
+	finishFileDownload();
+}
 
 //this will download the full header
 //send the request to google to get the file
-int startFileDownload(char *inputUrl, char isRangedRequest, char isPartialRange,
+//FIXME: start file download might not always return data,
+//FIXME: for example if you only get one byte at a time and the one byte is part of the chunking stuff
+//FIXME: this isn't taken into account in the other parts of the code, you might end up sending 0 chunks early
+int startFileDownload(char *inputUrl, char isRangedRequest, char isEndRangeSet,
 		long startRange, long endRange, Connection_t *con,
 		headerInfo_t *outputHInfo, parserState_t *outputParserState,
 		char *extraHeaders) {
@@ -31,15 +138,14 @@ int startFileDownload(char *inputUrl, char isRangedRequest, char isPartialRange,
 	/* request the file from google */
 	set_new_header_info(outputHInfo);
 	set_new_parser_state_struct(outputParserState);
-	/*create the header*/
 
+	/*create the header*/
 	utils_setHInfoFromUrl(inputUrl, outputHInfo, REQUEST_GET, extraHeaders);
 
 	outputHInfo->isRange = isRangedRequest;
 	outputHInfo->getContentRangeStart = startRange;
-	outputHInfo->getContentRangeEnd   = endRange;
-	outputHInfo->getEndRangeSet       = isPartialRange? 0: 1;
-
+	outputHInfo->getContentRangeEnd = endRange;
+	outputHInfo->getEndRangeSet = isEndRangeSet;
 	createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, outputHInfo, extraHeaders);
 
 	utils_connectByUrl(inputUrl, con);
@@ -62,12 +168,12 @@ int updateFileDownload(Connection_t *con, headerInfo_t *outputHInfo,
 		return 0;
 	}
 
-
 	/* load the next packet and parse it*/
 	received = net_recv(con, packetBuffer, MAX_PACKET_SIZE);
 
-	if(!outputParserState->headerFullyParsed)
-		printf("updateFileDownload called, this is the data --%s--\n", packetBuffer);
+	if (!outputParserState->headerFullyParsed)
+		printf("updateFileDownload called, this is the data --%s--\n",
+				packetBuffer);
 
 	process_data(packetBuffer, received, outputParserState, outputBuffer,
 			outputBufferMaxLength, outputBufferLength, packetEnd_s,

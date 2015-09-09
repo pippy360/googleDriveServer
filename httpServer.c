@@ -108,8 +108,7 @@ void createClientHeaderForDriveDownload(headerInfo_t *hInfoGoogle_response,
 			(hInfoClientRecv->getEndRangeSet) ?
 					hInfoClientRecv->getContentRangeEnd : fileSize;
 	hInfoGoogle_response->sentContentRangeFull = fileSize;
-	createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, &hInfoGoogle_response,
-	NULL);
+	createHTTPHeader(packetBuffer, MAX_PACKET_SIZE, hInfoGoogle_response, NULL);
 }
 
 //FIXME: use a define for the blocksize variable
@@ -124,6 +123,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	headerInfo_t hInfoGoogle_response, hInfoClient_response;
 	parserState_t parserStateGoogle_response;
 	Connection_t con;
+	CryptoFileDownloadState_t encState;
 	char packetBuffer[MAX_PACKET_SIZE], dataBuffer[MAX_PACKET_SIZE];
 
 	/* get the url and size of the file using the name given by the url */
@@ -133,28 +133,30 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	printf("File found, size: %s, url: %s\n", sizeStr, url);
 
 	accessTokenHeaders = getAccessTokenHeader(tokenState);
-	startEncryptedFileDownload(url, hInfoClientRecv->isRange,
+	printf("geting ready to start file download\n");
+	startEncryptedFileDownload(&encState, url, hInfoClientRecv->isRange,
 			hInfoClientRecv->getEndRangeSet,
 			hInfoClientRecv->getContentRangeStart,
 			hInfoClientRecv->getContentRangeEnd, &con, &hInfoGoogle_response,
 			&parserStateGoogle_response, accessTokenHeaders);
+	printf("about to call update\n");
 	/* get the header */
 	while (!parserStateGoogle_response.headerFullyParsed) {
-		updateEncryptedFileDownload(&con, &hInfoGoogle_response,
+		updateEncryptedFileDownload(&encState, &con, &hInfoGoogle_response,
 				&parserStateGoogle_response, dataBuffer, MAX_PACKET_SIZE,
 				&outputBufferLength, accessTokenHeaders);
 	}
+	printf("done with update\n");
 	/* reply to the client about the file */
 	createClientHeaderForDriveDownload(&hInfoGoogle_response, hInfoClientRecv,
 			fileSize, packetBuffer);
 	net_send(clientCon, packetBuffer, strlen(packetBuffer));
-	//printf("header sent to client: --%s--\n", packetBuffer);
 
 	/*chunk and send any data we received while receiving the header*/
 	utils_chunkAndSend(clientCon, dataBuffer, outputBufferLength);
 
 	/*break if client or google closes the connection ?*/
-	while (updateEncryptedFileDownload(&con, &hInfoGoogle_response,
+	while (updateEncryptedFileDownload(&encState, &con, &hInfoGoogle_response,
 				&parserStateGoogle_response, dataBuffer, MAX_PACKET_SIZE,
 				&outputBufferLength, accessTokenHeaders) != 0){
 		if(utils_chunkAndSend(clientCon, dataBuffer, outputBufferLength) == -1){

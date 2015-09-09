@@ -116,16 +116,14 @@ void utils_setHInfoFromUrl(char *inputUrl, headerInfo_t *hInfo,
 	int fileUrlLength, domainLength;
 	utils_parseUrl_proto(inputUrl, &type, &domain, &domainLength, &fileUrl,
 			&fileUrlLength);
+
 	hInfo->isRequest = 1;
 	hInfo->requestType = requestType;
-
-	printf("we're here now2\n");
 	//FIXME: there should really be some sort of setUrlBuffer and setHostBuffer
 	memcpy(hInfo->urlBuffer, fileUrl, fileUrlLength);
 	hInfo->urlBuffer[fileUrlLength] = '\0';
 	memcpy(hInfo->hostBuffer, domain, domainLength);
 	hInfo->hostBuffer[domainLength] = '\0';
-	printf("we're here now3\n");
 }
 
 //FIXME: CONST THIS STUFF !

@@ -36,12 +36,16 @@ int startEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 		/*if the startRange isn't in the first block then we need the previous block for the IV*/
 		encFileStart -= AES_BLOCK_SIZE;
 	}
-	encFileEnd = endRange + (AES_BLOCK_SIZE - (endRange % AES_BLOCK_SIZE)) - 1;
+	if (isEndRangeSet) {
+		encFileEnd = endRange + (AES_BLOCK_SIZE - (endRange % AES_BLOCK_SIZE));
+	} else {
+		//it doesn't matter what value encFileEnd has
+	}
 
 	encState->clientRangeStart = startRange;
 	encState->clientRangeEnd = endRange;
-	encState->encryptedRangeStart = encFileEnd;
-	encState->encryptedRangeEnd = encFileStart;
+	encState->encryptedRangeStart = encFileStart;
+	encState->encryptedRangeEnd = encFileEnd;
 	encState->encryptedDataDownloaded = 0;
 
 	return startFileDownload(inputUrl, isRangedRequest, isEndRangeSet,
@@ -58,63 +62,88 @@ int updateEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 
 	*outputBufferLength = 0; //the amount of data downloaded during this function call (including header)
 	int result; //use to store the return of updateFileDownload
-	char packetBuffer[MAX_PACKET_SIZE];
-	char *encryptedPacketBuffer;
-	char *currDataPos = encryptedPacketBuffer;
-	int dataLength, encryptedPacketLength, encryptedDataOffset;
+	char encryptedPacketBuffer[MAX_PACKET_SIZE];
+	int encryptedPacketLength = 0;
+	int dataLength;
 
-	result = updateFileDownload(con, outputHInfo, outputParserState,
-			currDataPos, MAX_PACKET_SIZE, &dataLength, extraHeaders);
-	if (result == 0) {
-		/*file server closed the connection*/
-		return 0;
-	}
-	encState->encryptedDataDownloaded += dataLength;
-	encryptedPacketLength += dataLength;
-	currDataPos += dataLength;
-
+	printf("about to handle the start stuff\n");
+	/*if this is the first time update has been called then call startDecryption*/
 	if (encState->encryptedDataDownloaded == 0) {
 		if (encState->encryptedRangeStart < AES_BLOCK_SIZE) {
-			encryptedDataOffset = 0;
+			printf("the start range was 0, here it is: %lu\n",
+					encState->encryptedRangeStart);
 			startDecryption(&(encState->cryptoState), "phone", NULL);
 		} else {
+			printf("the start range was NOT 0, here it is: %lu\n",
+					encState->encryptedRangeStart);
 			/*get the IV*/
 			while (encState->encryptedDataDownloaded < AES_BLOCK_SIZE) {
-				encryptedDataOffset = AES_BLOCK_SIZE;
 				result = updateFileDownload(con, outputHInfo, outputParserState,
-						currDataPos, MAX_PACKET_SIZE, &dataLength, extraHeaders);
+						encryptedPacketBuffer
+								+ encState->encryptedDataDownloaded,
+						MAX_PACKET_SIZE - encState->encryptedDataDownloaded,
+						&encryptedPacketLength, extraHeaders);
 				if (result == 0) {
 					/*file server closed the connection*/
 					return *outputBufferLength;
 				}
-				encState->encryptedDataDownloaded += dataLength;
-				encryptedPacketLength += dataLength;
-				currDataPos += dataLength;
+				encState->encryptedDataDownloaded += encryptedPacketLength;
 			}
 			startDecryption(&(encState->cryptoState), "phone",
 					encryptedPacketBuffer);
+
+			/*now decrypt any of the extra data we got when getting the IV and add it to the output buffer*/
+			updateDecryption(&(encState->cryptoState),
+					encryptedPacketBuffer + AES_BLOCK_SIZE,
+					encryptedPacketLength - AES_BLOCK_SIZE, outputBuffer,
+					outputBufferLength);
+			printf("we added the following decrypted data --%s--\n",
+					outputBuffer);
 		}
+	} else {
+		printf("not started\n");
 	}
+	printf("finished with the start stuff\n");
 
-	updateDecryption(&(encState->cryptoState), encryptedPacketBuffer + encryptedDataOffset,
-			encryptedPacketLength-encryptedDataOffset, outputBuffer, outputBufferLength);
-
+	/*make sure we have some decrypted data to return*/
 	while (*outputBufferLength == 0) {
 		//if it fails updateDOWN
 		result = updateFileDownload(con, outputHInfo, outputParserState,
-				encryptedPacketBuffer, MAX_PACKET_SIZE, &dataLength, extraHeaders);
-		currDataPos += dataLength;
-		if(result == 0){
+				encryptedPacketBuffer, MAX_PACKET_SIZE, &encryptedPacketLength,
+				extraHeaders);
+		encState->encryptedDataDownloaded += encryptedPacketLength;
+		if (result == 0) {
 			/*file server closed the connection*/
 			return 0;
 		}
-
+		printf(
+				"ok we've recv'd, now lets decrypt, recv'd: %d sent to decrypt: %d\n",
+				result, encryptedPacketLength);
 		updateDecryption(&(encState->cryptoState), encryptedPacketBuffer,
-					encryptedPacketLength, outputBuffer+(*outputBufferLength), dataLength);
-		outputBufferLength += dataLength;
+				encryptedPacketLength, outputBuffer + (*outputBufferLength),
+				&dataLength);
+		(*outputBufferLength) += dataLength; //dataLength can be 0, so we might have to loop again
 	}
 
-	//the final stuff
+	//TODO: IMPOVE EXPLINATION
+	//remove extra data. We can have extra data because the data must decypted in chunks
+	//DEBUG:
+	printf(
+			"checking if over, the encState->encryptedRangeStart: %d\n"
+			"encState->encryptedDataDownloaded: %d\nencState->clientRangeEnd:%d\n \n",
+			encState->encryptedRangeStart, encState->encryptedDataDownloaded,
+			encState->clientRangeEnd);
+	if ((encState->encryptedRangeStart + encState->encryptedDataDownloaded)
+			> encState->clientRangeEnd) {
+		printf("it was\n");
+		printf("data before cut --%.*s--\n", *outputBufferLength, outputBuffer);
+		(*outputBufferLength) -= (encState->encryptedRangeStart
+				+ encState->encryptedDataDownloaded) - encState->clientRangeEnd;
+		(*outputBufferLength) += 2;
+		printf("data after cut --%.*s--\n", *outputBufferLength, outputBuffer);
+	}
+
+	//remove any data at the start
 
 	return *outputBufferLength;
 }
@@ -150,7 +179,6 @@ int startFileDownload(char *inputUrl, char isRangedRequest, char isEndRangeSet,
 
 	utils_connectByUrl(inputUrl, con);
 	net_send(con, packetBuffer, strlen(packetBuffer));
-
 	printf("data sent to google --%s--\n\n", packetBuffer);
 
 	return 0;

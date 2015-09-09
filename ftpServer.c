@@ -18,6 +18,7 @@
 #include "google/googleAccessToken.h"
 #include "google/googleUpload.h"
 
+#include "crypto.h"
 #include "fileTransfer.h"
 #include "utils.h"
 

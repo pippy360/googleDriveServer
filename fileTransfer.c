@@ -97,8 +97,10 @@ int updateEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 					encryptedPacketBuffer + AES_BLOCK_SIZE,
 					encryptedPacketLength - AES_BLOCK_SIZE, outputBuffer,
 					outputBufferLength);
-			printf("we added the following decrypted data --%s--\n",
-					outputBuffer);
+			encState->amountOfFileDecrypted += *outputBufferLength;
+			printf(
+					"so we just decrypted the data we got with the IV, lets look at it\n");
+			printf("here: --%.*s--\n", *outputBufferLength, outputBuffer);
 		}
 	} else {
 		printf("not started\n");
@@ -123,29 +125,64 @@ int updateEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 				encryptedPacketLength, outputBuffer + (*outputBufferLength),
 				&dataLength);
 		(*outputBufferLength) += dataLength; //dataLength can be 0, so we might have to loop again
+		encState->amountOfFileDecrypted += dataLength;
 	}
 
-	//TODO: IMPOVE EXPLINATION
+	//write the trim function
+	//TODO: IMPROVE EXPLINATION
 	//remove extra data. We can have extra data because the data must decypted in chunks
-	//DEBUG:
-	printf(
-			"checking if over, the encState->encryptedRangeStart: %d\n"
-			"encState->encryptedDataDownloaded: %d\nencState->clientRangeEnd:%d\n \n",
-			encState->encryptedRangeStart, encState->encryptedDataDownloaded,
-			encState->clientRangeEnd);
-	if ((encState->encryptedRangeStart + encState->encryptedDataDownloaded)
-			> encState->clientRangeEnd) {
-		printf("it was\n");
-		printf("data before cut --%.*s--\n", *outputBufferLength, outputBuffer);
-		(*outputBufferLength) -= (encState->encryptedRangeStart
-				+ encState->encryptedDataDownloaded) - encState->clientRangeEnd;
-		(*outputBufferLength) += 2;
-		printf("data after cut --%.*s--\n", *outputBufferLength, outputBuffer);
-	}
+	long tempStart =
+			(encState->encryptedRangeStart == 0) ?
+					encState->encryptedRangeStart :
+					encState->encryptedRangeStart + 16;
+	int trimTopVal = trimTop(encState->clientRangeEnd, tempStart,
+			encState->amountOfFileDecrypted, *outputBufferLength);
 
-	//remove any data at the start
+	int trimBottomVal = trimBottom(encState->clientRangeStart, tempStart,
+			encState->amountOfFileDecrypted, *outputBufferLength);
+	printf("trim bottom %d, trim top %d\n", trimBottomVal, trimTopVal);
+	printf("before memcpy --%.*s--\n", (*outputBufferLength), outputBuffer);
+	(*outputBufferLength) -= trimBottomVal + trimTopVal;
+	memmove(outputBuffer, outputBuffer + trimBottomVal, *outputBufferLength);
+	printf("after memcpy %d --%.*s--\n", *outputBufferLength,
+			(*outputBufferLength), outputBuffer);
 
 	return *outputBufferLength;
+}
+
+//returns the amount that needs to be trimmed off the top
+//amountOfFileDecrypted must be kept up to date
+int trimTop(long clientRangeEnd, long decryptedDataFileStart,
+		long amountOfFileDecrypted, int bufferLength) {
+	//the RangeEnd is inclusive so you must -1 here
+	if ((decryptedDataFileStart + amountOfFileDecrypted - 1) > clientRangeEnd) {
+		//then trim
+		return ((decryptedDataFileStart + amountOfFileDecrypted - 1)
+				- clientRangeEnd);
+	}
+	return bufferLength;
+}
+
+//returns the amount that needs to be trimmed off the bottom
+int trimBottom(long clientRangeStart, long decryptedDataFileStart,
+		long amountOfFileDecrypted, int bufferLength) {
+
+	printf("trim bottom called\n");
+	int temp;
+	printf("if test calc: %lu clientRange: %lu\n",
+			decryptedDataFileStart + amountOfFileDecrypted - bufferLength,
+			clientRangeStart);
+	printf(
+			"bufferLength: %d\nencryptedRangeStart: %lu\namountOfFileDecrypted: %lu\n",
+			bufferLength, decryptedDataFileStart, amountOfFileDecrypted);
+	if ((decryptedDataFileStart + amountOfFileDecrypted - bufferLength)
+			< clientRangeStart) {
+		printf("needs trimming!\n");
+		return bufferLength
+				- (decryptedDataFileStart + amountOfFileDecrypted
+						- clientRangeStart);
+	}
+	return bufferLength;
 }
 
 void finishEncryptedFileDownload(CryptoFileDownloadState_t *encState) {

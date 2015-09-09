@@ -1,5 +1,9 @@
 typedef struct {
-	long encryptedDataDownloaded; //the amount of the encrypted file downloaded (doesn't include things like http headers)
+	//the amount of the encrypted file downloaded
+	//(doesn't include things like http headers,
+	//but does include any meta data at the start of the encrypted file like the IV)
+	long encryptedDataDownloaded;
+	long amountOfFileDecrypted;
 	long clientRangeStart;
 	long clientRangeEnd;
 	long encryptedRangeStart;

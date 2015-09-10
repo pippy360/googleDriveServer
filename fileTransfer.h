@@ -9,6 +9,8 @@ typedef struct {
 	long encryptedRangeStart;
 	long encryptedRangeEnd;
 	CryptoState_t cryptoState;
+	char isEndRangeSet;
+	char isDecryptionComplete;
 } CryptoFileDownloadState_t;
 
 int startFileDownload(char *inputUrl, char isRangedRequest, char isPartialRange,

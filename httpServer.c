@@ -159,6 +159,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	while (updateEncryptedFileDownload(&encState, &con, &hInfoGoogle_response,
 				&parserStateGoogle_response, dataBuffer, MAX_PACKET_SIZE,
 				&outputBufferLength, accessTokenHeaders) != 0){
+		printf("update finished, we got this much data: %d\n", outputBufferLength);
 		if(utils_chunkAndSend(clientCon, dataBuffer, outputBufferLength) == -1){
 			printf("client closed the connection\n");
 			break;

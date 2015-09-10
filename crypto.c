@@ -119,8 +119,9 @@ int finishDecryption(CryptoState_t *state, const char *inputBuffer,
 		const int inputBufferSize, char *outputBuffer, int *outputDataSize) {
 
 	int dataSentSoFar = 0, tempint;
-	//update one last time
+	//check if we have any data waiting to be decrypted
 	if (inputBufferSize > 0) {
+		printf("there was data to be decrypted\n");
 		if (EVP_DecryptUpdate(state->ctx, outputBuffer, &dataSentSoFar,
 				inputBuffer, inputBufferSize) != 1)
 			return -1;
@@ -131,7 +132,9 @@ int finishDecryption(CryptoState_t *state, const char *inputBuffer,
 		return -1;
 	}
 
+	printf("done with the final decryption, the data: %d\n", tempint);
 	*outputDataSize = dataSentSoFar + tempint;
+
 	/* Clean up */
 	//EVP_CIPHER_CTX_free(state->ctx);
 	return 0;

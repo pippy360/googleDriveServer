@@ -133,9 +133,9 @@ int updateEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 			}
 			return 0;
 		}
-//		printf(
-	//			"ok we've recv'd, now lets decrypt, recv'd: %d sent to decrypt: %d\n",
-		//		result, encryptedPacketLength);
+		printf(
+				"ok we've recv'd, now lets decrypt, recv'd: %d sent to decrypt: %d\n",
+				result, encryptedPacketLength);
 		updateDecryption(&(encState->cryptoState), encryptedPacketBuffer,
 				encryptedPacketLength, outputBuffer + (*outputBufferLength),
 				&dataLength);

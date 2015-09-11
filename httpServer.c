@@ -85,6 +85,9 @@ int getHeader(Connection_t *con, parserState_t *parserStateBuf,
 	char packetBuf[MAX_PACKET_SIZE + 1];
 	while (!parserStateBuf->headerFullyParsed) {
 		int recvd = net_recv(con, packetBuf, MAX_PACKET_SIZE);
+		if(recvd == 0){
+			return -1;
+		}
 		packetBuf[recvd] = '\0';
 
 		printf("packet received from client: --%s--\n\n", packetBuf);
@@ -187,8 +190,11 @@ void handle_client(AccessTokenState_t *stateStruct, int client_fd) {
 	Connection_t httpCon;
 	net_fileDescriptorToConnection(client_fd, &httpCon);
 
-	getHeader(&httpCon, &parserStateClientRecv, outputDataBuffer,
-	MAXDATASIZE, &outputDataLength, &hInfoClientRecv);
+	if(getHeader(&httpCon, &parserStateClientRecv, outputDataBuffer,
+			MAXDATASIZE, &outputDataLength, &hInfoClientRecv) != 0){
+		printf("client closed connection while we were getting the header\n");
+		return;
+	}
 
 	/* check what the client wants by checking the URL*/
 	if (!strncmp(hInfoClientRecv.urlBuffer, "/pull/", strlen("/pull/"))) {
@@ -203,6 +209,7 @@ void handle_client(AccessTokenState_t *stateStruct, int client_fd) {
 
 	} else {
 		//404 !
+		printf("favicon?\n");
 	}
 
 	printf("we're done apparently\n");

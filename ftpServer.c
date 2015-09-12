@@ -62,12 +62,16 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 
 	char strBuf1[2000]; //FIXME: hardcoded
 	char tempBuffer[2000]; //FIXME: hardcoded
+	char tempBuffer2[2000]; //FIXME: hardcoded
+	int tempBuffer2OutputSize;
 	long id, fileSize;
 	int received, dataLength;
 	GoogleUploadState_t fileState;
 	Connection_t googleCon;
 	headerInfo_t hInfo;
 	parserState_t googleParserState;
+	CryptoState_t encryptionState, decryptionState;
+	char encryptionStarted;
 
 	switch (parserState->type) {
 	case REQUEST_USER:
@@ -177,11 +181,15 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		sendFtpResponse(clientState, strBuf1);
 
 		//alright start reading in the file
+		startEncryption(&encryptionState, "phone");
 		while ((received = recv(clientState->data_fd, tempBuffer, 1800, 0)) > 0) {
-			flipBits(tempBuffer, received);
-			googleUpload_update(&googleCon, tempBuffer, received);
+
+			updateEncryption(&encryptionState, tempBuffer, received, tempBuffer2, &tempBuffer2OutputSize);
+			googleUpload_update(&googleCon, tempBuffer2, tempBuffer2OutputSize);
 			//printf("recv'd:--%.*s--\n", received, tempBuffer);
 		}
+		finishEncryption(&encryptionState, tempBuffer, received, tempBuffer2, &tempBuffer2OutputSize);
+		googleUpload_update(&googleCon, tempBuffer2, tempBuffer2OutputSize);
 
 		googleUpload_end(&googleCon, &fileState);
 		vfs_createFile(vfsContext, clientState->cwdId, parserState->paramBuffer,
@@ -198,7 +206,6 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		break;
 	case REQUEST_RETR:
 		//FIXME: make sure we have a connection open
-
 		//send a get request to the and then continue the download
 		//take the download out to it's own file
 		id = vfs_getFileIdByName(vfsContext, clientState->cwdId,
@@ -206,19 +213,26 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		vfs_getFileWebUrl(vfsContext, id, strBuf1, 2000);
 		printf("the url of the file they're looking for is: %s\n", strBuf1);
 
+
 		startFileDownload(strBuf1, 0, 0, 0, 0, &googleCon, &hInfo, &googleParserState,
 				getAccessTokenHeader(accessTokenState));
 		sendFtpResponse(clientState, "150 about to send file\r\n");
+		encryptionStarted = 0;
 		while (1) {
 			received = updateFileDownload(&googleCon, &hInfo,
 					&googleParserState, tempBuffer, 2000, &dataLength, "");
+			if(!encryptionStarted){
+				startDecryption(&(decryptionState), "phone", NULL);
+				encryptionStarted = 1;
+			}
 			if (received == 0) {
+				//finishDecryption(&decryptionState, tempBuffer, 0, tempBuffer2, &tempBuffer2OutputSize);
+				//send(clientState->data_fd, tempBuffer2, tempBuffer2OutputSize, 0);
 				break;
 			}
-			flipBits(tempBuffer, dataLength);
-			send(clientState->data_fd, tempBuffer, dataLength, 0);
+			updateDecryption(&decryptionState, tempBuffer, dataLength, tempBuffer2, &tempBuffer2OutputSize);
+			send(clientState->data_fd, tempBuffer2, tempBuffer2OutputSize, 0);
 		}
-
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
 		if (close(clientState->data_fd) != 0) {
 			perror("close:");

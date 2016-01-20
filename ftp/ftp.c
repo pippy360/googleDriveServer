@@ -24,9 +24,7 @@
 #include "../net/networking.h"
 #include "ftpCommon.h"
 
-
 #define MAX_FILE_NAME 1000;
-
 
 //FIXME:
 int isValidLogin(char *username, char *password) {
@@ -46,11 +44,14 @@ int sendFtpResponse(ftpClientState_t *clientState, char *contents) {
 }
 
 void ftp_newClientState(ftpClientState_t *clientState, int command_fd,
-		char *usernameBuffer, int usernameBufferLength) {
+		char *usernameBuffer, int usernameBufferLength,
+		char *fileNameChangeBuffer, int fileNameChangeBufferLength) {
 
 	clientState->command_fd = command_fd;
 	clientState->usernameBuffer = usernameBuffer;
 	clientState->usernameBufferLength = usernameBufferLength;
+	clientState->fileNameChangeBuffer = fileNameChangeBuffer;
+	clientState->fileNameChangeBufferLength = fileNameChangeBufferLength;
 	clientState->transferType = FTP_TRANSFER_TYPE_I;
 	clientState->loggedIn = 0;
 	clientState->data_fd = -1;
@@ -58,7 +59,6 @@ void ftp_newClientState(ftpClientState_t *clientState, int command_fd,
 	clientState->isDataConnectionOpen = 0;
 	clientState->cwdId = 0;
 }
-
 
 void sendFile(ftpClientState_t *clientState) {
 	FILE *ifp, *ofp;
@@ -76,5 +76,4 @@ void sendFile(ftpClientState_t *clientState) {
 	send(clientState->data_fd, buffer, strlen(buffer), 0);
 	close(clientState->data_fd);
 }
-
 

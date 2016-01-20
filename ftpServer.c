@@ -93,7 +93,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		sendFtpResponse(clientState, "215 UNIX Type: L8\r\n");
 		break;
 	case REQUEST_PWD:
-		vfs_getFolderPathFromId(vfsContext, clientState->cwdId, tempBuffer,
+		vfs_getDirPathFromId(vfsContext, clientState->cwdId, tempBuffer,
 				1000);
 		sprintf(strBuf1, "257 \"%s\"\r\n", tempBuffer);
 		sendFtpResponse(clientState, strBuf1);
@@ -117,7 +117,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		openDataConnection(clientState);
 		break;
 	case REQUEST_SIZE:
-		id = vfs_getIdFromPath(vfsContext, parserState->paramBuffer);
+		id = vfs_getFileIdFromPath(vfsContext, parserState->paramBuffer);
 		if ((fileSize = vfs_getFileSizeFromId(vfsContext, id)) == -1) {
 			sendFtpResponse(clientState, "550 Could not get file size.\r\n");
 		} else {
@@ -150,9 +150,9 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 			clientState->cwdId = vfs_getParent(vfsContext, clientState->cwdId);
 			sendFtpResponse(clientState,
 					"250 Directory successfully changed.\r\n"); //success
-		} else if ((id = vfs_getIdFromPath(vfsContext, parserState->paramBuffer))
+		} else if ((id = vfs_getFileIdFromPath(vfsContext, parserState->paramBuffer))
 				== -1
-				&& (id = vfs_getIdFromRelPath(vfsContext, clientState->cwdId,
+				&& (id = vfs_getFileIdFromRelPath(vfsContext, clientState->cwdId,
 						parserState->paramBuffer)) == -1) {
 
 			sendFtpResponse(clientState, "550 Failed to change directory.\r\n");
@@ -243,6 +243,18 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		//FIXME: finishFileDownload();
 
 		break;
+	case REQUEST_RNFR:
+		//buffer the command
+		//check if the file exists
+		sprintf(clientState->fileNameChangeBuffer, "%s", parserState->paramBuffer);
+		sendFtpResponse(clientState, "350 RNFR accepted. Please supply new name for RNTO.\r\n");
+		break;
+	case REQUEST_RNTO:
+		//rename the actual file
+		//TODO: FIX THIS COMMAND TO SHOW THE FILENAMES
+		vfs_mv(context, oldPath, newPath);
+		sendFtpResponse(clientState, "250 renamed\r\n");
+		break;
 	default:
 		sendFtpResponse(clientState, "502 Command not implemented\r\n");
 		break;
@@ -266,12 +278,12 @@ void handle_client(int client_fd, AccessTokenState_t *stateStruct) {
 		}
 		exit(1);
 	}
-	char buffer[MAX_PACKET_SIZE], pBuffer[MAX_PACKET_SIZE], usernameBuffer[100];
+	char buffer[MAX_PACKET_SIZE], pBuffer[MAX_PACKET_SIZE], usernameBuffer[100], fileNameChangeBuffer[1000];
 	int sent, recieved;
 	ftpParserState_t parserState;
 	ftpClientState_t clientState;
 	ftp_newParserState(&parserState, pBuffer, MAX_PACKET_SIZE);
-	ftp_newClientState(&clientState, client_fd, usernameBuffer, 100);
+	ftp_newClientState(&clientState, client_fd, usernameBuffer, 100, fileNameChangeBuffer, 1000);
 	sent = send(client_fd, VALID_GREETING, strlen(VALID_GREETING), 0);
 	while (1) {
 		if ((recieved = recv(client_fd, buffer, MAX_PACKET_SIZE, 0)) == 0) {

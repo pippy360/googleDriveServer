@@ -118,11 +118,8 @@ void vfs_getFolderName(redisContext *context, long id, char *outputNameBuffer,
 //this only works with folders for the moment
 long vfs_getParent(redisContext *context, long cwdId) {
 	redisReply *reply;
-	printf("we're here\n");
 	reply = redisCommand(context, "HGET FOLDER_%lu_info parent", cwdId);
-	printf("we're here1\n");
 	long newId = strtol(reply->str, NULL, 10);
-	printf("we're here2\n");
 	freeReplyObject(reply);
 	return newId;
 }
@@ -152,6 +149,19 @@ long vfs_createFile(redisContext *context, long parentId, char *name, long size,
 void vfs_createPart(redisContext *context, long fileId, char *partUrl,
 		long rangeStart, long rangeEnd) {
 	//add it to the list
+}
+
+//FIXME: return error codes
+void vfs_delete(redisContext *context, char *path){
+
+}
+
+void __deleteFile(redisContext *context, long fileId){
+
+}
+
+void __deleteDir(redisContext *context, long dirId){
+
 }
 
 void __createPart() {
@@ -239,20 +249,8 @@ long vfs_getFolderIdByName(redisContext *context, long parentFolderId,
 	return result;
 }
 
-long vfs_getIdByName(redisContext *context, long parentFolderId,
-		char *inputName) {
-	long id;
-	if ((id = vfs_getFileIdByName(context, parentFolderId, inputName)) != -1) {
-		return id;
-	} else if ((id = vfs_getFolderIdByName(context, parentFolderId, inputName))
-			!= -1) {
-		return id;
-	}
-	return -1;
-}
-
 //FIXME: clean up the use of buffers here, buffer2 is kind of a hack
-void vfs_getFolderPathFromId(redisContext *context, long inputId,
+void vfs_getDirPathFromId(redisContext *context, long inputId,
 		char *outputBuffer, int outputBufferLength) {
 	long currentId = inputId;
 	redisReply *parentIdReply, *nameReply;
@@ -280,31 +278,25 @@ void vfs_getFolderPathFromId(redisContext *context, long inputId,
 }
 
 //path must start with '/'
-long vfs_getIdFromPath(redisContext *context, char *path) {
-	if (path[0] != '/')
-		return -1;
+long vfs_getFileIdFromPath(redisContext *context, char *path) {
 
 	char *ptr = path + 1;
-	long cwdId = 0;
 	long resultId = 0;
 	char buffer[MAX_FILENAME_SIZE];
 
+	if (path[0] != '/')
+		return -1;
+
 	while (*ptr) {
 		//get the name and search it
-		int i;
-		for (i = 0; *ptr && *ptr != '/'; i++, ptr++) {
-			if (!isprint(*ptr)) {
-				return -1;
-			}
-			buffer[i] = *ptr;
+		if(__stripName(ptr, buffer, MAX_FILENAME_SIZE) != 0){
+			return -1;
 		}
-		buffer[i] = '\0';
 		//if the name isn't found return -1
-		if ((resultId = vfs_getIdByName(context, resultId, buffer)) == -1) {
+		if ((resultId = vfs_getFileIdByName(context, resultId, buffer)) == -1) {
 			printf("Id not found\n");
 			return -1;
 		}
-
 		//jump the '/'
 		if (*ptr == '/')
 			ptr++;
@@ -312,15 +304,68 @@ long vfs_getIdFromPath(redisContext *context, char *path) {
 	return resultId;
 }
 
-long vfs_getIdFromRelPath(redisContext *vfsContext, long cwdId, char *relPath) {
+//path must start with '/'
+long vfs_getDirIdFromPath(redisContext *context, char *path) {
+
+	char *ptr = path + 1;
+	long resultId = 0;
+	char buffer[MAX_FILENAME_SIZE];
+
+	if (path[0] != '/')
+		return -1;
+
+	while (*ptr) {
+		//get the name and search it
+		if(__stripName(ptr, buffer, MAX_FILENAME_SIZE) != 0){
+			return -1;
+		}
+		//if the name isn't found return -1
+		if ((resultId = vfs_getDirIdByName(context, resultId, buffer)) == -1) {
+			printf("Id not found\n");
+			return -1;
+		}
+		//jump the '/'
+		if (*ptr == '/')
+			ptr++;
+	}
+	return resultId;
+}
+
+
+//startPtr should start at the start of the name
+//returns 0 if success, non-0 otherwise
+int __stripName(char *startPtr, char *outputBuffer, int outputBufferMaxLength){
+	int i;
+	for (i = 0; *startPtr && *startPtr != '/'; i++, startPtr++) {
+		if (!isprint(*startPtr)) {
+			return -1;
+		}
+		outputBuffer[i] = *startPtr;
+	}
+	outputBuffer[i] = '\0';
+	return 0;
+}
+
+long vfs_getDirIdFromRelPath(redisContext *vfsContext, long cwdId, char *relPath) {
 
 	char newPath[10000];
 	char newPath2[10000];
 	printf("relPath: %s\n", relPath);
-	vfs_getFolderPathFromId(vfsContext, cwdId, newPath, 10000);
+	vfs_getDirPathFromId(vfsContext, cwdId, newPath, 10000);
 	sprintf(newPath2, "%s%s/", newPath, relPath);
 	printf("newPath: %s\n", newPath2);
-	return vfs_getIdFromPath(vfsContext, newPath2);
+	return vfs_getDirIdFromPath(vfsContext, newPath2);
+}
+
+long vfs_getFileIdFromRelPath(redisContext *vfsContext, long cwdId, char *relPath) {
+
+	char newPath[10000];
+	char newPath2[10000];
+	printf("relPath: %s\n", relPath);
+	vfs_getDirPathFromId(vfsContext, cwdId, newPath, 10000);
+	sprintf(newPath2, "%s%s/", newPath, relPath);
+	printf("newPath: %s\n", newPath2);
+	return vfs_getFileIdFromPath(vfsContext, newPath2);
 }
 
 char *vfs_listUnixStyle(redisContext *context, long dirId) {
@@ -362,7 +407,37 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 
 	return line;
 }
-/*
+
+void __mvDir(redisContext *context, long id, long newParentId){
+
+}
+
+void __mvFile(redisContext *context, char *fileId, long newParentId, char *newFileName){
+
+}
+
+//FIXME: return error codes
+void vfs_mv(redisContext *context, char *oldPath, char *newpath){
+
+	char buffer[MAX_FILENAME_SIZE];
+	//take the name from the end
+
+	vfs_getDirIdFromPath(context, oldPath);
+	vfs_getFileIdFromPath(context, oldPath);
+
+	//get the old parent from the rest of the path
+
+	//now mv the file using that info
+}
+
+void vfs_mvDir(redisContext *context, char *oldPath, char *newpath){
+
+}
+
+void vfs_mvFile(redisContext *context, char *oldPath, char *newpath){
+
+}
+
 int main(int argc, char const *argv[]) {
 	unsigned int j;
 	redisContext *c;
@@ -383,29 +458,29 @@ int main(int argc, char const *argv[]) {
 	}
 
 	vfs_buildDatabase(c);
-//	long newDirId = vfs_mkdir(c, 0, "new folder");
-//	long newFileId = vfs_createFile(c, newDirId, "a_new_file.webm", 1000,
-//			"something", "www.something.com", "");
-//	newDirId = vfs_mkdir(c, newDirId, "foldhere");
-//	newFileId = vfs_createFile(c, newDirId, "far_down_file.webm", 1000,
-//			"something", "www.something.com", "");
-//
-//	vfs_ls(c, 0);
-//	vfs_ls(c, 1);
-//	vfs_ls(c, 3);
-//	signed long tempId;
-//	tempId = vfs_getIdFromPath(c, "/");
-//	printf("idFromPath: %s, id: %ld\n", "/", tempId);
-//	char buffer[10000];
-//	vfs_getFolderPathFromId(c, (long) 0, buffer, 10000);
-//	printf("FolderPathFromId: %lu , path: \"%s\"\n", (long) 0, buffer);
-//	//pretty print the files and folders
-//	//list the parts !!
-//	printf("calling pwd now\n");
-//	printf("%s", vfs_listUnixStyle(c, 0));
-//	vfs_ls(c, newDirId);
-//	long newIdS = vfs_getIdFromRelPath(c, 1, "foldhere");
-//	printf("%lu\n", newIdS);
+	long newDirId = vfs_mkdir(c, 0, "new folder");
+	long newFileId = vfs_createFile(c, newDirId, "a_new_file.webm", 1000,
+			"something", "www.something.com", "");
+	newDirId = vfs_mkdir(c, newDirId, "foldhere");
+	newFileId = vfs_createFile(c, newDirId, "far_down_file.webm", 1000,
+			"something", "www.something.com", "");
+
+	vfs_ls(c, 0);
+	vfs_ls(c, 1);
+	vfs_ls(c, 3);
+	signed long tempId;
+	tempId = vfs_getFileIdFromPath(c, "/");
+	printf("idFromPath: %s, id: %ld\n", "/", tempId);
+	char buffer[10000];
+	vfs_getDirPathFromId(c, (long) 0, buffer, 10000);
+	printf("FolderPathFromId: %lu , path: \"%s\"\n", (long) 0, buffer);
+	//pretty print the files and folders
+	//list the parts !!
+	printf("calling pwd now\n");
+	printf("%s", vfs_listUnixStyle(c, 0));
+	vfs_ls(c, newDirId);
+	long newIdS = vfs_getFileIdFromRelPath(c, 1, "foldhere");
+	printf("%lu\n", newIdS);
 	return 0;
 }
-*/
+

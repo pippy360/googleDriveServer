@@ -67,9 +67,12 @@ typedef struct {
 	int command_fd;
 	int data_fd;
 	int data_fd2;
-	int isDataConnectionOpen;
+	char isDataConnectionOpen;
+	char isAwaitingRename;
 	char *usernameBuffer;
 	int usernameBufferLength;
+	char *fileNameChangeBuffer;
+	int fileNameChangeBufferLength;
 	int loggedIn;
 	int cwdId;
 	ftpTransferType_t transferType;

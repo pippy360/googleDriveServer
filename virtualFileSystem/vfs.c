@@ -15,6 +15,9 @@
 #include "./hiredis/hiredis.h"
 #define MAX_FILENAME_SIZE 10000
 
+//NO STRING PARSING SHOULD BE DONE IN THIS FILE
+
+
 void vfs_connect(redisContext **c) {
 	const char *hostname = "127.0.0.1";
 	int port = 6379;
@@ -61,16 +64,67 @@ long vfs_mkdir(redisContext *context, long parentId, char *name) {
 	return id;
 }
 
-//id 0 == root
-void vfs_buildDatabase(redisContext *context) {
-	//wipe it and set the first id to 0 and crate a root folder
+void __createFile(redisContext *context, long id, char *name, long size,
+		char *googleId, char *webUrl, char *apiUrl) {
 	redisReply *reply;
-	reply = redisCommand(context, "FLUSHALL");
-	freeReplyObject(reply);
-	__mkdir(context, 0, 0, "root");
-	reply = redisCommand(context, "SET current_id_count 1");
+	reply =
+			redisCommand(context,
+					"HMSET FILE_%lu_info name \"%s\" size \"%lu\" createdData \"%s\" id \"%s\" webUrl \"%s\" apiUrl \"%s\" ",
+					id, name, size, "march 7th", googleId, webUrl, apiUrl);
 	freeReplyObject(reply);
 }
+
+long vfs_createFile(redisContext *context, long parentId, char *name, long size,
+		char *googleId, char *webUrl, char *apiUrl) {
+	//add it to the file list of the dir
+	long id = getNewId(context);
+	redisReply *reply;
+	reply = redisCommand(context, "LPUSH FOLDER_%lu_files %lu", parentId, id);
+	freeReplyObject(reply);
+	__createFile(context, id, name, size, googleId, webUrl, apiUrl);
+	return id;
+}
+
+void __deleteFile(redisContext *context, long fileId){
+
+}
+
+void __deleteDir(redisContext *context, long dirId){
+
+}
+
+//FIXME: return error codes
+void vfs_delete(redisContext *context, char *path){
+
+}
+
+void __mvDir(redisContext *context, long id, long newParentId){
+
+}
+
+void __mvFile(redisContext *context, char *fileId, long newParentId, char *newFileName){
+
+}
+
+//FIXME: return error codes
+void vfs_mv(redisContext *context, char *oldPath, char *newpath){
+
+	char buffer[MAX_FILENAME_SIZE];
+	//take the name from the end
+
+
+	//get the old parent from the rest of the path
+
+	//now mv the file using that info
+}
+
+//  ####  ###### ##### ##### ###### #####   ####
+// #    # #        #     #   #      #    # #
+// #      #####    #     #   #####  #    #  ####
+// #  ### #        #     #   #      #####       #
+// #    # #        #     #   #      #   #  #    #
+//  ####  ######   #     #   ###### #    #  ####
+
 
 //returns the reply for the name resquest
 //so use freeReplayObject() to free
@@ -124,50 +178,6 @@ long vfs_getParent(redisContext *context, long cwdId) {
 	return newId;
 }
 
-void __createFile(redisContext *context, long id, char *name, long size,
-		char *googleId, char *webUrl, char *apiUrl) {
-	redisReply *reply;
-	reply =
-			redisCommand(context,
-					"HMSET FILE_%lu_info name \"%s\" size \"%lu\" createdData \"%s\" id \"%s\" webUrl \"%s\" apiUrl \"%s\" ",
-					id, name, size, "march 7th", googleId, webUrl, apiUrl);
-	freeReplyObject(reply);
-}
-
-long vfs_createFile(redisContext *context, long parentId, char *name, long size,
-		char *googleId, char *webUrl, char *apiUrl) {
-	//add it to the file list of the dir
-	long id = getNewId(context);
-	redisReply *reply;
-	reply = redisCommand(context, "LPUSH FOLDER_%lu_files %lu", parentId, id);
-	freeReplyObject(reply);
-	__createFile(context, id, name, size, googleId, webUrl, apiUrl);
-	return id;
-}
-
-//return part id
-void vfs_createPart(redisContext *context, long fileId, char *partUrl,
-		long rangeStart, long rangeEnd) {
-	//add it to the list
-}
-
-//FIXME: return error codes
-void vfs_delete(redisContext *context, char *path){
-
-}
-
-void __deleteFile(redisContext *context, long fileId){
-
-}
-
-void __deleteDir(redisContext *context, long dirId){
-
-}
-
-void __createPart() {
-	//creates the info part
-}
-
 void vfs_ls(redisContext *context, long dirId) {
 	int j = 0;
 	long id;
@@ -193,180 +203,51 @@ void vfs_ls(redisContext *context, long dirId) {
 	freeReplyObject(reply);
 }
 
-void vfs_rmDir() {
-
+//return's id if successful, -1 otherwise
+long vfs_findFileNameInDir(redisContext *context, long dirId, char *fileName, int fileNameLength){
+	long tempId, matchId = -1;
+	int i;
+	redisReply *reply;
+	char nameBuffer[MAX_FILENAME_SIZE];
+	printf("LRANGE FOLDER_%lu_files 0 -1\n", dirId);
+	reply = redisCommand(context, "LRANGE FOLDER_%lu_files 0 -1", dirId);
+	if (reply->type == REDIS_REPLY_ARRAY) {
+		for (i = 0; i < reply->elements; i++) {
+			tempId = strtol(reply->element[i]->str, NULL, 10);
+			vfs_getFileName(context, tempId, nameBuffer, MAX_FILENAME_SIZE);
+			printf("nameBuffer %s\n", nameBuffer);
+			if(strncmp(fileName, nameBuffer, fileNameLength) == 0){
+				matchId = tempId;
+			}
+		}
+	}
+	freeReplyObject(reply);
+	return matchId;
 }
 
-void vfs_rmFile() {
-
+//return's id if successful, -1 otherwise
+long vfs_findDirNameInDir(redisContext *context, long dirId, char *dirName, int dirNameLength){
+	long tempId, matchId = -1;
+	int i;
+	redisReply *reply;
+	char nameBuffer[MAX_FILENAME_SIZE];
+	reply = redisCommand(context, "LRANGE FOLDER_%lu_folders 0 -1", dirId);
+	if (reply->type == REDIS_REPLY_ARRAY) {
+		for (i = 0; i < reply->elements; i++) {
+			tempId = strtol(reply->element[i]->str, NULL, 10);
+			vfs_getFolderName(context, tempId, nameBuffer, MAX_FILENAME_SIZE);
+			if(strncmp(dirName, nameBuffer, dirNameLength) == 0){
+				matchId = tempId;
+			}
+		}
+	}
+	freeReplyObject(reply);
+	return matchId;
 }
 
 //FIXME: SO MUCH REPEATED CODE HERE, CLEAN THIS UP
 //-1 if not found, id otherwise
-long vfs_getFileIdByName(redisContext *context, long parentFolderId,
-		char *inputName) {
-	int j = 0;
-	long id, result = -1;
-	char nameBuffer[MAX_FILENAME_SIZE];
-	redisReply *reply;
-	char name[MAX_FILENAME_SIZE];
-	reply = redisCommand(context, "LRANGE FOLDER_%lu_files 0 -1",
-			parentFolderId);
 
-	if (reply->type == REDIS_REPLY_ARRAY) {
-		for (j = 0; j < reply->elements; j++) {
-			id = strtol(reply->element[j]->str, NULL, 10);
-			vfs_getFileName(context, id, name, MAX_FILENAME_SIZE);
-			if (strcmp(name, inputName) == 0) {
-				result = id;
-			}
-		}
-	}
-	freeReplyObject(reply);
-	return result;
-}
-
-//-1 if not found, id otherwise
-long vfs_getFolderIdByName(redisContext *context, long parentFolderId,
-		char *inputName) {
-	int j = 0;
-	long id, result = -1;
-	char name[MAX_FILENAME_SIZE];
-	redisReply *reply;
-	reply = redisCommand(context, "LRANGE FOLDER_%lu_folders 0 -1",
-			parentFolderId);
-
-	if (reply->type == REDIS_REPLY_ARRAY) {
-		for (j = 0; j < reply->elements; j++) {
-			id = strtol(reply->element[j]->str, NULL, 10);
-			vfs_getFolderName(context, id, name, MAX_FILENAME_SIZE);
-			if (strcmp(name, inputName) == 0) {
-				result = id;
-			}
-		}
-	}
-	freeReplyObject(reply);
-	return result;
-}
-
-//FIXME: clean up the use of buffers here, buffer2 is kind of a hack
-void vfs_getDirPathFromId(redisContext *context, long inputId,
-		char *outputBuffer, int outputBufferLength) {
-	long currentId = inputId;
-	redisReply *parentIdReply, *nameReply;
-	char buffer[outputBufferLength];
-	char buffer2[outputBufferLength];
-	outputBuffer[0] = '\0';
-
-	while (currentId != 0) {
-		//get the name of the current id
-		vfs_getFolderName(context, currentId, buffer2, outputBufferLength);
-
-		//FIXME: check if it'll fit !
-		//if(strlen(outputBuffer) > outputBufferLength){
-		//}
-		sprintf(buffer, "/%s%s", buffer2, outputBuffer);
-		strcpy(outputBuffer, buffer);
-
-		//get it's parent's id
-		parentIdReply = redisCommand(context, "HGET FOLDER_%lu_info parent",
-				currentId);
-		currentId = strtol(parentIdReply->str + 1, NULL, 10);
-		freeReplyObject(parentIdReply);
-	}
-	strcat(outputBuffer, "/");
-}
-
-//path must start with '/'
-long vfs_getFileIdFromPath(redisContext *context, char *path) {
-
-	char *ptr = path + 1;
-	long resultId = 0;
-	char buffer[MAX_FILENAME_SIZE];
-
-	if (path[0] != '/')
-		return -1;
-
-	while (*ptr) {
-		//get the name and search it
-		if(__stripName(ptr, buffer, MAX_FILENAME_SIZE) != 0){
-			return -1;
-		}
-		//if the name isn't found return -1
-		if ((resultId = vfs_getFileIdByName(context, resultId, buffer)) == -1) {
-			printf("Id not found\n");
-			return -1;
-		}
-		//jump the '/'
-		if (*ptr == '/')
-			ptr++;
-	}
-	return resultId;
-}
-
-//path must start with '/'
-long vfs_getDirIdFromPath(redisContext *context, char *path) {
-
-	char *ptr = path + 1;
-	long resultId = 0;
-	char buffer[MAX_FILENAME_SIZE];
-
-	if (path[0] != '/')
-		return -1;
-
-	while (*ptr) {
-		//get the name and search it
-		if(__stripName(ptr, buffer, MAX_FILENAME_SIZE) != 0){
-			return -1;
-		}
-		//if the name isn't found return -1
-		if ((resultId = vfs_getDirIdByName(context, resultId, buffer)) == -1) {
-			printf("Id not found\n");
-			return -1;
-		}
-		//jump the '/'
-		if (*ptr == '/')
-			ptr++;
-	}
-	return resultId;
-}
-
-
-//startPtr should start at the start of the name
-//returns 0 if success, non-0 otherwise
-int __stripName(char *startPtr, char *outputBuffer, int outputBufferMaxLength){
-	int i;
-	for (i = 0; *startPtr && *startPtr != '/'; i++, startPtr++) {
-		if (!isprint(*startPtr)) {
-			return -1;
-		}
-		outputBuffer[i] = *startPtr;
-	}
-	outputBuffer[i] = '\0';
-	return 0;
-}
-
-long vfs_getDirIdFromRelPath(redisContext *vfsContext, long cwdId, char *relPath) {
-
-	char newPath[10000];
-	char newPath2[10000];
-	printf("relPath: %s\n", relPath);
-	vfs_getDirPathFromId(vfsContext, cwdId, newPath, 10000);
-	sprintf(newPath2, "%s%s/", newPath, relPath);
-	printf("newPath: %s\n", newPath2);
-	return vfs_getDirIdFromPath(vfsContext, newPath2);
-}
-
-long vfs_getFileIdFromRelPath(redisContext *vfsContext, long cwdId, char *relPath) {
-
-	char newPath[10000];
-	char newPath2[10000];
-	printf("relPath: %s\n", relPath);
-	vfs_getDirPathFromId(vfsContext, cwdId, newPath, 10000);
-	sprintf(newPath2, "%s%s/", newPath, relPath);
-	printf("newPath: %s\n", newPath2);
-	return vfs_getFileIdFromPath(vfsContext, newPath2);
-}
 
 char *vfs_listUnixStyle(redisContext *context, long dirId) {
 	//get the folder
@@ -408,35 +289,18 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 	return line;
 }
 
-void __mvDir(redisContext *context, long id, long newParentId){
-
+//id 0 == root
+void vfs_buildDatabase(redisContext *context) {
+	//wipe it and set the first id to 0 and crate a root folder
+	redisReply *reply;
+	reply = redisCommand(context, "FLUSHALL");
+	freeReplyObject(reply);
+	__mkdir(context, 0, 0, "root");
+	reply = redisCommand(context, "SET current_id_count 1");
+	freeReplyObject(reply);
 }
 
-void __mvFile(redisContext *context, char *fileId, long newParentId, char *newFileName){
-
-}
-
-//FIXME: return error codes
-void vfs_mv(redisContext *context, char *oldPath, char *newpath){
-
-	char buffer[MAX_FILENAME_SIZE];
-	//take the name from the end
-
-	vfs_getDirIdFromPath(context, oldPath);
-	vfs_getFileIdFromPath(context, oldPath);
-
-	//get the old parent from the rest of the path
-
-	//now mv the file using that info
-}
-
-void vfs_mvDir(redisContext *context, char *oldPath, char *newpath){
-
-}
-
-void vfs_mvFile(redisContext *context, char *oldPath, char *newpath){
-
-}
+#include "vfsPathParser.h"
 
 int main(int argc, char const *argv[]) {
 	unsigned int j;
@@ -469,18 +333,59 @@ int main(int argc, char const *argv[]) {
 	vfs_ls(c, 1);
 	vfs_ls(c, 3);
 	signed long tempId;
-	tempId = vfs_getFileIdFromPath(c, "/");
 	printf("idFromPath: %s, id: %ld\n", "/", tempId);
 	char buffer[10000];
-	vfs_getDirPathFromId(c, (long) 0, buffer, 10000);
 	printf("FolderPathFromId: %lu , path: \"%s\"\n", (long) 0, buffer);
 	//pretty print the files and folders
 	//list the parts !!
 	printf("calling pwd now\n");
 	printf("%s", vfs_listUnixStyle(c, 0));
 	vfs_ls(c, newDirId);
-	long newIdS = vfs_getFileIdFromRelPath(c, 1, "foldhere");
-	printf("%lu\n", newIdS);
+
+	printf("new stuff....\n");
+
+	long tempId1, tempId2, tempId3;
+	tempId1 = vfs_findDirNameInDir (c, 0, "new folder", strlen("new folder"));
+	printf("The id %ld\n", tempId1);
+
+	printf("lets find foldhere\n");
+	tempId3 = vfs_findFileNameInDir(c, 0, "foldhere", strlen("foldhere"));
+	printf("The id %ld\n", tempId3);
+	tempId1 = vfs_findDirNameInDir (c, 0, "new folder", strlen("new folder"));
+	printf("The id %ld\n", tempId1);
+	printf("let's print the /new folder/\n");
+	vfs_ls(c, tempId1);
+	tempId3 = vfs_findDirNameInDir(c, tempId1, "foldhere", strlen("foldhere"));
+	printf("The id %ld\n", tempId3);
+
+	tempId1 = vfs_findFileNameInDir(c, 0, "far_down_file.webm", strlen("far_down_file.webm"));
+	printf("The id %ld\n", tempId1);
+
+	printf("let's print the /new folder/foldhere/\n");
+	vfs_ls(c, tempId3);
+
+	tempId1 = vfs_findFileNameInDir(c, tempId3, "far_down_file.webm", strlen("far_down_file.webm"));
+	printf("The id %ld\n", tempId1);
+	vfsPathParserState_t parserState;
+	init_vfsPathParserState(&parserState);
+	vfs_findObjectInDir(c, &parserState, tempId3, "far_down_file.webm", strlen("far_down_file.webm"));
+	printf("is it a file??? %d\n", parserState.isFile);
+
+	char *str1 = "sadf/";
+	vfs_serperatePathAndName(&parserState, str1, strlen(str1));
+	printf("the last bit of %s - %d %s\n", str1, parserState.nameLength, str1 + parserState.nameOffset);
+
+
+	init_vfsPathParserState(&parserState);
+	char *tempPath = "/new folder/foldhere/sdfsdf/";
+	printf("lets get the dir id using a path\n");
+	printf("the path %s\n", tempPath);
+	printf("tempId3 before %ld\n", tempId3);
+	tempId3 = vfs_getDirIdFromPath(c, 0, tempPath, strlen(tempPath));
+	printf("tempId3 after %ld\n", tempId3);
+	vfs_findObjectInDir(c, &parserState, tempId3, "far_down_file.webm", strlen("far_down_file.webm"));
+	printf("is it a file??? %d\n", parserState.isFile);
+
 	return 0;
 }
 

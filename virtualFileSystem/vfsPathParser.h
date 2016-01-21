@@ -1,6 +1,8 @@
 #define ROOT_FOLDER_ID 0
+#define ROOT_PARENT_ID -1
 
 typedef struct {
+	char isExistingObject;
 	char nameOffset;//offset points to any characters after the last '/' in the file path
 	int nameLength;
 	char isFile;//FIXME: REPLACE WITH ENUMS (objectType)

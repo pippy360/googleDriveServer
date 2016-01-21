@@ -147,7 +147,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		break;
 	case REQUEST_CWD:
 		if (!strcmp(parserState->paramBuffer, "..")) {
-			clientState->cwdId = vfs_getParent(vfsContext, clientState->cwdId);
+			clientState->cwdId = vfs_getDirParent(vfsContext, clientState->cwdId);
 			sendFtpResponse(clientState,
 					"250 Directory successfully changed.\r\n"); //success
 		} else if ((id = vfs_getFileIdFromPath(vfsContext, parserState->paramBuffer))
@@ -252,7 +252,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	case REQUEST_RNTO:
 		//rename the actual file
 		//TODO: FIX THIS COMMAND TO SHOW THE FILENAMES
-		vfs_mv(context, oldPath, newPath);
+		//vfs_mv(vfsContext, oldPath, newPath);
 		sendFtpResponse(clientState, "250 renamed\r\n");
 		break;
 	default:

@@ -1,6 +1,7 @@
 #include <string.h>
 #include "virtualFileSystem/hiredis/hiredis.h"
 #include "virtualFileSystem/vfs.h"
+#include "virtualFileSystem/vfsPathParser.h"
 
 #include "commonDefines.h"
 
@@ -71,6 +72,8 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	headerInfo_t hInfo;
 	parserState_t googleParserState;
 	CryptoState_t encryptionState, decryptionState;
+	vfsPathParserState_t vfsParserState;
+
 	char encryptionStarted;
 
 	switch (parserState->type) {
@@ -93,6 +96,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		sendFtpResponse(clientState, "215 UNIX Type: L8\r\n");
 		break;
 	case REQUEST_PWD:
+
 		vfs_getDirPathFromId(vfsContext, clientState->cwdId, tempBuffer,
 				1000);
 		sprintf(strBuf1, "257 \"%s\"\r\n", tempBuffer);
@@ -117,7 +121,8 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		openDataConnection(clientState);
 		break;
 	case REQUEST_SIZE:
-		id = vfs_getFileIdFromPath(vfsContext, parserState->paramBuffer);
+		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer, strlen(parserState->paramBuffer), clientState->cwdId);
+		id = vfsParserState.id;
 		if ((fileSize = vfs_getFileSizeFromId(vfsContext, id)) == -1) {
 			sendFtpResponse(clientState, "550 Could not get file size.\r\n");
 		} else {
@@ -146,20 +151,12 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		sendFtpResponse(clientState, "226 Directory send OK.\r\n");
 		break;
 	case REQUEST_CWD:
-		if (!strcmp(parserState->paramBuffer, "..")) {
-			clientState->cwdId = vfs_getDirParent(vfsContext, clientState->cwdId);
-			sendFtpResponse(clientState,
-					"250 Directory successfully changed.\r\n"); //success
-		} else if ((id = vfs_getFileIdFromPath(vfsContext, parserState->paramBuffer))
-				== -1
-				&& (id = vfs_getFileIdFromRelPath(vfsContext, clientState->cwdId,
-						parserState->paramBuffer)) == -1) {
-
+		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer, strlen(parserState->paramBuffer), clientState->cwdId);
+		if(vfsParserState.isExistingObject && vfsParserState.isDir){
+			clientState->cwdId = vfsParserState.id;
+			sendFtpResponse(clientState,"250 Directory successfully changed.\r\n"); //success
+		}else{
 			sendFtpResponse(clientState, "550 Failed to change directory.\r\n");
-		} else {
-			clientState->cwdId = id;
-			sendFtpResponse(clientState,
-					"250 Directory successfully changed.\r\n"); //success
 		}
 		break;
 	case REQUEST_MKD:
@@ -208,8 +205,8 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		//FIXME: make sure we have a connection open
 		//send a get request to the and then continue the download
 		//take the download out to it's own file
-		id = vfs_getFileIdByName(vfsContext, clientState->cwdId,
-				parserState->paramBuffer);
+		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer, strlen(parserState->paramBuffer), clientState->cwdId);
+		id = vfsParserState.id;
 		vfs_getFileWebUrl(vfsContext, id, strBuf1, 2000);
 		printf("the url of the file they're looking for is: %s\n", strBuf1);
 

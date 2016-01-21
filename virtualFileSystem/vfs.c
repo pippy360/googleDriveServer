@@ -315,6 +315,35 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 	return line;
 }
 
+//FIXME: MOVE THIS TO THE PARSER
+//FIXME: clean up the use of buffers here, buffer2 is kind of a hack
+void vfs_getDirPathFromId(redisContext *context, long inputId,
+		char *outputBuffer, int outputBufferLength) {
+	long currentId = inputId;
+	redisReply *parentIdReply, *nameReply;
+	char buffer[outputBufferLength];
+	char buffer2[outputBufferLength];
+	outputBuffer[0] = '\0';
+
+	while (currentId != 0) {
+		//get the name of the current id
+		vfs_getFolderName(context, currentId, buffer2, outputBufferLength);
+
+		//FIXME: check if it'll fit !
+		//if(strlen(outputBuffer) > outputBufferLength){
+		//}
+		sprintf(buffer, "/%s%s", buffer2, outputBuffer);
+		strcpy(outputBuffer, buffer);
+
+		//get it's parent's id
+		parentIdReply = redisCommand(context, "HGET FOLDER_%lu_info parent",
+				currentId);
+		currentId = strtol(parentIdReply->str + 1, NULL, 10);
+		freeReplyObject(parentIdReply);
+	}
+	strcat(outputBuffer, "/");
+}
+
 //id 0 == root
 void vfs_buildDatabase(redisContext *context) {
 	//wipe it and set the first id to 0 and crate a root folder

@@ -286,12 +286,9 @@ int vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
 
 		__addFileToFileList(context, newPathParserState.parentId,
 				oldPathParserState.id);
-		printf("setting file name --%.*s--\n", newPathParserState.nameLength,
-				newPath + newPathParserState.nameOffset);
 		vfs_setFileName(context, oldPathParserState.id,
 				newPath + newPathParserState.nameOffset,
 				newPathParserState.nameLength);
-		printf("file name set\n");
 	} else if (oldPathParserState.isFile && !newPathParserState.isExistingObject
 			&& newPathParserState.isDir) {
 		//move file to existing dir

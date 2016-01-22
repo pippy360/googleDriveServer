@@ -132,10 +132,15 @@ void __mv(redisContext *context, long fileId, long oldParentId,
 void vfs_setFileName(redisContext *context, long id, char *nameBuffer,
 		int nameBufferLength) {
 	redisReply *reply;
-	printf("command was HSET FILE_%lu_info name \"%.*s\"\n", id, nameBufferLength, nameBuffer);
-	reply = redisCommand(context, "HSET FILE_%lu_info name \"%.*s\"", id,
-			nameBufferLength, nameBuffer);
+	//FIXME: using %.*s doesn't work when used with redisCommand....weird...
+	//so we have to do this hack below
+	char *tempPtr = malloc(nameBufferLength+1);
+	memcpy(tempPtr, nameBuffer, nameBufferLength);
+	tempPtr[nameBufferLength] = '\0';
+
+	reply = redisCommand(context, "HSET FILE_%lu_info name \"%s\"", id, tempPtr);
 	freeReplyObject(reply);
+	free(tempPtr);
 }
 
 //  ####  ###### ##### ##### ###### #####   ####
@@ -191,7 +196,6 @@ void vfs_getFolderName(redisContext *context, long id, char *outputNameBuffer,
 //this only works with folders for the moment
 long vfs_getDirParent(redisContext *context, long cwdId) {
 	redisReply *reply;
-	printf("getting the dir parent HGET FOLDER_%lu_info parent\n", cwdId);
 	reply = redisCommand(context, "HGET FOLDER_%lu_info parent", cwdId);
 	//printf("the command we ran HGET FOLDER_%lu_info parent\n", cwdId);
 	long newId = strtol(reply->str, NULL, 10);
@@ -266,7 +270,6 @@ long vfs_findDirNameInDir(redisContext *context, long dirId, char *dirName,
 	if (dirNameLength == 1 && strncmp(".", dirName, 1) == 0) {
 		return dirId;
 	} else if (dirNameLength == 2 && strncmp("..", dirName, 2) == 0) {
-		printf("'..' match\n");
 		return vfs_getDirParent(context, dirId);
 	}
 
@@ -369,8 +372,8 @@ void vfs_buildDatabase(redisContext *context) {
 
 #include "vfsPathParser.h"
 
-int main(int argc, char const *argv[]) {
-//int something(int argc, char const *argv[]) {
+//int main(int argc, char const *argv[]) {
+int something(int argc, char const *argv[]) {
 	unsigned int j;
 	redisContext *c;
 	redisReply *reply;
@@ -436,7 +439,9 @@ int main(int argc, char const *argv[]) {
 	tempId1 = vfs_findFileNameInDir(c, tempId3, "far_down_file.webm",
 			strlen("far_down_file.webm"));
 	printf("The id %ld\n", tempId1);
-	vfsPathParserState_t parserState;
+
+
+	vfsPathParserState_t parserState, parserState2;
 	init_vfsPathParserState(&parserState);
 	vfs_findObjectInDir(c, &parserState, tempId3, "far_down_file.webm",
 			strlen("far_down_file.webm"));
@@ -494,16 +499,47 @@ int main(int argc, char const *argv[]) {
 	vfs_debug_printParserState(&parserState);
 
 	vfs_ls(c, tempId4);
+
+	char *str8, *str9;
+	str8 = "far_down_file.webm";
+	str9 = "something.jpg";
+
+/*
 	printf("tempId4 %ld\n", tempId4);
 	printf("starting the mv\n");
+	printf("################1\n");
+	result1 = vfs_parsePath(c, &parserState, str8, strlen(str8), tempId4);
+	printf("################2\n");
+	vfs_debug_printParserState(&parserState);
 
 
-	//vfs_mv(c, tempId4, "far_down_file.webm", "something.jpg");
+	init_vfsPathParserState(&parserState2);
+	result1 = vfs_parsePath(c, &parserState2, str9, strlen(str9), tempId4);
 	printf("the mv is done\n");
+	vfs_debug_printParserState(&parserState2);
+
+	vfsPathParserState_t o, n;
+	o = parserState;
+	n = parserState2;
+	if (o.isFile && !n.isExistingObject && 1)
+		printf("the conditions are met\n");
+	//ok we have the details
+	printf("before\n");
+	vfs_ls(c, tempId4);
+	__removeIdFromFileList(c, o.parentId, o.id);
+	printf("after\n");
+	vfs_ls(c, tempId4);
+
+	__addFileToFileList(c, n.parentId, o.id);
+	printf("setting file name --%.*s--\n", n.nameLength,
+			str9 + n.nameOffset);
+
+
 	//HSET FILE_4_info name "something.jpg"
 	redisReply *reply2;
-	reply2 = redisCommand(c, "HSET FILE_4_info name \"something2.jpg\"");
-
+	reply2 = redisCommand(c, "HSET FILE_4_info name \"something.jpg\"", str9);
+*/
+	vfs_mv(c, tempId4, str8, str9);
 	vfs_ls(c, tempId4);
 
 	return 0;

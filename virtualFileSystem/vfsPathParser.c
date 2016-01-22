@@ -215,6 +215,23 @@ int vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 	return 0;
 }
 
+//returns 0 if success, non-0 otherwise
+int vfs_deleteObjectWithPath(redisContext *context, char *path, long cwd){
+	vfsPathParserState_t parserState;
+	int result1 = vfs_parsePath(context, &parserState, path, strlen(path), cwd);
+	if(!parserState.isExistingObject){
+		return -1;
+	}
+
+	if(parserState.isDir){
+		//FIXME:
+		__removeIdFromFolderList(context, parserState.parentId, parserState.id);
+	}else if(parserState.isFile){
+		__removeIdFromFileList(context, parserState.parentId, parserState.id);
+	}
+	return 0;
+}
+
 int vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
 	vfsPathParserState_t oldPathParserState, newPathParserState;
 	printf("done with none\n");

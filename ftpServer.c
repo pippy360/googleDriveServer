@@ -253,8 +253,18 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		vfs_mv(vfsContext, clientState->cwdId, clientState->fileNameChangeBuffer, parserState->paramBuffer);
 		sendFtpResponse(clientState, "250 renamed\r\n");
 		break;
+	case REQUEST_DELE:
+		//here:
+		//vfs_deleteObjectWithPath(vfsContext, path, cwd);
+		vfs_deleteObjectWithPath(vfsContext, parserState->paramBuffer, clientState->cwdId);
+		sendFtpResponse(clientState, "250 file was taken out back and shot.\r\n");
+		break;
+	case REQUEST_CDUP:
+		clientState->cwdId = vfs_getDirParent(vfsContext, clientState->cwdId);
+		sendFtpResponse(clientState,"250 Directory successfully changed.\r\n"); //success
+		break;
 	default:
-		sendFtpResponse(clientState, "502 Command not implemented\r\n");
+		sendFtpResponse(clientState, "502 Command not implemented.\r\n");
 		break;
 	}
 }

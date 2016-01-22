@@ -96,7 +96,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		sendFtpResponse(clientState, "215 UNIX Type: L8\r\n");
 		break;
 	case REQUEST_PWD:
-
+		printf("PWD called, the CWD is %d\n", clientState->cwdId);
 		vfs_getDirPathFromId(vfsContext, clientState->cwdId, tempBuffer,
 				1000);
 		sprintf(strBuf1, "257 \"%s\"\r\n", tempBuffer);
@@ -249,7 +249,8 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	case REQUEST_RNTO:
 		//rename the actual file
 		//TODO: FIX THIS COMMAND TO SHOW THE FILENAMES
-		//vfs_mv(vfsContext, oldPath, newPath);
+		printf("mv %s %s\n", clientState->fileNameChangeBuffer, parserState->paramBuffer);
+		vfs_mv(vfsContext, clientState->cwdId, clientState->fileNameChangeBuffer, parserState->paramBuffer);
 		sendFtpResponse(clientState, "250 renamed\r\n");
 		break;
 	default:

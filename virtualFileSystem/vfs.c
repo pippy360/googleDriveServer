@@ -74,7 +74,7 @@ void __createFile(redisContext *context, long id, char *name, long size,
 	freeReplyObject(reply);
 }
 
-void __addFileToFolderList(redisContext *context, long folderId, long fileId){
+void __addFileToFileList(redisContext *context, long folderId, long fileId){
 	redisReply *reply;
 	reply = redisCommand(context, "LPUSH FOLDER_%lu_files %lu", folderId, fileId);
 	freeReplyObject(reply);
@@ -92,7 +92,7 @@ void __removeIdFromFileList(redisContext *context, long dirId, long removeId){
 	freeReplyObject(reply);
 }
 
-void __removeIdFromDirList(redisContext *context, long dirId, long removeId){
+void __removeIdFromFolderList(redisContext *context, long dirId, long removeId){
 	redisReply *reply;
 	reply = redisCommand(context, "LREM FOLDER_%ld_folders 0 %ld", dirId, removeId);
 	freeReplyObject(reply);
@@ -102,7 +102,7 @@ long vfs_createFile(redisContext *context, long parentId, char *name, long size,
 		char *googleId, char *webUrl, char *apiUrl) {
 	//add it to the file list of the dir
 	long id = getNewId(context);
-	__addFileToFolderList(context, parentId, id);
+	__addFileToFileList(context, parentId, id);
 	__createFile(context, id, name, size, googleId, webUrl, apiUrl);
 	return id;
 }
@@ -181,6 +181,7 @@ void vfs_getFolderName(redisContext *context, long id, char *outputNameBuffer,
 //this only works with folders for the moment
 long vfs_getDirParent(redisContext *context, long cwdId) {
 	redisReply *reply;
+	printf("getting the dir parent HGET FOLDER_%lu_info parent\n", cwdId);
 	reply = redisCommand(context, "HGET FOLDER_%lu_info parent", cwdId);
 	//printf("the command we ran HGET FOLDER_%lu_info parent\n", cwdId);
 	long newId = strtol(reply->str, NULL, 10);
@@ -356,8 +357,9 @@ void vfs_buildDatabase(redisContext *context) {
 }
 
 #include "vfsPathParser.h"
-/*
-int main(int argc, char const *argv[]) {
+
+//int main(int argc, char const *argv[]) {
+void something(int argc, char const *argv[]){
 	unsigned int j;
 	redisContext *c;
 	redisReply *reply;
@@ -466,4 +468,4 @@ int main(int argc, char const *argv[]) {
 
 	return 0;
 }
-*/
+

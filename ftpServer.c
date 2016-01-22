@@ -263,6 +263,10 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		clientState->cwdId = vfs_getDirParent(vfsContext, clientState->cwdId);
 		sendFtpResponse(clientState,"250 Directory successfully changed.\r\n"); //success
 		break;
+	case REQUEST_RMD:
+		vfs_deleteObjectWithPath(vfsContext, parserState->paramBuffer, clientState->cwdId);
+		sendFtpResponse(clientState,"250 directory killed.\r\n"); //success
+		break;
 	default:
 		sendFtpResponse(clientState, "502 Command not implemented.\r\n");
 		break;

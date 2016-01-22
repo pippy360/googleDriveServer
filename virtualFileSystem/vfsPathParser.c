@@ -223,8 +223,11 @@ int vfs_deleteObjectWithPath(redisContext *context, char *path, long cwd){
 		return -1;
 	}
 
+	printf("removing path %ld %s\n", cwd, path);
+
 	if(parserState.isDir){
 		//FIXME:
+		printf("removing dir %ld %ld\n", parserState.parentId, parserState.id);
 		__removeIdFromFolderList(context, parserState.parentId, parserState.id);
 	}else if(parserState.isFile){
 		__removeIdFromFileList(context, parserState.parentId, parserState.id);

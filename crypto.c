@@ -40,6 +40,8 @@ int startEncryption(CryptoState_t *state, char *password) {
 }
 
 //0 if success, -1 otherwise
+//The amount of data written depends on the block alignment of the encrypted data:
+//as a result the amount of data written may be anything from zero bytes to (inl + cipher_block_size - 1) so outl should contain sufficient room.
 int updateEncryption(CryptoState_t *state, const char *inputBuffer,
 		const int inputBufferSize, char *outputBuffer, int *outputDataSize) {
 
@@ -104,6 +106,7 @@ int startDecryption(CryptoState_t *state, char *password, char *iv) {
 }
 
 //0 if success, -1 otherwise
+//if padding is enabled the decrypted data buffer out passed to EVP_DecryptUpdate() should have sufficient room for (inl + cipher_block_size) bytes
 int updateDecryption(CryptoState_t *state, const char *inputBuffer,
 		const int inputBufferSize, char *outputBuffer, int *outputDataSize) {
 

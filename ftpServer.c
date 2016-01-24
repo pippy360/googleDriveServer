@@ -29,6 +29,12 @@
 
 #define SEVER_IP_FTP "127,0,0,1"
 
+#define STRING_BUFFER_LEN 2000
+#define ENCRYPTED_BUFFER_LEN 2000
+#define DECRYPTED_BUFFER_LEN 2000
+#define AES_BLOCK_SIZE 16//fixme: get this from a config file
+
+
 
 void flipBits(void* packetData, int size) {
 	char* b = packetData;
@@ -61,10 +67,13 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		AccessTokenState_t *accessTokenState, ftpParserState_t *parserState,
 		ftpClientState_t *clientState) {
 
-	char strBuf1[2000]; //FIXME: hardcoded
-	char tempBuffer[2000]; //FIXME: hardcoded
-	char tempBuffer2[2000]; //FIXME: hardcoded
-	int tempBuffer2OutputSize;
+	char strBuf1[STRING_BUFFER_LEN], strBuf2[STRING_BUFFER_LEN];
+	//we will under report the size of the buffers to functions when using them as input buffers
+	//so that we always meet the size+AES_BLOCK_SIZE requirements of the output buffer for the encrypt/decrypt functions
+	//see openssl docs for more info on ecrypted buffer/decrypted buffers size requirements
+	char encryptedDataBuffer[ENCRYPTED_BUFFER_LEN + AES_BLOCK_SIZE];
+	char decryptedDataBuffer[DECRYPTED_BUFFER_LEN + AES_BLOCK_SIZE];
+	int tempOutputSize;
 	long id, fileSize;
 	int received, dataLength;
 	GoogleUploadState_t fileState;
@@ -97,10 +106,10 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		break;
 	case REQUEST_PWD:
 		printf("PWD called, the CWD is %d\n", clientState->cwdId);
-		vfs_getDirPathFromId(vfsContext, clientState->cwdId, tempBuffer,
-				1000);
-		sprintf(strBuf1, "257 \"%s\"\r\n", tempBuffer);
-		sendFtpResponse(clientState, strBuf1);
+		vfs_getDirPathFromId(vfsContext, clientState->cwdId, strBuf1,
+				STRING_BUFFER_LEN);
+		sprintf(strBuf2, "257 \"%s\"\r\n", strBuf1);
+		sendFtpResponse(clientState, strBuf2);
 		break;
 	case REQUEST_TYPE:
 		if (strcmp(parserState->paramBuffer, "I") == 0) {
@@ -179,14 +188,14 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 
 		//alright start reading in the file
 		startEncryption(&encryptionState, "phone");
-		while ((received = recv(clientState->data_fd, tempBuffer, 1800, 0)) > 0) {
+		while ((received = recv(clientState->data_fd, decryptedDataBuffer, DECRYPTED_BUFFER_LEN, 0)) > 0) {
 
-			updateEncryption(&encryptionState, tempBuffer, received, tempBuffer2, &tempBuffer2OutputSize);
-			googleUpload_update(&googleCon, tempBuffer2, tempBuffer2OutputSize);
+			updateEncryption(&encryptionState, decryptedDataBuffer, received, encryptedDataBuffer, &tempOutputSize);
+			googleUpload_update(&googleCon, encryptedDataBuffer, tempOutputSize);
 			//printf("recv'd:--%.*s--\n", received, tempBuffer);
 		}
-		finishEncryption(&encryptionState, tempBuffer, received, tempBuffer2, &tempBuffer2OutputSize);
-		googleUpload_update(&googleCon, tempBuffer2, tempBuffer2OutputSize);
+		finishEncryption(&encryptionState, decryptedDataBuffer, received, encryptedDataBuffer, &tempOutputSize);
+		googleUpload_update(&googleCon, encryptedDataBuffer, tempOutputSize);
 
 		googleUpload_end(&googleCon, &fileState);
 		vfs_createFile(vfsContext, clientState->cwdId, parserState->paramBuffer,
@@ -217,7 +226,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		encryptionStarted = 0;
 		while (1) {
 			received = updateFileDownload(&googleCon, &hInfo,
-					&googleParserState, tempBuffer, 2000, &dataLength, "");
+					&googleParserState, encryptedDataBuffer, ENCRYPTED_BUFFER_LEN, &dataLength, "");
 			if(!encryptionStarted){
 				startDecryption(&(decryptionState), "phone", NULL);
 				encryptionStarted = 1;
@@ -227,8 +236,8 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 				//send(clientState->data_fd, tempBuffer2, tempBuffer2OutputSize, 0);
 				break;
 			}
-			updateDecryption(&decryptionState, tempBuffer, dataLength, tempBuffer2, &tempBuffer2OutputSize);
-			send(clientState->data_fd, tempBuffer2, tempBuffer2OutputSize, 0);
+			updateDecryption(&decryptionState, encryptedDataBuffer, dataLength, decryptedDataBuffer, &tempOutputSize);
+			send(clientState->data_fd, decryptedDataBuffer, tempOutputSize, 0);
 		}
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
 		if (close(clientState->data_fd) != 0) {

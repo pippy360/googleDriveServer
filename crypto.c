@@ -53,6 +53,7 @@ int updateEncryption(CryptoState_t *state, const char *inputBuffer,
 	return 0;
 }
 
+//we (optionally) call EVP_EncryptUpdate one more time because it can make it easier to use these functions in loops
 //0 if success, -1 otherwise
 int finishEncryption(CryptoState_t *state, const char *inputBuffer,
 		const int inputBufferSize, char *outputBuffer, int *outputDataSize) {
@@ -117,6 +118,8 @@ int updateDecryption(CryptoState_t *state, const char *inputBuffer,
 	return 0;
 }
 
+
+//we (optionally) call EVP_DecryptUpdate one more time because it can make it easier to use these functions in loops
 //0 if success, -1 otherwise
 int finishDecryption(CryptoState_t *state, const char *inputBuffer,
 		const int inputBufferSize, char *outputBuffer, int *outputDataSize) {
@@ -124,7 +127,6 @@ int finishDecryption(CryptoState_t *state, const char *inputBuffer,
 	int dataSentSoFar = 0, tempint;
 	//check if we have any data waiting to be decrypted
 	if (inputBufferSize > 0) {
-		printf("there was data to be decrypted\n");
 		if (EVP_DecryptUpdate(state->ctx, outputBuffer, &dataSentSoFar,
 				inputBuffer, inputBufferSize) != 1)
 			return -1;

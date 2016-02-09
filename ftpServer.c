@@ -34,8 +34,6 @@
 #define DECRYPTED_BUFFER_LEN 2000
 #define AES_BLOCK_SIZE 16//fixme: get this from a config file
 
-
-
 void flipBits(void* packetData, int size) {
 	char* b = packetData;
 	int i;
@@ -107,7 +105,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	case REQUEST_PWD:
 		printf("PWD called, the CWD is %d\n", clientState->cwdId);
 		vfs_getDirPathFromId(vfsContext, clientState->cwdId, strBuf1,
-				STRING_BUFFER_LEN);
+		STRING_BUFFER_LEN);
 		sprintf(strBuf2, "257 \"%s\"\r\n", strBuf1);
 		sendFtpResponse(clientState, strBuf2);
 		break;
@@ -130,7 +128,8 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		openDataConnection(clientState);
 		break;
 	case REQUEST_SIZE:
-		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer, strlen(parserState->paramBuffer), clientState->cwdId);
+		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer,
+				strlen(parserState->paramBuffer), clientState->cwdId);
 		id = vfsParserState.id;
 		if ((fileSize = vfs_getFileSizeFromId(vfsContext, id)) == -1) {
 			sendFtpResponse(clientState, "550 Could not get file size.\r\n");
@@ -160,11 +159,13 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		sendFtpResponse(clientState, "226 Directory send OK.\r\n");
 		break;
 	case REQUEST_CWD:
-		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer, strlen(parserState->paramBuffer), clientState->cwdId);
-		if(vfsParserState.isExistingObject && vfsParserState.isDir){
+		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer,
+				strlen(parserState->paramBuffer), clientState->cwdId);
+		if (vfsParserState.isExistingObject && vfsParserState.isDir) {
 			clientState->cwdId = vfsParserState.id;
-			sendFtpResponse(clientState,"250 Directory successfully changed.\r\n"); //success
-		}else{
+			sendFtpResponse(clientState,
+					"250 Directory successfully changed.\r\n"); //success
+		} else {
 			sendFtpResponse(clientState, "550 Failed to change directory.\r\n");
 		}
 		break;
@@ -189,18 +190,21 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		//alright start reading in the file
 		startEncryption(&encryptionState, "phone");
 		long storFileSize = 0;
-		while ((received = recv(clientState->data_fd, decryptedDataBuffer, DECRYPTED_BUFFER_LEN, 0)) > 0) {
+		while ((received = recv(clientState->data_fd, decryptedDataBuffer,
+		DECRYPTED_BUFFER_LEN, 0)) > 0) {
 
-			updateEncryption(&encryptionState, decryptedDataBuffer, received, encryptedDataBuffer, &tempOutputSize);
-			googleUpload_update(&googleCon, encryptedDataBuffer, tempOutputSize);
-			//printf("recv'd:--%.*s--\n", received, tempBuffer);
 			storFileSize += received;
+			updateEncryption(&encryptionState, decryptedDataBuffer, received,
+					encryptedDataBuffer, &tempOutputSize);
+			googleUpload_update(&googleCon, encryptedDataBuffer,
+					tempOutputSize);
+			//printf("recv'd:--%.*s--\n", received, tempBuffer);
 		}
-		finishEncryption(&encryptionState, decryptedDataBuffer, received, encryptedDataBuffer, &tempOutputSize);
+		finishEncryption(&encryptionState, decryptedDataBuffer, received,
+				encryptedDataBuffer, &tempOutputSize);
 		googleUpload_update(&googleCon, encryptedDataBuffer, tempOutputSize);
 
 		googleUpload_end(&googleCon, &fileState);
-		printf("created a file of size %lu\n", storFileSize);
 		vfs_createFile(vfsContext, clientState->cwdId, parserState->paramBuffer,
 				storFileSize, fileState.id, fileState.webUrl, fileState.apiUrl);
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
@@ -217,20 +221,21 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		//FIXME: make sure we have a connection open
 		//send a get request to the and then continue the download
 		//take the download out to it's own file
-		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer, strlen(parserState->paramBuffer), clientState->cwdId);
+		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer,
+				strlen(parserState->paramBuffer), clientState->cwdId);
 		id = vfsParserState.id;
 		vfs_getFileWebUrl(vfsContext, id, strBuf1, 2000);
 		printf("the url of the file they're looking for is: %s\n", strBuf1);
 
-
-		startFileDownload(strBuf1, 0, 0, 0, 0, &googleCon, &hInfo, &googleParserState,
-				getAccessTokenHeader(accessTokenState));
+		startFileDownload(strBuf1, 0, 0, 0, 0, &googleCon, &hInfo,
+				&googleParserState, getAccessTokenHeader(accessTokenState));
 		sendFtpResponse(clientState, "150 about to send file\r\n");
 		encryptionStarted = 0;
 		while (1) {
 			received = updateFileDownload(&googleCon, &hInfo,
-					&googleParserState, encryptedDataBuffer, ENCRYPTED_BUFFER_LEN, &dataLength, "");
-			if(!encryptionStarted){
+					&googleParserState, encryptedDataBuffer,
+					ENCRYPTED_BUFFER_LEN, &dataLength, "");
+			if (!encryptionStarted) {
 				startDecryption(&(decryptionState), "phone", NULL);
 				encryptionStarted = 1;
 			}
@@ -239,9 +244,15 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 				//send(clientState->data_fd, tempBuffer2, tempBuffer2OutputSize, 0);
 				break;
 			}
-			updateDecryption(&decryptionState, encryptedDataBuffer, dataLength, decryptedDataBuffer, &tempOutputSize);
+			updateDecryption(&decryptionState, encryptedDataBuffer, dataLength,
+					decryptedDataBuffer, &tempOutputSize);
 			send(clientState->data_fd, decryptedDataBuffer, tempOutputSize, 0);
 		}
+		finishDecryption(&decryptionState, NULL, 0,
+				decryptedDataBuffer, &tempOutputSize);
+		if(tempOutputSize > 0)
+			send(clientState->data_fd, decryptedDataBuffer, tempOutputSize, 0);
+
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
 		if (close(clientState->data_fd) != 0) {
 			perror("close:");
@@ -255,29 +266,36 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	case REQUEST_RNFR:
 		//buffer the command
 		//check if the file exists
-		sprintf(clientState->fileNameChangeBuffer, "%s", parserState->paramBuffer);
-		sendFtpResponse(clientState, "350 RNFR accepted. Please supply new name for RNTO.\r\n");
+		sprintf(clientState->fileNameChangeBuffer, "%s",
+				parserState->paramBuffer);
+		sendFtpResponse(clientState,
+				"350 RNFR accepted. Please supply new name for RNTO.\r\n");
 		break;
 	case REQUEST_RNTO:
 		//rename the actual file
 		//TODO: FIX THIS COMMAND TO SHOW THE FILENAMES
-		printf("mv %s %s\n", clientState->fileNameChangeBuffer, parserState->paramBuffer);
-		vfs_mv(vfsContext, clientState->cwdId, clientState->fileNameChangeBuffer, parserState->paramBuffer);
+		printf("mv %s %s\n", clientState->fileNameChangeBuffer,
+				parserState->paramBuffer);
+		vfs_mv(vfsContext, clientState->cwdId,
+				clientState->fileNameChangeBuffer, parserState->paramBuffer);
 		sendFtpResponse(clientState, "250 renamed\r\n");
 		break;
 	case REQUEST_DELE:
 		//here:
 		//vfs_deleteObjectWithPath(vfsContext, path, cwd);
-		vfs_deleteObjectWithPath(vfsContext, parserState->paramBuffer, clientState->cwdId);
-		sendFtpResponse(clientState, "250 file was taken out back and shot.\r\n");
+		vfs_deleteObjectWithPath(vfsContext, parserState->paramBuffer,
+				clientState->cwdId);
+		sendFtpResponse(clientState,
+				"250 file was taken out back and shot.\r\n");
 		break;
 	case REQUEST_CDUP:
 		clientState->cwdId = vfs_getDirParent(vfsContext, clientState->cwdId);
-		sendFtpResponse(clientState,"250 Directory successfully changed.\r\n"); //success
+		sendFtpResponse(clientState, "250 Directory successfully changed.\r\n"); //success
 		break;
 	case REQUEST_RMD:
-		vfs_deleteObjectWithPath(vfsContext, parserState->paramBuffer, clientState->cwdId);
-		sendFtpResponse(clientState,"250 directory killed.\r\n"); //success
+		vfs_deleteObjectWithPath(vfsContext, parserState->paramBuffer,
+				clientState->cwdId);
+		sendFtpResponse(clientState, "250 directory killed.\r\n"); //success
 		break;
 	default:
 		sendFtpResponse(clientState, "502 Command not implemented.\r\n");
@@ -302,12 +320,14 @@ void handle_client(int client_fd, AccessTokenState_t *stateStruct) {
 		}
 		exit(1);
 	}
-	char buffer[MAX_PACKET_SIZE], pBuffer[MAX_PACKET_SIZE], usernameBuffer[100], fileNameChangeBuffer[1000];
+	char buffer[MAX_PACKET_SIZE], pBuffer[MAX_PACKET_SIZE], usernameBuffer[100],
+			fileNameChangeBuffer[1000];
 	int sent, recieved;
 	ftpParserState_t parserState;
 	ftpClientState_t clientState;
 	ftp_newParserState(&parserState, pBuffer, MAX_PACKET_SIZE);
-	ftp_newClientState(&clientState, client_fd, usernameBuffer, 100, fileNameChangeBuffer, 1000);
+	ftp_newClientState(&clientState, client_fd, usernameBuffer, 100,
+			fileNameChangeBuffer, 1000);
 	sent = send(client_fd, VALID_GREETING, strlen(VALID_GREETING), 0);
 	while (1) {
 		if ((recieved = recv(client_fd, buffer, MAX_PACKET_SIZE, 0)) == 0) {

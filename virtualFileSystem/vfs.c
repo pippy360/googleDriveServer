@@ -178,8 +178,8 @@ long vfs_getFileSizeFromId(redisContext *context, long id) {
 		freeReplyObject(reply);
 		return -1;
 	}
-	long size = strtol(reply->str, NULL, 10);
-	freeReplyObject(reply);
+	printf("we asked for the size of id: %lu and got: %s\n", id, reply->str);
+	long size = strtol(reply->str+1, NULL, 10);//FIXME: the +1 is here because we have the "'s, get rid of that
 	return size;
 }
 
@@ -300,17 +300,16 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 	line[0] = '\0';
 
 	int j = 0;
-	long id;
 	redisReply *reply;
 	char name[MAX_FILENAME_SIZE];
 	reply = redisCommand(context, "LRANGE FOLDER_%lu_folders 0 -1", dirId);
 	if (reply->type == REDIS_REPLY_ARRAY) {
 		for (j = 0; j < reply->elements; j++) {
-			id = strtol(reply->element[j]->str, NULL, 10);
-			vfs_getFolderName(context, id, name, MAX_FILENAME_SIZE);
+			long innerDirId = strtol(reply->element[j]->str, NULL, 10);
+			vfs_getFolderName(context, innerDirId, name, MAX_FILENAME_SIZE);
 			sprintf(line + strlen(line),
 					"%s   1 %s %s %10lu Jan  1  1980 %s\r\n", "drwxrwxr-x",
-					"linux", "linux", (long) 24001, name);
+					"linux", "linux", (long) 1, name);
 		}
 	}
 	freeReplyObject(reply);
@@ -318,11 +317,11 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 	reply = redisCommand(context, "LRANGE FOLDER_%lu_files   0 -1", dirId);
 	if (reply->type == REDIS_REPLY_ARRAY) {
 		for (j = 0; j < reply->elements; j++) {
-			long id = strtol(reply->element[j]->str, NULL, 10);
-			vfs_getFileName(context, id, name, MAX_FILENAME_SIZE);
+			long fileId = strtol(reply->element[j]->str, NULL, 10);
+			vfs_getFileName(context, fileId, name, MAX_FILENAME_SIZE);
 			sprintf(line + strlen(line),
 					"%s   1 %s %s %10lu Jan  1  1980 %s\r\n", "-rwxrwxr-x",
-					"linux", "linux", (long) 24001, name);
+					"linux", "linux", (long) vfs_getFileSizeFromId(context, fileId), name);
 		}
 	}
 	freeReplyObject(reply);

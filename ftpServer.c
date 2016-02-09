@@ -188,18 +188,21 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 
 		//alright start reading in the file
 		startEncryption(&encryptionState, "phone");
+		long storFileSize = 0;
 		while ((received = recv(clientState->data_fd, decryptedDataBuffer, DECRYPTED_BUFFER_LEN, 0)) > 0) {
 
 			updateEncryption(&encryptionState, decryptedDataBuffer, received, encryptedDataBuffer, &tempOutputSize);
 			googleUpload_update(&googleCon, encryptedDataBuffer, tempOutputSize);
 			//printf("recv'd:--%.*s--\n", received, tempBuffer);
+			storFileSize += received;
 		}
 		finishEncryption(&encryptionState, decryptedDataBuffer, received, encryptedDataBuffer, &tempOutputSize);
 		googleUpload_update(&googleCon, encryptedDataBuffer, tempOutputSize);
 
 		googleUpload_end(&googleCon, &fileState);
+		printf("created a file of size %lu\n", storFileSize);
 		vfs_createFile(vfsContext, clientState->cwdId, parserState->paramBuffer,
-				1000, fileState.id, fileState.webUrl, fileState.apiUrl);
+				storFileSize, fileState.id, fileState.webUrl, fileState.apiUrl);
 		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
 
 		if (close(clientState->data_fd) != 0) {

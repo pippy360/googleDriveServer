@@ -1,0 +1,110 @@
+client: connecting to 74.125.24.84
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+buffer: USER anonymous
+--
+response: 331 User name okay, need password.
+
+buffer: PASS chrome@example.com
+--
+response: 430 Invalid username or password
+
+buffer: QUIT
+--
+got a quit
+connection closed
+client: connecting to 74.125.24.84
+it's chunked
+server: waiting for connections...
+server: got connection from 127.0.0.1
+server: got connection from 127.0.0.1
+buffer: USER tom
+--
+response: 331 User name okay, need password.
+
+buffer: PASS wootwoot
+--
+response: 230 User logged in, proceed.
+
+buffer: SYST
+--
+response: 215 UNIX Type: L8
+
+buffer: PWD
+--
+PWD called, the CWD is 0
+response: 257 "/"
+
+buffer: TYPE I
+--
+response: 200 Switching to Binary mode..
+
+buffer: PASV
+--
+response: 227 Entering Passive Mode (127,0,0,1,137,72).
+
+buffer: SIZE /12 - CHVRCHES - You Caught The Light.mp3
+--
+the path: --/12 - CHVRCHES - You Caught The Light.mp3--
+testing the name 12 - CHVRCHES - You Caught The Light.mp3
+we asked for the size of id: 45 and got: "13477388"
+response: 213 13477388
+
+buffer: CWD /12 - CHVRCHES - You Caught The Light.mp3
+--
+the path: --/12 - CHVRCHES - You Caught The Light.mp3--
+testing the name 12 - CHVRCHES - You Caught The Light.mp3
+response: 550 Failed to change directory.
+
+buffer: PASV
+--
+there was an open connection, it's closed
+response: 227 Entering Passive Mode (127,0,0,1,230,201).
+
+buffer: RETR /12 - CHVRCHES - You Caught The Light.mp3
+--
+the path: --/12 - CHVRCHES - You Caught The Light.mp3--
+testing the name 12 - CHVRCHES - You Caught The Light.mp3
+the url of the file they're looking for is: https://doc-0g-ak-docs.googleusercontent.com/docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/07iv9kjbmlnvm8egqtlod0fmcavn1c6s/1455134400000/00377112155790015384/00377112155790015384/0B7_KKsaOads4akd3ajl4UWNqX2M?e=download&gd=true
+client: connecting to 74.125.24.132
+data sent to google --GET /docs/securesc/he9unpj0rh27t96v09626udpvmum8vcs/07iv9kjbmlnvm8egqtlod0fmcavn1c6s/1455134400000/00377112155790015384/00377112155790015384/0B7_KKsaOads4akd3ajl4UWNqX2M?e=download&gd=true HTTP/1.1
+Host: doc-0g-ak-docs.googleusercontent.com
+Connection: keep-alive
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
+Connection: keep-alive
+Accept-Encoding: identity;q=1, *;q=0
+Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
+Authorization: Bearer ya29.hAJ8TSpcgX941xiIGKMKXICPL0jPKTjssUSXdzqSAcCXTcxOpQnCc5mlT7j81O1GeIs-
+
+--
+
+response: 150 about to send file
+
+updateFileDownload called, this is the data --HTTP/1.1 200 OK
+X-GUploader-UploadID: AEnB2UolBJcJBitbmgjKs0SNwYppIH69QgO6wBv82pRRRLD24iYyYyrspLRwM70n_QtRXoTDQ5rF9o3BW-T_6A1oIl1tjpJihQ
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: false
+Access-Control-Allow-Headers: Accept, Accept-Language, Authorization, Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Content-Length, Content-MD5, Content-Range, Content-Type, Date, GData-Version, Host, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Origin, OriginToken, Pragma, Range, Slug, Transfer-Encoding, Want-Digest, X-ClientDetails, X-GData-Client, X-GData-Key, X-Goog-AuthUser, X-Goog-PageId, X-Goog-Encode-Response-If-Executable, X-Goog-Correlation-Id, X-Goog-Request-Info, X-Goog-Experiments, x-goog-iam-authority-selector, x-goog-iam-authorization-token, X-Goog-Spatula, X-Goog-Upload-Command, X-Goog-Upload-Content-Disposition, X-Goog-Upload-Content-Length, X-Goog-Upload-Content-Type, X-Goog-Upload-File-Name, X-Goog-Upload-Offset, X-Goog-Upload-Protocol, X-Goog-Visitor-Id, X-HTTP-Method-Override, X-JavaScript-User-Agent, X-Pan-Versionid, X-Origin, X-Referer, X-Upload-Content-Length, X-Upload-Content-Type, X-Use-HTTP-Status-Code-Override, X-YouTube-VVT, X-YouTube-Page-CL, X-YouTube-Page-Timestamp
+Access-Control-Allow-Methods: GET,OPTIONS
+Content-Type: image/png
+Content-Disposition: attachment;filename="nuffin.bin";filename*=UTF-8''nuffin.bin
+Date: Wed, 10 Feb 2016 21:09:15 GMT
+Expires: Wed, 10 Feb 2016 21:09:15 GMT
+Cache-Control: private, max-age=0
+X-Goog-Hash: crc32c=+9/C4g==
+Transfer-Encoding: chunked
+Server: UploadServer
+Alternate-Protocol: 443:quic,p=1
+Alt-Svc: quic=":443"; ma=604800; v="30,29,28,27,26,25"
+
+o»—--
+it's chunked
+done with the final decryption, the data: 12
+response: 226 Transfer complete.
+
+buffer: QUIT
+--
+got a quit
+connection closed

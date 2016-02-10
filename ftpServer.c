@@ -328,6 +328,8 @@ void handle_client(int client_fd, AccessTokenState_t *stateStruct) {
 	ftp_newParserState(&parserState, pBuffer, MAX_PACKET_SIZE);
 	ftp_newClientState(&clientState, client_fd, usernameBuffer, 100,
 			fileNameChangeBuffer, 1000);
+
+	buildDatabaseIfRequired(c);
 	sent = send(client_fd, VALID_GREETING, strlen(VALID_GREETING), 0);
 	while (1) {
 		if ((recieved = recv(client_fd, buffer, MAX_PACKET_SIZE, 0)) == 0) {

@@ -37,6 +37,15 @@ void vfs_connect(redisContext **c) {
 long getNewId(redisContext *context) {
 	redisReply *reply;
 	reply = redisCommand(context, "GET current_id_count");
+
+	//fixme:
+	if(reply->str == NULL){
+		return -1;
+	}else{
+		printf("it wasn't NULL...why not???");
+		printf(reply->str);
+	}
+
 	long result = strtol(reply->str, NULL, 10);
 	freeReplyObject(reply);
 	reply = redisCommand(context, "INCR current_id_count");
@@ -367,6 +376,13 @@ void vfs_buildDatabase(redisContext *context) {
 	__mkdir(context, 0, 0, "root");
 	reply = redisCommand(context, "SET current_id_count 1");
 	freeReplyObject(reply);
+}
+
+//FIXME:
+void buildDatabaseIfRequired(redisContext *context){
+	if(getNewId(context) == -1){
+		vfs_buildDatabase(context);
+	}
 }
 
 #include "vfsPathParser.h"

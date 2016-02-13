@@ -84,6 +84,9 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 	char encryptionStarted;
 
 	switch (parserState->type) {
+	case REQUEST_QUIT:
+		sendFtpResponse(clientState, "221 see ya.\r\n");
+		break;
 	case REQUEST_USER:
 		strcpy(clientState->usernameBuffer, parserState->paramBuffer);
 		sendFtpResponse(clientState, "331 User name okay, need password.\r\n");
@@ -224,7 +227,8 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer,
 				strlen(parserState->paramBuffer), clientState->cwdId);
 
-		if(!vfsParserState.isValid || !vfsParserState.isExistingObject || !vfsParserState.isFilePath){
+		//FIXME: handle if the file doesn't exist or if it's not a valid path
+		if(!vfsParserState.isFilePath){
 			sendFtpResponse(clientState, "500 bad parameters, it's either not a file or it doesn't exist!\r\n");
 			break;
 		}
@@ -251,20 +255,22 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 			}
 			updateDecryption(&decryptionState, encryptedDataBuffer, dataLength,
 					decryptedDataBuffer, &tempOutputSize);
-			send(clientState->data_fd, decryptedDataBuffer, tempOutputSize, 0);
+			if(tempOutputSize>0){
+				send(clientState->data_fd, decryptedDataBuffer, tempOutputSize, 0);
+			}
 		}
 		finishDecryption(&decryptionState, NULL, 0,
 				decryptedDataBuffer, &tempOutputSize);
-		if(tempOutputSize > 0)
+		if(tempOutputSize > 0){
 			send(clientState->data_fd, decryptedDataBuffer, tempOutputSize, 0);
-
-		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
-		if (close(clientState->data_fd) != 0) {
-			perror("close:");
 		}
 		if (close(clientState->data_fd2) != 0) {
 			perror("close:");
 		}
+		if (close(clientState->data_fd) != 0) {
+			perror("close:");
+		}
+		sendFtpResponse(clientState, "226 Transfer complete.\r\n");
 		//FIXME: finishFileDownload();
 
 		break;
@@ -342,11 +348,11 @@ void handle_client(int client_fd, AccessTokenState_t *stateStruct) {
 		}
 		printf("buffer: %.*s--\n", recieved, buffer);
 		ftp_parsePacket(buffer, recieved, &parserState, &clientState);
+		ftp_handleFtpRequest(c, stateStruct, &parserState, &clientState);
 		if (parserState.type == REQUEST_QUIT) {
 			printf("got a quit\n");
 			break;
 		}
-		ftp_handleFtpRequest(c, stateStruct, &parserState, &clientState);
 	}
 	close(client_fd);
 	printf("connection closed\n");

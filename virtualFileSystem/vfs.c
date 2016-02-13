@@ -41,9 +41,6 @@ long getNewId(redisContext *context) {
 	//fixme:
 	if(reply->str == NULL){
 		return -1;
-	}else{
-		printf("it wasn't NULL...why not???");
-		printf(reply->str);
 	}
 
 	long result = strtol(reply->str, NULL, 10);
@@ -257,7 +254,6 @@ long vfs_findFileNameInDir(redisContext *context, long dirId, char *fileName,
 		for (i = 0; i < reply->elements; i++) {
 			tempId = strtol(reply->element[i]->str, NULL, 10);
 			vfs_getFileName(context, tempId, nameBuffer, MAX_FILENAME_SIZE);
-			//printf("nameBuffer %s\n", nameBuffer);
 			if (strncmp(fileName, nameBuffer, fileNameLength) == 0) {
 				matchId = tempId;
 			}
@@ -380,9 +376,8 @@ void vfs_buildDatabase(redisContext *context) {
 
 //FIXME:
 void buildDatabaseIfRequired(redisContext *context){
-	if(getNewId(context) == -1){
-		vfs_buildDatabase(context);
-	}
+	__mkdir(context, 0, 0, "root");
+	getNewId(context);
 }
 
 #include "vfsPathParser.h"
@@ -460,7 +455,7 @@ int something(int argc, char const *argv[]) {
 	init_vfsPathParserState(&parserState);
 	vfs_findObjectInDir(c, &parserState, tempId3, "far_down_file.webm",
 			strlen("far_down_file.webm"));
-	printf("is it a file??? %d\n", parserState.isFile);
+	printf("is it a file??? %d\n", parserState.isFilePath);
 
 	char *str1 = "sadf/";
 	vfs_serperatePathAndName(&parserState, str1, strlen(str1));
@@ -476,7 +471,7 @@ int something(int argc, char const *argv[]) {
 	printf("tempId3 after %ld\n", tempId3);
 	vfs_findObjectInDir(c, &parserState, tempId3, "far_down_file.webm",
 			strlen("far_down_file.webm"));
-	printf("is it a file??? %d\n", parserState.isFile);
+	printf("is it a file??? %d\n", parserState.isFilePath);
 
 	char *str2 = "/new folder/foldhere";
 	init_vfsPathParserState(&parserState);
@@ -484,7 +479,7 @@ int something(int argc, char const *argv[]) {
 	if (result1 == 0) {
 		printf("id                  %ld\n", parserState.id);
 		printf("parent Id           %ld\n", parserState.parentId);
-		printf("isFile              %d\n", parserState.isFile);
+		printf("isFile              %d\n", parserState.isFilePath);
 		printf("isDir               %d\n", parserState.isDir);
 		printf("nameLength          %d\n", parserState.nameLength);
 		printf("name:               %s\n", str2 + parserState.nameOffset);

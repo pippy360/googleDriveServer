@@ -223,6 +223,11 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		//take the download out to it's own file
 		vfs_parsePath(vfsContext, &vfsParserState, parserState->paramBuffer,
 				strlen(parserState->paramBuffer), clientState->cwdId);
+
+		if(!vfsParserState.isValid || !vfsParserState.isExistingObject || !vfsParserState.isFilePath){
+			sendFtpResponse(clientState, "500 bad parameters, it's either not a file or it doesn't exist!\r\n");
+			break;
+		}
 		id = vfsParserState.id;
 		vfs_getFileWebUrl(vfsContext, id, strBuf1, 2000);
 		printf("the url of the file they're looking for is: %s\n", strBuf1);

@@ -5,7 +5,9 @@ typedef struct {
 	char isExistingObject;
 	char nameOffset;//offset points to any characters after the last '/' in the file path
 	int nameLength;
-	char isFile;//FIXME: REPLACE WITH ENUMS (objectType)
+	//@isFilePath If this is true it DOESN'T mean it's an existing file,
+	//only that it's a file path (like "/something.txt as opposed to a directory path like /something/
+	char isFilePath;
 	char isDir;//FIXME: REPLACE WITH ENUMS (objectType)
 	char isValid;
 	int error;

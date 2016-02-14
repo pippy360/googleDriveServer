@@ -149,13 +149,9 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 
 		send(clientState->data_fd, dirList, strlen(dirList), 0);
 
-		for (i = 0; i < 2000000; i++)
-			;
-
 		if (close(clientState->data_fd) != 0) {
 			perror("close:");
 		}
-
 		if (close(clientState->data_fd2) != 0) {
 			perror("close2:");
 		}

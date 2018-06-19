@@ -155,6 +155,9 @@ int getAccessTokenWithRefreshToken(AccessTokenState_t *stateStruct) {
 
 	//get the json value
 	jsonReturnValue = shitty_get_json_value("access_token", jsonReturnDataBuffer, jsonDataSize);
+	if (!jsonReturnValue) 
+		return -1;
+
 	setAccessToken(jsonReturnValue, stateStruct);
 	//expiresTime = shitty_get_json_value("expires_in"  , jsonReturnDataBuffer, jsonDataSize);
 

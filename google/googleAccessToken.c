@@ -20,6 +20,17 @@
 					"Content-Type: application/x-www-form-urlencoded\r\n"\
 					"Content-length: %d\r\n\r\n%s"
 
+#define CLIENT_ID "83270242690-ik7708euo0ghpdkk3qrknjv220kreg2g.apps.googleusercontent.com"
+#define REDIRECT_URI "urn:ietf:wg:oauth:2.0:oob"
+#define CLIENT_SECRET "zY3rv4fVbHGRc6YXk_iTUREk"
+#define pasted_code ""\
+			"code=%s"\
+			"&redirect_uri=" REDIRECT_URI\
+			"&client_id=" CLIENT_ID \
+			"&client_secret=" CLIENT_SECRET\
+			"&scope=" \
+			"&grant_type=authorization_code"
+
 void gat_newAccessTokenState(AccessTokenState_t *stateStruct) {
 	//malloc the intial stuff
 	stateStruct->isAccessTokenLoaded = 0;
@@ -37,13 +48,13 @@ void gat_freeAccessTokenState(AccessTokenState_t *stateStruct) {
 //TODO:
 //check if we have enough room in the buffer and realloc if we don't
 void setAccessToken(const char *accessToken, AccessTokenState_t *stateStruct) {
-	memcpy(stateStruct->accessTokenStr, accessToken, strlen(accessToken));
+	sprintf(stateStruct->accessTokenStr, "%s", accessToken);
 }
 
 //TODO:
 //check if we have enough room in the buffer and realloc if we don't
 void setRefreshToken(const char *refreshToken, AccessTokenState_t *stateStruct) {
-	memcpy(stateStruct->refreshTokenStr, refreshToken, strlen(refreshToken));
+	sprintf(stateStruct->refreshTokenStr, "%s", refreshToken);
 }
 
 //returns 0 if success, -1 if error where errorno is set, -2 otherwise
@@ -71,9 +82,15 @@ int loadFromFile(char *accessTokenBuffer, const int bufferLength) {
 	return 0;
 }
 
-void saveToFile(char *accessTokenBuffer, const int accessTokenLength) {
-	FILE *f = fopen("refresh.token", "w");
-	fprintf(f, "%.*s\n", accessTokenLength, accessTokenBuffer);
+void saveRefreshTokenToFile(char *tokenStr) {
+	FILE *f = fopen("refresh.token", "w+");
+	fprintf(f, "%s\n", tokenStr);
+	fclose(f);
+}
+
+void saveAccessTokenToFile(char *tokenStr) {
+	FILE *f = fopen("access.token", "w+");
+	fprintf(f, "%s\n", tokenStr);
 	fclose(f);
 }
 
@@ -115,8 +132,8 @@ int gat_init_googleAccessToken(AccessTokenState_t *stateStruct) {
 	}
 
 	if (shouldSaveToFile) {
-		saveToFile(stateStruct->accessTokenStr,
-				strlen(stateStruct->accessTokenStr));
+		saveAccessTokenToFile(stateStruct->accessTokenStr);
+		saveRefreshTokenToFile(stateStruct->refreshTokenStr);
 	}
 	return 0;
 }
@@ -130,11 +147,10 @@ int getAccessTokenWithRefreshToken(AccessTokenState_t *stateStruct) {
 	char url[] = "https://accounts.google.com/o/oauth2/token";
 	char *jsonReturnDataBuffer = malloc(jsonDataSize);
 	char refresh_token_post_data[] =
-			"client_id=83270242690-k8gfaaaj5gjahc7ncvri5m3pu2lp9nsu."
-					"apps.googleusercontent.com&"
-					"client_secret=BDkeIsUA394I_n-hwFp6syeO&"
-					"refresh_token=%s&"
-					"grant_type=refresh_token";
+		"client_id=" CLIENT_ID
+		"&client_secret=" CLIENT_SECRET
+		"&refresh_token=%s"
+		"&grant_type=refresh_token";
 	headerInfo_t hInfo;
 	Connection_t con;
 
@@ -172,26 +188,29 @@ int getAccessTokenWithPastedCode(const char *codeStr,
 		AccessTokenState_t *stateStruct) {
 	int size;
 	char packetBuffer[MAX_PACKET_SIZE];
-	char url[] = "https://developers.google.com/oauth2/v3/token";
+	char url[] = "https://www.googleapis.com/oauth2/v4/token";
 	char *jsonReturnDataBuffer = malloc(200000);
-	char pasted_code_post_data[] = "code=%s&client_id=83270242690-k8"
-			"gfaaaj5gjahc7ncvri5m3pu2lp9nsu.apps.googleu"
-			"sercontent.com&client_secret=BDkeIsUA394I_n"
-			"-hwFp6syeO&redirect_uri=urn:ietf:wg:oauth:2"
-			".0:oob&grant_type=authorization_code";
+	char *jsonReturnValue;
+	char pasted_code_post_data[] = "code=" "%s"
+		"&redirect_uri=" REDIRECT_URI
+		"&client_id=" CLIENT_ID
+		"&client_secret=" CLIENT_SECRET
+		"&scope=&grant_type=authorization_code";
+	char strt[MAX_PACKET_SIZE];
 	headerInfo_t hInfo;
 	Connection_t con;
 
 	set_new_header_info(&hInfo);
 	hInfo.transferType = TRANSFER_CONTENT_LENGTH;
 	hInfo.contentLength = strlen(pasted_code_post_data)
-			+ strlen(stateStruct->accessTokenStr) - strlen("%s");
+			+ strlen(codeStr) - strlen("%s");
 	size = utils_createHTTPHeaderFromUrl(url, packetBuffer, MAX_PACKET_SIZE,
-			&hInfo, REQUEST_POST, NULL);
+			&hInfo, REQUEST_POST, 
+			"Content-Type: application/x-www-form-urlencoded\r\n");
 	//append the data
-	sprintf(packetBuffer + size, pasted_code_post_data,
-			stateStruct->accessTokenStr);
-
+	sprintf(strt, pasted_code_post_data, codeStr);
+	sprintf(packetBuffer + size, pasted_code_post_data, codeStr);
+	printf("PacketBuffer:\n%s\n\n", packetBuffer);
 	utils_connectByUrl(url, &con);
 	net_send(&con, packetBuffer, strlen(packetBuffer));
 
@@ -199,7 +218,17 @@ int getAccessTokenWithPastedCode(const char *codeStr,
 	net_close(&con);
 
 	//get the json value
-	printf("the json data we got was %s", jsonReturnDataBuffer);
+	printf("the json data we got was:\n%s\n", jsonReturnDataBuffer);
+	
+	jsonReturnValue = shitty_get_json_value("access_token", jsonReturnDataBuffer, strlen(jsonReturnDataBuffer));
+	if (!jsonReturnValue) 
+		return -1;
+	setAccessToken(jsonReturnValue, stateStruct);
+
+	jsonReturnValue = shitty_get_json_value("refresh_token", jsonReturnDataBuffer, strlen(jsonReturnDataBuffer));
+	if (!jsonReturnValue) 
+		return -1;
+	setRefreshToken(jsonReturnValue, stateStruct);
 
 	free(jsonReturnDataBuffer);
 	return 0;
@@ -212,10 +241,11 @@ int getNewTokensWithLink(AccessTokenState_t *stateStruct) {
 
 	printf("Visit this link and paste the code in...:\n"
 			"https://accounts.google.com/o/oauth2/auth?access_type=offline"
-			"&client_id=83270242690-k8gfaaaj5gjahc7ncvri5m3pu2lp9nsu.apps."
-			"googleusercontent.com&redirect_uri=urn%%3Aietf%%3Awg%%3Aoauth"
-			"%%3A2.0%%3Aoob&response_type=code&scope=https%%3A%%2F%%2Fwww."
-			"googleapis.com%%2Fauth%%2Fdrive\n");
+			"&client_id="
+			CLIENT_ID
+			"&redirect_uri=urn%%3Aietf%%3Awg%%3Aoauth%%3A2.0%%3Aoob"
+			"&response_type=code"
+			"&scope=https%%3A%%2F%%2Fwww.googleapis.com%%2Fauth%%2Fdrive\n");
 
 	fgets(buffer, MAX_RETURN_CODE_LENGTH, stdin);
 	buffer[strlen(buffer) - 1] = '\0'; //cut out the last char

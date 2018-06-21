@@ -21,15 +21,12 @@ int googleUpload_init(Connection_t *con, AccessTokenState_t *accessTokenState,
 	char extraHeaders[MAX_PACKET_SIZE];
 	char metadataBuff[MAX_PACKET_SIZE];
 	char postData[] =
-			"--foo_bar_baz\nContent-Type: application/json; charset=UTF-8\n\n"
-					"{\n"
-					"%s,\n"
-					"\"parents\":"
-					"[{\"id\":\"0B7_KKsaOads4fkUyYzluV2hWcm90SGxoaUxURGdXUkE0QUJDQnIwT1hzMVVZcDJNX2lCX2M\","
-					"\"kind\":\"drive#parentReference\"}]"
-					"}\n"
-					"--foo_bar_baz\n"
-					"Content-Type: %s\n\n";
+		"--foo_bar_baz\nContent-Type: application/json; charset=UTF-8\n\n"
+		"{\n"
+		"%s\n"
+		"}\n"
+		"--foo_bar_baz\n"
+		"Content-Type: %s\n\n";
 	headerInfo_t hInfo;
 	set_new_header_info(&hInfo);
 	hInfo.transferType = TRANSFER_CHUNKED;
@@ -88,7 +85,7 @@ int googleUpload_end(Connection_t *con, GoogleUploadState_t *fileState) {
 	//FIXME: this output buffer really isn't big enough
 	received = utils_recvNextHttpPacket(con, &hInfo, outputData,
 			MAX_PACKET_SIZE);
-
+	printf("received:\n%s\n", outputData);	
 	//you have to save this data !!
 	printf("the id of the uploaded file is: %s\n",
 			shitty_get_json_value("id", outputData, received));

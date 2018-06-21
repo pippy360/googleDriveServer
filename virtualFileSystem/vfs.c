@@ -17,6 +17,9 @@
 
 //NO STRING PARSING SHOULD BE DONE IN THIS FILE
 
+
+//FIXME: mix of i and j for iterators isn't needed and confusing!!!
+
 void vfs_connect(redisContext **c) {
 	const char *hostname = "127.0.0.1";
 	int port = 6379;
@@ -159,45 +162,73 @@ void vfs_setFileName(redisContext *context, long id, char *nameBuffer,
 
 //returns the reply for the name resquest
 //so use freeReplayObject() to free
-void vfs_getFileName(redisContext *context, long id, char *outputNameBuffer,
+int vfs_getFileName(redisContext *context, long id, char *outputNameBuffer,
 		int outputNameBufferLength) {
 	redisReply *reply;
 	reply = redisCommand(context, "HGET FILE_%lu_info name", id);
+	if (!reply->str) {
+		goto fetch_value_failed;
+	}
 	sprintf(outputNameBuffer, "%.*s", (int) strlen(reply->str) - 2,
 			reply->str + 1);
 	freeReplyObject(reply);
+	return 0;
+
+fetch_value_failed:
+	freeReplyObject(reply);
+	return -1;
 }
 
 //FIXME: FIXME: temporary fix here, change APIURL TO WEBURL
-void vfs_getFileWebUrl(redisContext *context, long id, char *outputNameBuffer,
+int vfs_getFileWebUrl(redisContext *context, long id, char *outputNameBuffer,
 		int outputNameBufferLength) {
 	redisReply *reply;
 	reply = redisCommand(context, "HGET FILE_%lu_info apiUrl", id);
+	if (!reply->str) {
+		goto fetch_value_failed;
+	}
+
 	sprintf(outputNameBuffer, "%.*s", (int) strlen(reply->str) - 2,
 			reply->str + 1);
 	freeReplyObject(reply);
+	return 0;
+
+fetch_value_failed:
+	freeReplyObject(reply);
+	return -1;
 }
 
 long vfs_getFileSizeFromId(redisContext *context, long id) {
 	redisReply *reply;
 	reply = redisCommand(context, "HGET FILE_%lu_info size", id);
-	if (reply->str == NULL) {
-		freeReplyObject(reply);
-		return -1;
+	if (!reply->str) {
+		goto fetch_value_failed;
 	}
 	printf("we asked for the size of id: %lu and got: %s\n", id, reply->str);
 	long size = strtol(reply->str + 1, NULL, 10);//FIXME: the +1 is here because we have the "'s, get rid of that
 	return size;
+
+fetch_value_failed:
+	freeReplyObject(reply);
+	return -1;
 }
 
 //^see get file name
-void vfs_getFolderName(redisContext *context, long id, char *outputNameBuffer,
+int vfs_getFolderName(redisContext *context, long id, char *outputNameBuffer,
 		int outputNameBufferLength) {
 	redisReply *reply;
 	reply = redisCommand(context, "HGET FOLDER_%lu_info name", id);
+	if (!reply->str) {
+		goto fetch_value_failed;
+	}
 	sprintf(outputNameBuffer, "%.*s", (int) strlen(reply->str) - 2,
 			reply->str + 1);
 	freeReplyObject(reply);
+	return 0;
+
+fetch_value_failed:
+	freeReplyObject(reply);
+	return -1;
 }
 
 //this only works with folders for the moment
@@ -226,18 +257,34 @@ void vfs_ls(redisContext *context, long dirId) {
 	reply = redisCommand(context, "LRANGE FOLDER_%lu_folders 0 -1", dirId);
 	if (reply->type == REDIS_REPLY_ARRAY) {
 		for (j = 0; j < reply->elements; j++) {
+			if (!reply->element[j]->str) {
+				printf( "ERROR: broken element\n" );
+				continue;
+			}
+
 			id = strtol(reply->element[j]->str, NULL, 10);
-			vfs_getFolderName(context, id, name, MAX_FILENAME_SIZE);
-			printf("ls: %s\n", name);
+			if ( vfs_getFolderName( context, id, name, MAX_FILENAME_SIZE ) ) {
+				printf("ls: %s\n", name);
+			} else {
+				printf("ERROR: broken folder\n");
+			}
 		}
 	}
 	freeReplyObject(reply);
 	reply = redisCommand(context, "LRANGE FOLDER_%lu_files   0 -1", dirId);
 	if (reply->type == REDIS_REPLY_ARRAY) {
 		for (j = 0; j < reply->elements; j++) {
+			if (!reply->element[j]->str) {
+				printf( "ERROR: broken element\n" );
+				continue;
+			}
+
 			long id = strtol(reply->element[j]->str, NULL, 10);
-			vfs_getFileName(context, id, name, MAX_FILENAME_SIZE);
-			printf("ls: %s\n", name);
+			if ( vfs_getFileName( context, id, name, MAX_FILENAME_SIZE ) ) {
+				printf( "ls: %s\n", name );
+			} else {
+				printf( "ERROR: broken file\n" );
+			}
 		}
 	}
 	freeReplyObject(reply);
@@ -253,8 +300,17 @@ long vfs_findFileNameInDir(redisContext *context, long dirId, char *fileName,
 	reply = redisCommand(context, "LRANGE FOLDER_%lu_files 0 -1", dirId);
 	if (reply->type == REDIS_REPLY_ARRAY) {
 		for (i = 0; i < reply->elements; i++) {
+			if (!reply->element[i]->str) {
+				printf( "ERROR: broken element\n" );
+				continue;
+			}
+
 			tempId = strtol(reply->element[i]->str, NULL, 10);
-			vfs_getFileName(context, tempId, nameBuffer, MAX_FILENAME_SIZE);
+			if ( vfs_getFileName( context, tempId, nameBuffer, MAX_FILENAME_SIZE ) ) {
+				printf( "ERROR: broken file\n" );
+				continue;
+			}
+
 			if (strncmp(fileName, nameBuffer, fileNameLength) == 0) {
 				matchId = tempId;
 			}
@@ -282,8 +338,17 @@ long vfs_findDirNameInDir(redisContext *context, long dirId, char *dirName,
 	reply = redisCommand(context, "LRANGE FOLDER_%lu_folders 0 -1", dirId);
 	if (reply->type == REDIS_REPLY_ARRAY) {
 		for (i = 0; i < reply->elements; i++) {
+			if (!reply->element[i]->str) {
+				printf( "ERROR: broken element\n" );
+				continue;
+			}
+
 			tempId = strtol(reply->element[i]->str, NULL, 10);
-			vfs_getFolderName(context, tempId, nameBuffer, MAX_FILENAME_SIZE);
+			if ( vfs_getFolderName( context, tempId, nameBuffer, MAX_FILENAME_SIZE ) ) {
+				printf( "ERROR: broken folder\n" );
+				continue;
+			}
+
 			if (strncmp(dirName, nameBuffer, dirNameLength) == 0) {
 				matchId = tempId;
 			}
@@ -305,14 +370,21 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 	char *line = malloc(20000);
 	line[0] = '\0';
 
-	int j = 0;
+	int i = 0;
 	redisReply *reply;
 	char name[MAX_FILENAME_SIZE];
 	reply = redisCommand(context, "LRANGE FOLDER_%lu_folders 0 -1", dirId);
 	if (reply->type == REDIS_REPLY_ARRAY) {
-		for (j = 0; j < reply->elements; j++) {
-			long innerDirId = strtol(reply->element[j]->str, NULL, 10);
-			vfs_getFolderName(context, innerDirId, name, MAX_FILENAME_SIZE);
+		for (i = 0; i < reply->elements; i++) {
+			if (!reply->element[i]->str) {
+				printf( "ERROR: broken element\n" );
+				continue;
+			}
+			long innerDirId = strtol(reply->element[i]->str, NULL, 10);
+			if ( vfs_getFolderName(context, innerDirId, name, MAX_FILENAME_SIZE) ) {
+				printf( "ERROR: broken folder\n" );
+				continue;
+			}
 			sprintf(line + strlen(line),
 					"%s   1 %s %s %10lu Jan  1  1980 %s\r\n", "drwxrwxr-x",
 					"linux", "linux", (long) 1, name);
@@ -322,13 +394,20 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 
 	reply = redisCommand(context, "LRANGE FOLDER_%lu_files   0 -1", dirId);
 	if (reply->type == REDIS_REPLY_ARRAY) {
-		for (j = 0; j < reply->elements; j++) {
-			long fileId = strtol(reply->element[j]->str, NULL, 10);
-			vfs_getFileName(context, fileId, name, MAX_FILENAME_SIZE);
+		for (i = 0; i < reply->elements; i++) {
+			if (!reply->element[i]->str) {
+				printf( "ERROR: broken element\n" );
+				continue;
+			}
+			long fileId = strtol(reply->element[i]->str, NULL, 10);
+			if ( vfs_getFileName(context, fileId, name, MAX_FILENAME_SIZE) ) {
+				printf( "ERROR: broken file\n" );
+				continue;
+			}
+			long fileSize = vfs_getFileSizeFromId(context, fileId);
 			sprintf(line + strlen(line),
 					"%s   1 %s %s %10lu Jan  1  1980 %s\r\n", "-rwxrwxr-x",
-					"linux", "linux",
-					(long) vfs_getFileSizeFromId(context, fileId), name);
+					"linux", "linux", fileSize, name);
 		}
 	}
 	freeReplyObject(reply);

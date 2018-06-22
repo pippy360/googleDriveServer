@@ -3,6 +3,10 @@
 #include <fuse.h>
 #include <string.h>
 #include <errno.h>
+#include "../virtualFileSystem/hiredis/hiredis.h"
+#include "../virtualFileSystem/vfs.h"
+#include "../virtualFileSystem/vfsPathParser.h"
+
 
 static const char *filepath = "/file";
 static const char *filename = "file";

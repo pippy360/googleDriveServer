@@ -11,6 +11,7 @@
 static const char *filepath = "/file";
 static const char *filename = "file";
 static const char *filecontent = "I'm the content of the only file available there\n";
+redisContext *c;
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
   memset(stbuf, 0, sizeof(struct stat));
@@ -35,7 +36,12 @@ static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
     off_t offset, struct fuse_file_info *fi) {
   (void) offset;
   (void) fi;
+  char buf[20000];
+  int numRetVals;
 
+  //FIXME: get cwd
+  long dirId = vfs_getIdByPath(path, 0);
+  vfs_fuseLsDir(c, dirId, buf, 999, &numRetVals);
   filler(buf, ".", NULL, 0);
   filler(buf, "..", NULL, 0);
 
@@ -78,5 +84,22 @@ static struct fuse_operations fuse_example_operations = {
 
 int main(int argc, char *argv[])
 {
+        unsigned int j;
+        redisReply *reply;
+        const char *hostname = (argc > 1) ? argv[1] : "127.0.0.1";
+        int port = (argc > 2) ? atoi(argv[2]) : 6379;
+
+        struct timeval timeout = { 1, 500000 }; // 1.5 seconds
+        c = redisConnectWithTimeout(hostname, port, timeout);
+        if (c == NULL || c->err) {
+                if (c) {
+                        printf("Connection error: %s\n", c->errstr);
+                        redisFree(c);
+                } else {
+                        printf("Connection error: can't allocate redis context\n");
+                }
+                exit(1);
+        }
+
   return fuse_main(argc, argv, &fuse_example_operations, NULL);
 }

@@ -225,13 +225,13 @@ int vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 	return 0;
 }
 
-int vfs_getIdByPath( char *path, long cwd ) {
+int vfs_getIdByPath(redisContext *context, char *path, long cwd ) {
 	vfsPathParserState_t parserState;
-	if( vfs_parsePath( c, &parserState, strlen(path), cwd ) ) {
-		return -1
+	if( vfs_parsePath( context, &parserState, path, strlen(path), cwd ) ) {
+		return -1;
 	}
 	
-	return parserState->id;
+	return parserState.id;
 
 }
 

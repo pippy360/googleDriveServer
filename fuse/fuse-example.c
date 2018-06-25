@@ -14,40 +14,44 @@ static const char *filecontent = "I'm the content of the only file available the
 redisContext *c;
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
-  memset(stbuf, 0, sizeof(struct stat));
+	
+	memset( stbuf, 0, sizeof( struct stat ) );
 
-  if (strcmp(path, "/") == 0) {
-    stbuf->st_mode = S_IFDIR | 0755;
-    stbuf->st_nlink = 2;
-    return 0;
-  }
+	vfsPathParserState_t parserState;
+	init_vfsPathParserState( &parserState );
+ 	vfs_parsePath( c, &parserState, path, strlen(path), 0/*cwd*/ );
 
-  if (strcmp(path, filepath) == 0) {
-    stbuf->st_mode = S_IFREG | 0777;
-    stbuf->st_nlink = 1;
-    stbuf->st_size = strlen(filecontent);
-    return 0;
-  }
+	if ( parserState.isDir ) {
+		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2;
+		return 0;
+	} else {
+		stbuf->st_mode = S_IFREG | 0777;
+		stbuf->st_nlink = 1;
+		stbuf->st_size = strlen(filecontent);
+		return 0;
+	}
 
-  return -ENOENT;
+	return -ENOENT;
 }
 
 static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
-    off_t offset, struct fuse_file_info *fi) {
-  (void) offset;
-  (void) fi;
-  char buf[20000];
-  int numRetVals;
+		off_t offset, struct fuse_file_info *fi) {
 
-  //FIXME: get cwd
-  long dirId = vfs_getIdByPath(path, 0);
-  vfs_fuseLsDir(c, dirId, buf, 999, &numRetVals);
-  filler(buf, ".", NULL, 0);
-  filler(buf, "..", NULL, 0);
+	char fuseLsbuf[20000];
+	int numRetVals;
 
-  filler(buf, filename, NULL, 0);
+	//FIXME: get cwd
+	long dirId = vfs_getIdByPath(path, 0);
+	vfs_fuseLsDir(c, dirId, fuseLsbuf, 999, &numRetVals);
+	int i;
+	char *ptr = fuseLsbuf;
+	for ( i = 0; i < numRetVals; i++ ) {
+		filler( buf, ptr, NULL, 0 );
+		ptr += strlen( ptr );
+	}
 
-  return 0;
+	return 0;
 }
 
 static int open_callback(const char *path, struct fuse_file_info *fi) {

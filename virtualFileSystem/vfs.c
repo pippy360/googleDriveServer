@@ -358,16 +358,58 @@ long vfs_findDirNameInDir(redisContext *context, long dirId, char *dirName,
 	return matchId;
 }
 
+int vfs_fuseLsDir(redisContext *context, long dirId, char *fuseLsbuf, int maxBuffSize, 
+		int *numRetVals) {
+	int i = 0;
+	redisReply *reply;
+	char name[MAX_FILENAME_SIZE];
+	reply = redisCommand(context, "LRANGE FOLDER_%lu_folders 0 -1", dirId);
+	char *ptr = fuseLsbuf;
+	int rc;
+	if (reply->type == REDIS_REPLY_ARRAY) {
+		for (i = 0; i < reply->elements; i++) {
+			if (!reply->element[i]->str) {
+				printf( "ERROR: broken element\n" );
+				continue;
+			}
+			long innerDirId = strtol(reply->element[i]->str, NULL, 10);
+			if ( vfs_getFolderName(context, innerDirId, name, MAX_FILENAME_SIZE) ) {
+				printf( "ERROR: broken folder\n" );
+				continue;
+			}
+			rc = sprintf(ptr, name);
+			ptr += rc + 1;
+		}
+	}
+	freeReplyObject(reply);
+
+	reply = redisCommand(context, "LRANGE FOLDER_%lu_files   0 -1", dirId);
+	if (reply->type == REDIS_REPLY_ARRAY) {
+		for (i = 0; i < reply->elements; i++) {
+			if (!reply->element[i]->str) {
+				printf( "ERROR: broken element\n" );
+				continue;
+			}
+			long fileId = strtol(reply->element[i]->str, NULL, 10);
+			if ( vfs_getFileName(context, fileId, name, MAX_FILENAME_SIZE) ) {
+				printf( "ERROR: broken file\n" );
+				continue;
+			}
+			rc = sprintf(ptr, name);
+			ptr += rc + 1;
+		}
+	}
+	freeReplyObject(reply);
+
+	return 0;//fixme, only one return code? then this isn't needed
+	
+}
+
 //FIXME: SO MUCH REPEATED CODE HERE, CLEAN THIS UP
 //-1 if not found, id otherwise
 
 char *vfs_listUnixStyle(redisContext *context, long dirId) {
-	//get the folder
-	//get all the id's, go over them and print sprintf the contents
-
-	//get the folder
-	//go through all the folders
-	char *line = malloc(20000);
+	char *line = malloc(20000);//fixme:
 	line[0] = '\0';
 
 	int i = 0;

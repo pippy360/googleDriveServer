@@ -12,11 +12,11 @@ redisContext *vfs_connect() {
 	int port = 6379;
 
 	struct timeval timeout = { 1, 500000 }; // 1.5 seconds
-	*c = redisConnectWithTimeout(hostname, port, timeout);
-	if (*c == NULL || (*c)->err) {
-		if (*c) {
-			printf("Connection error: %s\n", (*c)->errstr);
-			redisFree(*c);
+	redisContext *c = redisConnectWithTimeout(hostname, port, timeout);
+	if (c == NULL || (c)->err) {
+		if (c) {
+			printf("Connection error: %s\n", (c)->errstr);
+			redisFree(c);
 		} else {
 			printf("Connection error: can't allocate redis context\n");
 		}
@@ -69,28 +69,28 @@ void __createFile(redisContext *context, long id, char *name, long size,
 	freeReplyObject(reply);
 }
 
-void __addFileToFileList(redisContext *context, long folderId, long fileId) {
+void vfs_addFileToFileList(redisContext *context, long folderId, long fileId) {
 	redisReply *reply;
 	reply = redisCommand(context, "LPUSH FOLDER_%lu_files %lu", folderId,
 			fileId);
 	freeReplyObject(reply);
 }
 
-void __addDirToFolderList(redisContext *context, long folderId, long fileId) {
+void vfs_addDirToFolderList(redisContext *context, long folderId, long fileId) {
 	redisReply *reply;
 	reply = redisCommand(context, "LPUSH FOLDER_%lu_folders %lu", folderId,
 			fileId);
 	freeReplyObject(reply);
 }
 
-void __removeIdFromFileList(redisContext *context, long dirId, long removeId) {
+void vfs_removeIdFromFileList(redisContext *context, long dirId, long removeId) {
 	redisReply *reply;
 	reply = redisCommand(context, "LREM FOLDER_%ld_files 0 %ld", dirId,
 			removeId);
 	freeReplyObject(reply);
 }
 
-void __removeIdFromFolderList(redisContext *context, long dirId, long removeId) {
+void vfs_removeIdFromFolderList(redisContext *context, long dirId, long removeId) {
 	redisReply *reply;
 	reply = redisCommand(context, "LREM FOLDER_%ld_folders 0 %ld", dirId,
 			removeId);
@@ -101,7 +101,7 @@ long vfs_createFile(redisContext *context, long parentId, char *name, long size,
 		char *googleId, char *webUrl, char *apiUrl) {
 	//add it to the file list of the dir
 	long id = getNewId(context);
-	__addFileToFileList(context, parentId, id);
+	vfs_addFileToFileList(context, parentId, id);
 	__createFile(context, id, name, size, googleId, webUrl, apiUrl);
 	return id;
 }
@@ -237,7 +237,7 @@ void vfs_setDirParent(redisContext *context, long dirId, long newParent) {
 	freeReplyObject(reply);
 }
 
-void vfs_ls(redisContext *context, long dirId) {
+void __vfs_ls(redisContext *context, long dirId) {
 	int i = 0;
 	long id;
 	redisReply *reply;
@@ -258,16 +258,16 @@ void vfs_ls(redisContext *context, long dirId) {
 			}
 		}
 	}
-	freeReplyObject(reply);
-	reply = redisCommand(context, "LRANGE FOLDER_%lu_files   0 -1", dirId);
-	if (reply->type == REDIS_REPLY_ARRAY) {
-		for (i = 0; i < reply->elements; i++) {
-			if (!reply->element[i]->str) {
+	freeReplyObject( reply );
+	reply = redisCommand( context, "LRANGE FOLDER_%lu_files   0 -1", dirId );
+	if ( reply->type == REDIS_REPLY_ARRAY ) {
+		for ( i = 0; i < reply->elements; i++ ) {
+			if ( !reply->element[i]->str ) {
 				printf( "ERROR: broken element\n" );
 				continue;
 			}
 
-			long id = strtol(reply->element[i]->str, NULL, 10);
+			long id = strtol( reply->element[i]->str, NULL, 10 );
 			if ( vfs_getFileName( context, id, name, MAX_FILENAME_SIZE ) ) {
 				printf( "ls: %s\n", name );
 			} else {
@@ -275,43 +275,43 @@ void vfs_ls(redisContext *context, long dirId) {
 			}
 		}
 	}
-	freeReplyObject(reply);
+	freeReplyObject( reply );
 }
 
 //return's id if successful, -1 otherwise
-long vfs_findFileNameInDir(redisContext *context, long dirId, char *fileName,
-		int fileNameLength) {
+long vfs_findFileNameInDir( redisContext *context, long dirId, 
+		const char *fileName, int fileNameLength ) {
 	long tempId, matchId = -1;
 	int i;
 	redisReply *reply;
-	char nameBuffer[MAX_FILENAME_SIZE];
-	reply = redisCommand(context, "LRANGE FOLDER_%lu_files 0 -1", dirId);
-	if (reply->type == REDIS_REPLY_ARRAY) {
-		for (i = 0; i < reply->elements; i++) {
-			if (!reply->element[i]->str) {
+	char nameBuffer[ MAX_FILENAME_SIZE ];
+	reply = redisCommand( context, "LRANGE FOLDER_%lu_files 0 -1", dirId );
+	if ( reply->type == REDIS_REPLY_ARRAY ) {
+		for ( i = 0; i < reply->elements; i++ ) {
+			if ( !reply->element[i]->str ) {
 				printf( "ERROR: broken element\n" );
 				continue;
 			}
 
-			tempId = strtol(reply->element[i]->str, NULL, 10);
+			tempId = strtol( reply->element[i]->str, NULL, 10 );
 			if ( vfs_getFileName( context, tempId, nameBuffer, MAX_FILENAME_SIZE ) ) {
 				printf( "ERROR: broken file\n" );
 				continue;
 			}
 
-			if (strncmp(fileName, nameBuffer, fileNameLength) == 0) {
+			if ( strncmp( fileName, nameBuffer, fileNameLength ) == 0 ) {
 				matchId = tempId;
 			}
 		}
 	}
-	freeReplyObject(reply);
+	freeReplyObject( reply );
 	return matchId;
 }
 
 //return's id if successful, -1 otherwise
 //works for '.' and '..'
-long vfs_findDirNameInDir(redisContext *context, long dirId, char *dirName,
-		int dirNameLength) {
+long vfs_findDirNameInDir(redisContext *context, long dirId, 
+		const char *dirName, int dirNameLength) {
 	long tempId, matchId = -1;
 	int i;
 	redisReply *reply;
@@ -346,8 +346,8 @@ long vfs_findDirNameInDir(redisContext *context, long dirId, char *dirName,
 	return matchId;
 }
 
-int __vfs_fuseLsDir(redisContext *context, long dirId, char *fuseLsbuf, int maxBuffSize, 
-		int *numRetVals) {
+int __vfs_listDirToBuffer( redisContext *context, long dirId, char *fuseLsbuf, int maxBuffSize, 
+		int *numRetVals ) {
 	int i = 0;
 	redisReply *reply;
 	char name[MAX_FILENAME_SIZE];
@@ -366,7 +366,7 @@ int __vfs_fuseLsDir(redisContext *context, long dirId, char *fuseLsbuf, int maxB
 				printf( "ERROR: broken folder\n" );
 				continue;
 			}
-			rc = sprintf(ptr, name);
+			rc = sprintf(ptr, "%s", name);
 			ptr += rc + 1;
 			*numRetVals += 1;
 		}
@@ -385,7 +385,7 @@ int __vfs_fuseLsDir(redisContext *context, long dirId, char *fuseLsbuf, int maxB
 				printf( "ERROR: broken file\n" );
 				continue;
 			}
-			rc = sprintf(ptr, name);
+			rc = sprintf(ptr, "%s", name);
 			ptr += rc + 1;
 			*numRetVals += 1;
 		}

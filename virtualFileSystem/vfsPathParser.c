@@ -27,12 +27,12 @@ void init_vfsPathParserState(vfsPathParserState_t *parserState) {
 
 //finds parserState->namePtr
 //returns 0 if success, non-0 otherwise
-int vfs_serperatePathAndName(vfsPathParserState_t *parserState,
-		char *fullFilePath, int fullFilePathLength) {
+int __vfs_serperatePathAndName(vfsPathParserState_t *parserState,
+		const char *fullFilePath, int fullFilePathLength) {
 
 	int i = 0;
 	int containsFileName; //boolean, does it end in a '/' or a file name
-	char *currPos = fullFilePath + fullFilePathLength - 1;
+	const char *currPos = fullFilePath + fullFilePathLength - 1;
 
 	for (i = 0; currPos >= fullFilePath && *currPos != '/'; i++) {
 		currPos--;
@@ -52,20 +52,22 @@ int vfs_serperatePathAndName(vfsPathParserState_t *parserState,
 //fills in the id and object type (isDir/isFile) in the parserState
 //returns 0 if success, non-0 otherwise
 //works for '.' and '..'
-int vfs_findObjectInDir(redisContext *context,
-		vfsPathParserState_t *parserState, long dirId, char *name,
-		int nameLength) {
+int __vfs_findObjectInDir( redisContext *context, vfsPathParserState_t *parserState, 
+		long dirId, const char *name, int nameLength ) {
+
 	long resultId;
 	int isFile = 0, isDir = 0;
 
-	if ((resultId = vfs_findFileNameInDir(context, dirId, name, nameLength))
-			!= -1) {
+	if ( ( resultId = vfs_findFileNameInDir( 
+			context, dirId, name, nameLength ) ) != -1) {
+
 		isFile = 1;
-	} else if ((resultId = vfs_findDirNameInDir(context, dirId, name,
-			nameLength)) != -1) {
+	} else if ( ( resultId = vfs_findDirNameInDir( 
+			context, dirId, name, nameLength ) ) != -1 ) {
+
 		isDir = 1;
 	}
-	if (resultId == -1) {
+	if ( resultId == -1 ) {
 		return -1;
 	}
 
@@ -76,7 +78,7 @@ int vfs_findObjectInDir(redisContext *context,
 	return 0;
 }
 
-long getLengthOfNextName(char *remainingPath, long remainingPathLength){
+long getLengthOfNextName(const char *remainingPath, long remainingPathLength){
 	int i;
 	for (i = 0; i < remainingPathLength && remainingPath[i] != '/'; i++) {
 		;
@@ -85,10 +87,10 @@ long getLengthOfNextName(char *remainingPath, long remainingPathLength){
 }
 
 //will follow the string until the last '/' and will ignore any characters after that
-long vfs_getDirIdFromPath(redisContext *context, long userCwd, char *path,
+long vfs_getDirIdFromPath(redisContext *context, long userCwd, const char *path,
 		int pathLength) {
 	printf("the path length %d\n", pathLength);
-	char *currPtr = path, *nameStart;
+	const char *currPtr = path, *nameStart;
 	int result;
 	long currDir = userCwd;
 	vfsPathParserState_t parserState;
@@ -109,7 +111,7 @@ long vfs_getDirIdFromPath(redisContext *context, long userCwd, char *path,
 		}
 		currPtr++; //skip over the '/'
 
-		result = vfs_findObjectInDir(context, &parserState, currDir, nameStart,
+		result = __vfs_findObjectInDir(context, &parserState, currDir, nameStart,
 				lengthOfNextName);
 		printf("the current name of the folder we're processing %lu %.*s\n", lengthOfNextName, (int)lengthOfNextName, nameStart);
 		if (result != 0 || parserState.id == -1 || !parserState.isDir) {
@@ -123,8 +125,8 @@ long vfs_getDirIdFromPath(redisContext *context, long userCwd, char *path,
 }
 
 //takes in an empty vfsPathParserState_t
-int vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
-		char *fullPath, int fullPathLength, long clientCwd) {
+int __vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
+		const char *fullPath, int fullPathLength, long clientCwd) {
 
 	//FIXME: handle 0 strings
 	if (fullPathLength <= 0) {
@@ -181,7 +183,7 @@ int vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 	//get all characters after the last '/',
 	//After preprocessing and checking if root there will always be characters in the name
 	//the name could be ".."
-	if (vfs_serperatePathAndName(parserState, fullPath, fixedPathLength) != 0) {
+	if (__vfs_serperatePathAndName(parserState, fullPath, fixedPathLength) != 0) {
 		printf("failed to get the last part of path, stuff after last '/'\n");
 	}
 
@@ -193,7 +195,7 @@ int vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 
 	if (parserState->nameLength > 0) {
 		printf("testing the name %.*s\n", parserState->nameLength, fullPath + parserState->nameOffset);
-		if (vfs_findObjectInDir(context, parserState, tempId,
+		if (__vfs_findObjectInDir(context, parserState, tempId,
 				fullPath + parserState->nameOffset, parserState->nameLength)
 				!= 0) {
 			printf("failed to find in directory\n");
@@ -222,7 +224,7 @@ int vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 
 int vfs_getIdByPath(redisContext *context, char *path, long cwd ) {
 	vfsPathParserState_t parserState;
-	if( vfs_parsePath( context, &parserState, path, strlen(path), cwd ) ) {
+	if( __vfs_parsePath( context, &parserState, path, strlen(path), cwd ) ) {
 		return -1;
 	}
 	
@@ -233,7 +235,7 @@ int vfs_getIdByPath(redisContext *context, char *path, long cwd ) {
 //returns 0 if success, non-0 otherwise
 int vfs_deleteObjectWithPath(redisContext *context, char *path, long cwd){
 	vfsPathParserState_t parserState;
-	int result1 = vfs_parsePath(context, &parserState, path, strlen(path), cwd);
+	int result1 = __vfs_parsePath(context, &parserState, path, strlen(path), cwd);
 	if(!parserState.isExistingObject){
 		return -1;
 	}
@@ -243,9 +245,9 @@ int vfs_deleteObjectWithPath(redisContext *context, char *path, long cwd){
 	if(parserState.isDir){
 		//FIXME:
 		printf("removing dir %ld %ld\n", parserState.parentId, parserState.id);
-		__removeIdFromFolderList(context, parserState.parentId, parserState.id);
+		vfs_removeIdFromFolderList(context, parserState.parentId, parserState.id);
 	}else if(parserState.isFilePath){
-		__removeIdFromFileList(context, parserState.parentId, parserState.id);
+		vfs_removeIdFromFileList(context, parserState.parentId, parserState.id);
 	}
 	return 0;
 }
@@ -253,10 +255,10 @@ int vfs_deleteObjectWithPath(redisContext *context, char *path, long cwd){
 int __vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
 	vfsPathParserState_t oldPathParserState, newPathParserState;
 	printf("done with none\n");
-	int result1 = vfs_parsePath(context, &oldPathParserState, oldPath,
+	int result1 = __vfs_parsePath(context, &oldPathParserState, oldPath,
 			strlen(oldPath), cwd);
 	printf("done with the first one\n");
-	int result2 = vfs_parsePath(context, &newPathParserState, newPath,
+	int result2 = __vfs_parsePath(context, &newPathParserState, newPath,
 			strlen(newPath), cwd);
 
 	printf("\noldpath %s\n", oldPath);
@@ -305,21 +307,21 @@ int __vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
 			&& newPathParserState.isFilePath) {
 		//overwrite file
 		printf("overwrite file\n");
-		__removeIdFromFileList(context, newPathParserState.parentId,
+		vfs_removeIdFromFileList(context, newPathParserState.parentId,
 				newPathParserState.id);
-		__removeIdFromFileList(context, oldPathParserState.parentId,
+		vfs_removeIdFromFileList(context, oldPathParserState.parentId,
 				oldPathParserState.id);
 
-		__addFileToFileList(context, newPathParserState.parentId,
+		vfs_addFileToFileList(context, newPathParserState.parentId,
 				oldPathParserState.id);
 	} else if (oldPathParserState.isFilePath && !newPathParserState.isExistingObject
 			&& newPathParserState.isFilePath) {
 		//rename file
 		printf("rename file\n");
-		__removeIdFromFileList(context, oldPathParserState.parentId,
+		vfs_removeIdFromFileList(context, oldPathParserState.parentId,
 				oldPathParserState.id);
 
-		__addFileToFileList(context, newPathParserState.parentId,
+		vfs_addFileToFileList(context, newPathParserState.parentId,
 				oldPathParserState.id);
 		vfs_setFileName(context, oldPathParserState.id,
 				newPath + newPathParserState.nameOffset,
@@ -328,21 +330,21 @@ int __vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
 			&& newPathParserState.isDir) {
 		//move file to existing dir
 		printf("move file to existing dir\n");
-		__removeIdFromFileList(context, oldPathParserState.parentId,
+		vfs_removeIdFromFileList(context, oldPathParserState.parentId,
 				oldPathParserState.id);
 
-		__addFileToFileList(context, newPathParserState.id,
+		vfs_addFileToFileList(context, newPathParserState.id,
 				oldPathParserState.id);
 	} else if (oldPathParserState.isDir && newPathParserState.isExistingObject
 			&& newPathParserState.isDir) {
 		//overwrite dir
 		printf("overwrite dir\n");
-		__removeIdFromFolderList(context, oldPathParserState.parentId,
+		vfs_removeIdFromFolderList(context, oldPathParserState.parentId,
 				oldPathParserState.id);
-		__removeIdFromFolderList(context, newPathParserState.parentId,
+		vfs_removeIdFromFolderList(context, newPathParserState.parentId,
 				newPathParserState.id);
 
-		__addDirToFolderList(context, newPathParserState.parentId,
+		vfs_addDirToFolderList(context, newPathParserState.parentId,
 				oldPathParserState.id);
 		vfs_setDirParent(context, oldPathParserState.id,
 				newPathParserState.parentId);
@@ -350,10 +352,10 @@ int __vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
 			&& newPathParserState.isDir) {
 		//rename dir
 		printf("rename dir\n");
-		__removeIdFromFolderList(context, oldPathParserState.parentId,
+		vfs_removeIdFromFolderList(context, oldPathParserState.parentId,
 				oldPathParserState.id);
 
-		__addDirToFolderList(context, newPathParserState.parentId,
+		vfs_addDirToFolderList(context, newPathParserState.parentId,
 				oldPathParserState.id);
 		vfs_setDirParent(context, oldPathParserState.id,
 				newPathParserState.parentId);

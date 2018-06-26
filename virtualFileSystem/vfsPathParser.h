@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "vfs_private.h"
 #include "./hiredis/hiredis.h"
-#include "vfs.h"
 
 
 typedef struct {
@@ -31,5 +31,8 @@ typedef struct {
 	long parentId;
 	long id;//id of the file/folder the path points to
 } vfsPathParserState_t;
+
+int __vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
+		const char *fullPath, int fullPathLength, long clientCwd);
 
 #endif /* VFSPATHPARSER_H */

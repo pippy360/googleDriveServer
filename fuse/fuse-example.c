@@ -10,7 +10,8 @@
 static const char *filepath = "/file";
 static const char *filename = "file";
 static const char *filecontent = "I'm the content of the only file available there\n";
-vfsContext_t c;
+vfsContext_t ctx;
+vfsContext_t *c = &ctx;
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
 	
@@ -40,14 +41,15 @@ static int getattr_callback(const char *path, struct stat *stbuf) {
 static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 		off_t offset, struct fuse_file_info *fi) {
   
-  printf("the path they asked for: %s\n", path);
+	printf("the path they asked for: %s\n", path);
 
 	char fuseLsbuf[20000];
 	int numRetVals = 0;
 
-  vfsPathParserState_t parserState;
-  vfs_parsePath( c, &parserState, path, strlen( path ) );
-  vfs_ls( c, &parserState, fuseLsbuf, 9999, &numRetVals );
+	vfsPathParserState_t parserState;
+	vfs_parsePath( c, &parserState, path, strlen( path ) );
+	vfs_ls( c, &parserState, fuseLsbuf, 9999, &numRetVals );
+
 	int i;
 	char *ptr = fuseLsbuf;
 	filler( buf, ".", NULL, 0 );
@@ -95,7 +97,7 @@ static struct fuse_operations fuse_example_operations = {
 int main(int argc, char *argv[])
 {
 
-  if ( vfsContext_init( &c ) ) {
+  if ( vfsContext_init( c ) ) {
     printf("erororrororor\n");
     exit(-1);
   }

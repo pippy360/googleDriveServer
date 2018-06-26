@@ -366,7 +366,7 @@ int vfs_fuseLsDir(redisContext *context, long dirId, char *fuseLsbuf, int maxBuf
 	reply = redisCommand(context, "LRANGE FOLDER_%lu_folders 0 -1", dirId);
 	char *ptr = fuseLsbuf;
 	int rc;
-	numRetVals = 0;
+	*numRetVals = 0;
 	if (reply->type == REDIS_REPLY_ARRAY) {
 		for (i = 0; i < reply->elements; i++) {
 			if (!reply->element[i]->str) {
@@ -380,7 +380,7 @@ int vfs_fuseLsDir(redisContext *context, long dirId, char *fuseLsbuf, int maxBuf
 			}
 			rc = sprintf(ptr, name);
 			ptr += rc + 1;
-			numRetVals += 1;
+			*numRetVals += 1;
 		}
 	}
 	freeReplyObject(reply);
@@ -399,7 +399,7 @@ int vfs_fuseLsDir(redisContext *context, long dirId, char *fuseLsbuf, int maxBuf
 			}
 			rc = sprintf(ptr, name);
 			ptr += rc + 1;
-			numRetVals += 1;
+			*numRetVals += 1;
 		}
 	}
 	freeReplyObject(reply);

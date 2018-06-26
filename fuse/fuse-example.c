@@ -17,11 +17,11 @@ static int getattr_callback(const char *path, struct stat *stbuf) {
 	
 	memset( stbuf, 0, sizeof( struct stat ) );
 
-	vfsPathParserState_t parserState;
-	init_vfsPathParserState( &parserState );
- 	vfs_parsePath( c, &parserState, path, strlen(path), 0/*cwd*/ );
+	//vfsPathParserState_t parserState;
+	//init_vfsPathParserState( &parserState );
+ 	//vfs_parsePath( c, &parserState, path, strlen(path), 0/*cwd*/ );
 
-	if ( parserState.isDir ) {
+	if ( 1 ) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 		return 0;
@@ -43,12 +43,13 @@ static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 	int numRetVals = 0;
 
 	//FIXME: get cwd
-	//long dirId = vfs_getIdByPath(path, 0);
-	//vfs_fuseLsDir(c, dirId, fuseLsbuf, 999, &numRetVals);
+	long dirId = vfs_getIdByPath(path, 0);
+	vfs_fuseLsDir(c, 0, fuseLsbuf, 999, &numRetVals);
 	int i;
 	char *ptr = fuseLsbuf;
 	filler( buf, ".", NULL, 0 );
 	filler( buf, "..", NULL, 0 );
+	filler( buf, "file", NULL, 0 );
 	for ( i = 0; i < numRetVals; i++ ) {
 		filler( buf, ptr, NULL, 0 );
 		ptr += strlen( ptr );
@@ -94,7 +95,7 @@ int main(int argc, char *argv[])
         unsigned int j;
         redisReply *reply;
         const char *hostname = "127.0.0.1";
-        int port = (argc > 2) ? atoi(argv[2]) : 6379;
+        int port = 6379;
 
         struct timeval timeout = { 1, 500000 }; // 1.5 seconds
         c = redisConnectWithTimeout(hostname, port, timeout);

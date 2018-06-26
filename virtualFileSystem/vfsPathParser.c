@@ -1,8 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include "./hiredis/hiredis.h"
-#include "vfs.h"
 #include "vfsPathParser.h"
 
 #define MAX_FILENAME_SIZE 1000
@@ -255,7 +250,7 @@ int vfs_deleteObjectWithPath(redisContext *context, char *path, long cwd){
 	return 0;
 }
 
-int vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
+int __vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
 	vfsPathParserState_t oldPathParserState, newPathParserState;
 	printf("done with none\n");
 	int result1 = vfs_parsePath(context, &oldPathParserState, oldPath,
@@ -369,4 +364,9 @@ int vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
 
 	return 0;
 }
+
+int vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
+	return __vfs_mv(context, cwd, oldPath, newPath);
+}
+
 

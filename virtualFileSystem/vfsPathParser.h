@@ -1,5 +1,15 @@
-#define ROOT_FOLDER_ID 0
-#define ROOT_PARENT_ID -1
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "./hiredis/hiredis.h"
+#include "vfs.h"
+
+
+typedef struct {
+	long cwd;//id of the file/folder the path points to
+	redisContext *dbContext;
+} vfsContext_t;
+
 
 typedef struct {
 	char isExistingObject;
@@ -18,4 +28,3 @@ typedef struct {
 	long parentId;
 	long id;//id of the file/folder the path points to
 } vfsPathParserState_t;
-

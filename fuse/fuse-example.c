@@ -5,13 +5,12 @@
 #include <errno.h>
 #include "../virtualFileSystem/hiredis/hiredis.h"
 #include "../virtualFileSystem/vfs.h"
-#include "../virtualFileSystem/vfsPathParser.h"
 
 
 static const char *filepath = "/file";
 static const char *filename = "file";
 static const char *filecontent = "I'm the content of the only file available there\n";
-redisContext *c;
+vfsContext_t c;
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
 	
@@ -44,12 +43,13 @@ static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	//FIXME: get cwd
 	long dirId = vfs_getIdByPath(path, 0);
-	vfs_fuseLsDir(c, 0, fuseLsbuf, 999, &numRetVals);
+  vfsPathParserState_t parserState;
+  vfs_parsePath( c, &parserState, path, strlen( path ) );
+  vfs_ls( c, &parserState, fuseLsbuf, 9999, &numRetVals );
 	int i;
 	char *ptr = fuseLsbuf;
 	filler( buf, ".", NULL, 0 );
 	filler( buf, "..", NULL, 0 );
-	filler( buf, "file", NULL, 0 );
 	for ( i = 0; i < numRetVals; i++ ) {
 		filler( buf, ptr, NULL, 0 );
 		ptr += strlen( ptr );
@@ -92,22 +92,10 @@ static struct fuse_operations fuse_example_operations = {
 
 int main(int argc, char *argv[])
 {
-        unsigned int j;
-        redisReply *reply;
-        const char *hostname = "127.0.0.1";
-        int port = 6379;
 
-        struct timeval timeout = { 1, 500000 }; // 1.5 seconds
-        c = redisConnectWithTimeout(hostname, port, timeout);
-        if (c == NULL || c->err) {
-                if (c) {
-                        printf("Connection error: %s\n", c->errstr);
-                        redisFree(c);
-                } else {
-                        printf("Connection error: can't allocate redis context\n");
-                }
-                exit(1);
-        }
-
+  if ( vfsContext_init( &c ) ) {
+    printf("erororrororor\n");
+    exit(-1);
+  }
   return fuse_main(argc, argv, &fuse_example_operations, NULL);
 }

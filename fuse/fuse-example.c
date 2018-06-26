@@ -14,6 +14,8 @@ vfsContext_t c;
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
 	
+  printf("2the path they asked for: %s\n", path);
+
 	memset( stbuf, 0, sizeof( struct stat ) );
 
 	//vfsPathParserState_t parserState;
@@ -37,12 +39,12 @@ static int getattr_callback(const char *path, struct stat *stbuf) {
 
 static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 		off_t offset, struct fuse_file_info *fi) {
+  
+  printf("the path they asked for: %s\n", path);
 
 	char fuseLsbuf[20000];
 	int numRetVals = 0;
 
-	//FIXME: get cwd
-	long dirId = vfs_getIdByPath(path, 0);
   vfsPathParserState_t parserState;
   vfs_parsePath( c, &parserState, path, strlen( path ) );
   vfs_ls( c, &parserState, fuseLsbuf, 9999, &numRetVals );

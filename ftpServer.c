@@ -190,7 +190,7 @@ void ftp_handleFtpRequest(redisContext *vfsContext,
 		startEncryption(&encryptionState, "phone");
 		long storFileSize = 0;
 		while ((received = recv(clientState->data_fd, decryptedDataBuffer,
-		DECRYPTED_BUFFER_LEN, 0)) > 0) {
+			DECRYPTED_BUFFER_LEN, 0)) > 0) {
 
 			storFileSize += received;
 			updateEncryption(&encryptionState, decryptedDataBuffer, received,

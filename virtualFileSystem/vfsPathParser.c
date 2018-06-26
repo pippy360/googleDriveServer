@@ -225,6 +225,16 @@ int vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 	return 0;
 }
 
+int vfs_getIdByPath(redisContext *context, char *path, long cwd ) {
+	vfsPathParserState_t parserState;
+	if( vfs_parsePath( context, &parserState, path, strlen(path), cwd ) ) {
+		return -1;
+	}
+	
+	return parserState.id;
+
+}
+
 //returns 0 if success, non-0 otherwise
 int vfs_deleteObjectWithPath(redisContext *context, char *path, long cwd){
 	vfsPathParserState_t parserState;

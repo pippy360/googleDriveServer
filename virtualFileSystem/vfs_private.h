@@ -1,3 +1,6 @@
+#ifndef VFSPRIVATE_H
+#define VFSPRIVATE_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,3 +32,6 @@ void vfs_getFileName(redisContext *context, long id, char *outputNameBuffer,
 
 void vfs_getFileWebUrl(redisContext *context, long id, char *outputNameBuffer,
 		int outputNameBufferLength);
+
+
+#endif /* VFSPRIVATE_H */

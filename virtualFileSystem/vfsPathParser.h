@@ -1,3 +1,6 @@
+#ifndef VFSPATHPARSER_H
+#define VFSPATHPARSER_H
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -28,3 +31,5 @@ typedef struct {
 	long parentId;
 	long id;//id of the file/folder the path points to
 } vfsPathParserState_t;
+
+#endif /* VFSPATHPARSER_H */

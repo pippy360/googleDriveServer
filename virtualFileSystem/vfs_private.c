@@ -453,7 +453,7 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 void vfs_getDirPathFromId(redisContext *context, long inputId,
 		char *outputBuffer, int outputBufferLength) {
 	long currentId = inputId;
-	redisReply *parentIdReply, *nameReply;
+	redisReply *parentIdReply;
 	char buffer[outputBufferLength];
 	char buffer2[outputBufferLength];
 	outputBuffer[0] = '\0';

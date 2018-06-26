@@ -31,7 +31,6 @@ int __vfs_serperatePathAndName(vfsPathParserState_t *parserState,
 		const char *fullFilePath, int fullFilePathLength) {
 
 	int i = 0;
-	int containsFileName; //boolean, does it end in a '/' or a file name
 	const char *currPos = fullFilePath + fullFilePathLength - 1;
 
 	for (i = 0; currPos >= fullFilePath && *currPos != '/'; i++) {
@@ -138,8 +137,7 @@ int __vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 
 	long cwd = (*fullPath == '/') ? ROOT_FOLDER_ID : clientCwd; //if it's not a relative path set CWD to ROOT_FOLDER_ID
 	long tempId;
-	int isLastCharSlash, fixedPathLength, i;
-	char *tempPathPtr, *formattedPath;
+	int isLastCharSlash, fixedPathLength;
 
 	//wipe the parsing state
 	init_vfsPathParserState(parserState);
@@ -235,7 +233,10 @@ int vfs_getIdByPath(redisContext *context, char *path, long cwd ) {
 //returns 0 if success, non-0 otherwise
 int vfs_deleteObjectWithPath(redisContext *context, char *path, long cwd){
 	vfsPathParserState_t parserState;
-	int result1 = __vfs_parsePath(context, &parserState, path, strlen(path), cwd);
+	int rc = __vfs_parsePath(context, &parserState, path, strlen(path), cwd);
+	if (!rc) {
+		return rc;
+	}
 	if(!parserState.isExistingObject){
 		return -1;
 	}
@@ -255,11 +256,20 @@ int vfs_deleteObjectWithPath(redisContext *context, char *path, long cwd){
 int __vfs_mv(redisContext *context, long cwd, char *oldPath, char *newPath) {
 	vfsPathParserState_t oldPathParserState, newPathParserState;
 	printf("done with none\n");
-	int result1 = __vfs_parsePath(context, &oldPathParserState, oldPath,
+	int rc;
+	rc = __vfs_parsePath(context, &oldPathParserState, oldPath,
 			strlen(oldPath), cwd);
+	if (!rc) {
+		printf("FIXME : ERROR \n");
+		return rc;
+	}
 	printf("done with the first one\n");
-	int result2 = __vfs_parsePath(context, &newPathParserState, newPath,
+	rc = __vfs_parsePath(context, &newPathParserState, newPath,
 			strlen(newPath), cwd);
+	if (!rc) {
+		printf("FIXME : ERROR \n");
+		return rc;
+	}
 
 	printf("\noldpath %s\n", oldPath);
 	printf("name:               %.*s\n", oldPathParserState.nameLength,

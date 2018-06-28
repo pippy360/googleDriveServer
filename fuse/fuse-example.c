@@ -8,26 +8,24 @@
 
 
 static const char *filepath = "/file";
-static const char *filename = "file";
 static const char *filecontent = "I'm the content of the only file available there\n";
 vfsContext_t ctx;
 vfsContext_t *c = &ctx;
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
 	
-  printf("2the path they asked for: %s\n", path);
+	printf("2the path they asked for: %s\n", path);
 
 	memset( stbuf, 0, sizeof( struct stat ) );
 
-	//vfsPathParserState_t parserState;
-	//init_vfsPathParserState( &parserState );
- 	//vfs_parsePath( c, &parserState, path, strlen(path), 0/*cwd*/ );
+	vfsPathParserState_t parserState;
+	init_vfsPathParserState( &parserState );
+ 	vfs_parsePath( c, &parserState, path, strlen(path) );
 
-	if ( 1 ) {
+	if ( parserState.isDir ) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 		return 0;
-		
 	} else {
 		stbuf->st_mode = S_IFREG | 0777;
 		stbuf->st_nlink = 1;
@@ -48,12 +46,10 @@ static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	vfsPathParserState_t parserState;
 	vfs_parsePath( c, &parserState, path, strlen( path ) );
-	vfs_ls( c, &parserState, fuseLsbuf, 9999, &numRetVals );
+	vfs_ls( c, &parserState.fileObj, fuseLsbuf, 9999, &numRetVals );
 
 	int i;
 	char *ptr = fuseLsbuf;
-	filler( buf, ".", NULL, 0 );
-	filler( buf, "..", NULL, 0 );
 	for ( i = 0; i < numRetVals; i++ ) {
 		filler( buf, ptr, NULL, 0 );
 		ptr += strlen( ptr );

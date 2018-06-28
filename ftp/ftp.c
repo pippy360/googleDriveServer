@@ -43,9 +43,9 @@ int sendFtpResponse(ftpClientState_t *clientState, char *contents) {
 	return status;
 }
 
-void ftp_newClientState(ftpClientState_t *clientState, int command_fd,
+void ftpClientState_init( ftpClientState_t *clientState, int command_fd,
 		char *usernameBuffer, int usernameBufferLength,
-		char *fileNameChangeBuffer, int fileNameChangeBufferLength) {
+		char *fileNameChangeBuffer, int fileNameChangeBufferLength ) {
 
 	clientState->command_fd = command_fd;
 	clientState->usernameBuffer = usernameBuffer;
@@ -57,7 +57,15 @@ void ftp_newClientState(ftpClientState_t *clientState, int command_fd,
 	clientState->data_fd = -1;
 	clientState->data_fd2 = -1;
 	clientState->isDataConnectionOpen = 0;
-	clientState->cwdId = 0;
+	vfsContext_t *ctx = malloc( sizeof( vfsContext_t ) );
+	vfsContext_init( ctx );
+	clientState->ctx = ctx;
+}
+
+void ftpClientState_free( ftpClientState_t *clientState ) {
+	//todo: 
+	//fixme
+	//
 }
 
 void sendFile(ftpClientState_t *clientState) {

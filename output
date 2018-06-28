@@ -1,0 +1,2 @@
+gcc -g -O0 -c ftpServer.c
+gcc -g -O0 ftpServer.o vfsPathParser.o vfs_private.o  googleUpload.o createHTTPHeader.o crypto.o fileTransfer.o realtimePacketParser.o googleAccessToken.o ftp.o ftpParser.o vfs.o utils.o networking.o connection.o -lcrypto -lssl ./virtualFileSystem/hiredis/*.o -o ftpServer.out

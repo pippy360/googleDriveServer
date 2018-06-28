@@ -25,8 +25,7 @@ void sigchld_handler(int s)
 }
 
 // get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
+void *get_in_addr(struct sockaddr *sa) {
     if (sa->sa_family == AF_INET) {
         return &(((struct sockaddr_in*)sa)->sin_addr);
     }
@@ -34,7 +33,7 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int getPort(int fd){
+int getPort(int fd) {
     struct sockaddr_in sa;
     int sa_len;
     sa_len = sizeof(sa);
@@ -47,7 +46,7 @@ int getPort(int fd){
     return (int) ntohs(sa.sin_port);
 }
 
-int getListeningSocket(const char* port){
+int getListeningSocket(const char* port) {
 
     int sockfd;
     struct addrinfo hints, *servinfo, *p;
@@ -115,7 +114,7 @@ int getListeningSocket(const char* port){
 returns a valid file descriptor, or -1 if error
 */
 //TODO: error checking
-int setUpTcpConnection(const char* hostname, const char* port){
+int setUpTcpConnection(const char* hostname, const char* port) {
 
     int sockfd, numbytes;
     struct addrinfo hints, *servinfo, *p;
@@ -168,8 +167,7 @@ int setUpTcpConnection(const char* hostname, const char* port){
 
 // Establish a connection using an SSL layer
 //returns 0 if success, -1 otherwise
-int sslConnect (const char* host, const char* port, sslConnection *c)
-{
+int sslConnect (const char* host, const char* port, sslConnection *c) {
   c->sslHandle = NULL;
   c->sslContext = NULL;
 
@@ -209,8 +207,7 @@ int sslConnect (const char* host, const char* port, sslConnection *c)
 }
 
 // Disconnect & free connection struct
-void sslDisconnectAndFree (sslConnection *c)
-{
+void sslDisconnectAndFree (sslConnection *c) {
   if (c->socket)
     close (c->socket);
   if (c->sslHandle)

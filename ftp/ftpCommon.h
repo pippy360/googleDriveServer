@@ -1,10 +1,10 @@
+#ifndef FTP_COMMON_H
+#define FTP_COMMON_H
+
+#include "../virtualFileSystem/vfs.h"
+
+
 #define MAX_PACKET_LENGTH 1600
-
-
-
-
-
-
 
 typedef enum {
 	REQUEST_ABOR,
@@ -74,14 +74,9 @@ typedef struct {
 	char *fileNameChangeBuffer;
 	int fileNameChangeBufferLength;
 	int loggedIn;
-	int cwdId;
+	vfsContext_t *ctx;
 	ftpTransferType_t transferType;
 } ftpClientState_t;
 
 
-
-
-
-
-
-
+#endif /* FTP_COMMON_H */

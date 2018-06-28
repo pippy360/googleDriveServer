@@ -41,7 +41,7 @@ long getNewId( redisContext *context ) {
 	return result;
 }
 
-void __mkdir(redisContext *context, long parentId, long id, char *name) {
+void __private_mkdir(redisContext *context, long parentId, long id, const char *name) {
 	redisReply *reply;
 	reply = redisCommand(context,
 			"HMSET FOLDER_%lu_info  parent %lu name \"%s\" createdData \"%s\"",
@@ -50,17 +50,17 @@ void __mkdir(redisContext *context, long parentId, long id, char *name) {
 }
 
 //returns dir id
-long vfs_mkdir(redisContext *context, long parentId, char *name) {
+long __vfs_mkdir(redisContext *context, long parentId, const char *name) {
 	long id = getNewId(context);
 	redisReply *reply;
 	reply = redisCommand(context, "LPUSH FOLDER_%lu_folders %lu", parentId, id);
 	freeReplyObject(reply);
-	__mkdir(context, parentId, id, name);
+	__private_mkdir(context, parentId, id, name);
 	return id;
 }
 
-void __createFile(redisContext *context, long id, char *name, long size,
-		char *googleId, char *webUrl, char *apiUrl) {
+void __createFile(redisContext *context, long id, const char *name, long size,
+		const char *googleId, const char *webUrl, const char *apiUrl) {
 	redisReply *reply;
 	reply =
 			redisCommand(context,
@@ -97,8 +97,8 @@ void vfs_removeIdFromFolderList(redisContext *context, long dirId, long removeId
 	freeReplyObject(reply);
 }
 
-long vfs_createFile(redisContext *context, long parentId, char *name, long size,
-		char *googleId, char *webUrl, char *apiUrl) {
+long __vfs_createFile(redisContext *context, long parentId, const char *name, long size,
+		const char *googleId, const char *webUrl, const char *apiUrl) {
 	//add it to the file list of the dir
 	long id = getNewId(context);
 	vfs_addFileToFileList(context, parentId, id);
@@ -126,7 +126,7 @@ void __mv(redisContext *context, long fileId, long oldParentId,
 	}
 }
 
-void vfs_setFileName(redisContext *context, long id, char *nameBuffer,
+void vfs_setFileName(redisContext *context, long id, const char *nameBuffer,
 		int nameBufferLength) {
 	redisReply *reply;
 	//FIXME: using %.*s doesn't work when used with redisCommand....weird...
@@ -168,8 +168,8 @@ fetch_value_failed:
 }
 
 //FIXME: FIXME: temporary fix here, change APIURL TO WEBURL
-int vfs_getFileWebUrl(redisContext *context, long id, char *outputNameBuffer,
-		int outputNameBufferLength) {
+int __vfs_getFileWebUrl(redisContext *context, long id, 
+	char *outputNameBuffer, int outputNameBufferLength) {
 	redisReply *reply;
 	reply = redisCommand(context, "HGET FILE_%lu_info apiUrl", id);
 	if (!reply->str) {
@@ -186,7 +186,7 @@ fetch_value_failed:
 	return -1;
 }
 
-long vfs_getFileSizeFromId(redisContext *context, long id) {
+long vfs_getFileSizeById( redisContext *context, long id ) {
 	redisReply *reply;
 	reply = redisCommand(context, "HGET FILE_%lu_info size", id);
 	if (!reply->str) {
@@ -202,59 +202,57 @@ fetch_value_failed:
 }
 
 //^see get file name
-int vfs_getFolderName(redisContext *context, long id, char *outputNameBuffer,
-		int outputNameBufferLength) {
+int vfs_getFolderName( redisContext *context, long id, char *outputNameBuffer,
+		int outputNameBufferLength ) {
 	redisReply *reply;
-	reply = redisCommand(context, "HGET FOLDER_%lu_info name", id);
-	if (!reply->str) {
+	reply = redisCommand( context, "HGET FOLDER_%lu_info name", id );
+	if ( !reply->str ) {
 		goto fetch_value_failed;
 	}
-	sprintf(outputNameBuffer, "%.*s", (int) strlen(reply->str) - 2,
-			reply->str + 1);
-	freeReplyObject(reply);
+	sprintf( outputNameBuffer, "%.*s", (int) strlen(reply->str) - 2,
+			reply->str + 1 );
+	freeReplyObject( reply );
 	return 0;
 
 fetch_value_failed:
-	freeReplyObject(reply);
+	freeReplyObject( reply );
 	return -1;
 }
 
 //this only works with folders for the moment
-long vfs_getDirParent(redisContext *context, long cwdId) {
+long __vfs_getDirParent( redisContext *context, long dirId ) {
 	redisReply *reply;
-	reply = redisCommand(context, "HGET FOLDER_%lu_info parent", cwdId);
-	//printf("the command we ran HGET FOLDER_%lu_info parent\n", cwdId);
-	long newId = strtol(reply->str, NULL, 10);
-	freeReplyObject(reply);
-	//printf("the result %ld\n", newId);
+	reply = redisCommand( context, "HGET FOLDER_%lu_info parent", dirId );
+	long newId = strtol( reply->str, NULL, 10 );
+	freeReplyObject( reply );
 	return newId;
 }
 
-void vfs_setDirParent(redisContext *context, long dirId, long newParent) {
+void __vfs_setDirParent( redisContext *context, long dirId, long newParent ) {
 	redisReply *reply;
-	reply = redisCommand(context, "HSET FOLDER_%lu_info parent %ld", dirId,
-			newParent);
-	freeReplyObject(reply);
+	reply = redisCommand( context, "HSET FOLDER_%lu_info parent %ld", dirId,
+			newParent );
+	freeReplyObject( reply );
 }
 
-void __vfs_ls(redisContext *context, long dirId) {
+void __vfs_ls( redisContext *context, long dirId ) {
 	int i = 0;
 	long id;
 	redisReply *reply;
-	char name[MAX_FILENAME_SIZE];
-	reply = redisCommand(context, "LRANGE FOLDER_%lu_folders 0 -1", dirId);
-	if (reply->type == REDIS_REPLY_ARRAY) {
-		for (i = 0; i < reply->elements; i++) {
-			if (!reply->element[i]->str) {
+	char name[ MAX_FILENAME_SIZE ];
+	reply = redisCommand( context, "LRANGE FOLDER_%lu_folders 0 -1", dirId );
+	if ( reply->type == REDIS_REPLY_ARRAY ) {
+		for ( i = 0; i < reply->elements; i++ ) {
+			if ( !reply->element[i]->str ) {
 				printf( "ERROR: broken element\n" );
 				continue;
 			}
 
-			id = strtol(reply->element[i]->str, NULL, 10);
+			id = strtol( reply->element[i]->str, NULL, 10 );
 			if ( vfs_getFolderName( context, id, name, MAX_FILENAME_SIZE ) ) {
-				printf("ls: %s\n", name);
+				printf( "ls: %s\n", name );
 			} else {
-				printf("ERROR: broken folder\n");
+				printf( "ERROR: broken folder\n" );
 			}
 		}
 	}
@@ -320,7 +318,7 @@ long vfs_findDirNameInDir(redisContext *context, long dirId,
 	if (dirNameLength == 1 && strncmp(".", dirName, 1) == 0) {
 		return dirId;
 	} else if (dirNameLength == 2 && strncmp("..", dirName, 2) == 0) {
-		return vfs_getDirParent(context, dirId);
+		return __vfs_getDirParent(context, dirId);
 	}
 
 	reply = redisCommand(context, "LRANGE FOLDER_%lu_folders 0 -1", dirId);
@@ -399,7 +397,7 @@ int __vfs_listDirToBuffer( redisContext *context, long dirId, char *fuseLsbuf, i
 //FIXME: SO MUCH REPEATED CODE HERE, CLEAN THIS UP
 //-1 if not found, id otherwise
 
-char *vfs_listUnixStyle(redisContext *context, long dirId) {
+char *__vfs_listUnixStyle(redisContext *context, long dirId) {
 	char *line = malloc(20000);//fixme:
 	line[0] = '\0';
 
@@ -437,7 +435,7 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 				printf( "ERROR: broken file\n" );
 				continue;
 			}
-			long fileSize = vfs_getFileSizeFromId(context, fileId);
+			long fileSize = vfs_getFileSizeById(context, fileId);
 			sprintf(line + strlen(line),
 					"%s   1 %s %s %10lu Jan  1  1980 %s\r\n", "-rwxrwxr-x",
 					"linux", "linux", fileSize, name);
@@ -450,31 +448,31 @@ char *vfs_listUnixStyle(redisContext *context, long dirId) {
 
 //FIXME: MOVE THIS TO THE PARSER
 //FIXME: clean up the use of buffers here, buffer2 is kind of a hack
-void vfs_getDirPathFromId(redisContext *context, long inputId,
-		char *outputBuffer, int outputBufferLength) {
+void vfs_getDirPathFromId( redisContext *context, long inputId,
+		char *outputBuffer, int outputBufferLength ) {
 	long currentId = inputId;
 	redisReply *parentIdReply;
 	char buffer[outputBufferLength];
 	char buffer2[outputBufferLength];
 	outputBuffer[0] = '\0';
 
-	while (currentId != 0) {
+	while ( currentId != 0 ) {
 		//get the name of the current id
-		vfs_getFolderName(context, currentId, buffer2, outputBufferLength);
+		vfs_getFolderName( context, currentId, buffer2, outputBufferLength );
 
 		//FIXME: check if it'll fit !
 		//if(strlen(outputBuffer) > outputBufferLength){
 		//}
-		sprintf(buffer, "/%s%s", buffer2, outputBuffer);
-		strcpy(outputBuffer, buffer);
+		sprintf( buffer, "/%s%s", buffer2, outputBuffer );
+		strcpy( outputBuffer, buffer );
 
 		//get it's parent's id
-		parentIdReply = redisCommand(context, "HGET FOLDER_%lu_info parent",
-				currentId);
-		currentId = strtol(parentIdReply->str + 1, NULL, 10);
-		freeReplyObject(parentIdReply);
+		parentIdReply = redisCommand( context, 
+				"HGET FOLDER_%lu_info parent", currentId );
+		currentId = strtol( parentIdReply->str + 1, NULL, 10 );
+		freeReplyObject( parentIdReply );
 	}
-	strcat(outputBuffer, "/");
+	strcat( outputBuffer, "/" );
 }
 
 //id 0 == root
@@ -483,7 +481,7 @@ void vfs_buildDatabase(redisContext *context) {
 	redisReply *reply;
 	reply = redisCommand(context, "FLUSHALL");
 	freeReplyObject(reply);
-	__mkdir(context, 0, 0, "root");
+	__private_mkdir(context, 0, 0, "root");
 	reply = redisCommand(context, "SET current_id_count 1");
 	reply = redisCommand(context, "SET isVirtualFileSystemCreated yes");
 	freeReplyObject(reply);
@@ -497,11 +495,8 @@ int isVirtualFileSystemCreated(redisContext *context) {
 	return newId;
 }
 
-//FIXME:
-void buildDatabaseIfRequired(redisContext *context) {
+void __buildDatabaseIfRequired(redisContext *context) {
 	if (!isVirtualFileSystemCreated(context)) {
 		vfs_buildDatabase(context);
 	}
 }
-
-

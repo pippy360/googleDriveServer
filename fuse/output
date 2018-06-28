@@ -1,0 +1,177 @@
+fuse-example.c: In function ‘main’:
+fuse-example.c:98:5: warning: implicit declaration of function ‘exit’ [-Wimplicit-function-declaration]
+     exit(-1);
+     ^~~~
+fuse-example.c:98:5: warning: incompatible implicit declaration of built-in function ‘exit’
+fuse-example.c:98:5: note: include ‘<stdlib.h>’ or provide a declaration of ‘exit’
+../virtualFileSystem/vfsPathParser.c: In function ‘vfs_debug_printParserState’:
+../virtualFileSystem/vfsPathParser.c:6:51: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+  printf("id's of oldpath %ld - %ld\n", parserState->parentId,
+                                                   ^~
+../virtualFileSystem/vfsPathParser.c:7:15: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+    parserState->id);
+               ^~
+../virtualFileSystem/vfsPathParser.c:8:49: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+  printf("id                  %ld\n", parserState->id);
+                                                 ^~
+../virtualFileSystem/vfsPathParser.c:9:49: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+  printf("parent Id           %ld\n", parserState->parentId);
+                                                 ^~
+../virtualFileSystem/vfsPathParser.c: In function ‘init_vfsPathParserState’:
+../virtualFileSystem/vfsPathParser.c:18:13: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+  parserState->id = -1;
+             ^~
+../virtualFileSystem/vfsPathParser.c:24:13: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+  parserState->parentId = -1;
+             ^~
+../virtualFileSystem/vfsPathParser.c: In function ‘__vfs_findObjectInDir’:
+../virtualFileSystem/vfsPathParser.c:73:13: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+  parserState->id = resultId;
+             ^~
+../virtualFileSystem/vfsPathParser.c: In function ‘vfs_getDirIdFromPath’:
+../virtualFileSystem/vfsPathParser.c:116:33: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+   if (result != 0 || parserState.id == -1 || !parserState.isDir) {
+                                 ^
+../virtualFileSystem/vfsPathParser.c:120:24: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+   currDir = parserState.id;
+                        ^
+../virtualFileSystem/vfsPathParser.c: In function ‘__vfs_parsePath’:
+../virtualFileSystem/vfsPathParser.c:172:14: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+   parserState->id = ROOT_FOLDER_ID;
+              ^~
+../virtualFileSystem/vfsPathParser.c:173:14: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   parserState->parentId = ROOT_PARENT_ID;
+              ^~
+../virtualFileSystem/vfsPathParser.c:204:15: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+    parserState->parentId = tempId;
+               ^~
+../virtualFileSystem/vfsPathParser.c:209:16: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+     parserState->parentId = tempId;
+                ^~
+../virtualFileSystem/vfsPathParser.c:213:16: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+     parserState->parentId = vfs_getDirParent(context,
+                ^~
+../virtualFileSystem/vfsPathParser.c:214:18: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+       parserState->id);
+                  ^~
+../virtualFileSystem/vfsPathParser.c: In function ‘vfs_getIdByPath’:
+../virtualFileSystem/vfsPathParser.c:230:20: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+  return parserState.id;
+                    ^
+../virtualFileSystem/vfsPathParser.c: In function ‘vfs_deleteObjectWithPath’:
+../virtualFileSystem/vfsPathParser.c:249:47: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   printf("removing dir %ld %ld\n", parserState.parentId, parserState.id);
+                                               ^
+../virtualFileSystem/vfsPathParser.c:249:69: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+   printf("removing dir %ld %ld\n", parserState.parentId, parserState.id);
+                                                                     ^
+../virtualFileSystem/vfsPathParser.c:250:50: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_removeIdFromFolderList(context, parserState.parentId, parserState.id);
+                                                  ^
+../virtualFileSystem/vfsPathParser.c:250:72: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+   vfs_removeIdFromFolderList(context, parserState.parentId, parserState.id);
+                                                                        ^
+../virtualFileSystem/vfsPathParser.c:252:48: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_removeIdFromFileList(context, parserState.parentId, parserState.id);
+                                                ^
+../virtualFileSystem/vfsPathParser.c:252:70: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+   vfs_removeIdFromFileList(context, parserState.parentId, parserState.id);
+                                                                      ^
+../virtualFileSystem/vfsPathParser.c: In function ‘__vfs_mv’:
+../virtualFileSystem/vfsPathParser.c:314:25: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+    && oldPathParserState.id == newPathParserState.id) {
+                         ^
+../virtualFileSystem/vfsPathParser.c:314:50: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+    && oldPathParserState.id == newPathParserState.id) {
+                                                  ^
+../virtualFileSystem/vfsPathParser.c:321:55: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_removeIdFromFileList(context, newPathParserState.parentId,
+                                                       ^
+../virtualFileSystem/vfsPathParser.c:322:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     newPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:323:55: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_removeIdFromFileList(context, oldPathParserState.parentId,
+                                                       ^
+../virtualFileSystem/vfsPathParser.c:324:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     oldPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:326:52: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_addFileToFileList(context, newPathParserState.parentId,
+                                                    ^
+../virtualFileSystem/vfsPathParser.c:327:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     oldPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:332:55: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_removeIdFromFileList(context, oldPathParserState.parentId,
+                                                       ^
+../virtualFileSystem/vfsPathParser.c:333:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     oldPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:335:52: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_addFileToFileList(context, newPathParserState.parentId,
+                                                    ^
+../virtualFileSystem/vfsPathParser.c:336:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     oldPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:337:46: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+   vfs_setFileName(context, oldPathParserState.id,
+                                              ^
+../virtualFileSystem/vfsPathParser.c:344:55: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_removeIdFromFileList(context, oldPathParserState.parentId,
+                                                       ^
+../virtualFileSystem/vfsPathParser.c:345:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     oldPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:347:52: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+   vfs_addFileToFileList(context, newPathParserState.id,
+                                                    ^
+../virtualFileSystem/vfsPathParser.c:348:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     oldPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:353:57: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_removeIdFromFolderList(context, oldPathParserState.parentId,
+                                                         ^
+../virtualFileSystem/vfsPathParser.c:354:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     oldPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:355:57: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_removeIdFromFolderList(context, newPathParserState.parentId,
+                                                         ^
+../virtualFileSystem/vfsPathParser.c:356:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     newPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:358:53: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_addDirToFolderList(context, newPathParserState.parentId,
+                                                     ^
+../virtualFileSystem/vfsPathParser.c:359:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     oldPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:360:47: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+   vfs_setDirParent(context, oldPathParserState.id,
+                                               ^
+../virtualFileSystem/vfsPathParser.c:361:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+     newPathParserState.parentId);
+                       ^
+../virtualFileSystem/vfsPathParser.c:366:57: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_removeIdFromFolderList(context, oldPathParserState.parentId,
+                                                         ^
+../virtualFileSystem/vfsPathParser.c:367:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     oldPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:369:53: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+   vfs_addDirToFolderList(context, newPathParserState.parentId,
+                                                     ^
+../virtualFileSystem/vfsPathParser.c:370:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+     oldPathParserState.id);
+                       ^
+../virtualFileSystem/vfsPathParser.c:371:47: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘id’
+   vfs_setDirParent(context, oldPathParserState.id,
+                                               ^
+../virtualFileSystem/vfsPathParser.c:372:23: error: ‘vfsPathParserState_t {aka struct <anonymous>}’ has no member named ‘parentId’
+     newPathParserState.parentId);
+                       ^
+../virtualFileSystem/vfsPathParser.c: In function ‘vfs_getIdByPath’:
+../virtualFileSystem/vfsPathParser.c:232:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^

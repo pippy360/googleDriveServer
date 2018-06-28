@@ -20,7 +20,7 @@ void init_opensll() {
 //returns 0 if success, -1 otherwise
 
 //must be at the start of file
-int startEncryption(CryptoState_t *state, char *password) {
+int startEncryption(CryptoState_t *state, const char *password) {
 
 	/* get the key, iv and salt*/
 	char salt[] = "12345678"; //randomly gen a salt, TODO:
@@ -80,7 +80,7 @@ int finishEncryption(CryptoState_t *state, const char *inputBuffer,
 
 //0 if success, -1 otherwise
 
-int startDecryption(CryptoState_t *state, char *password, char *iv) {
+int startDecryption(CryptoState_t *state, const char *password, const char *iv) {
 
 	/* get the key, iv and salt*/
 	char salt[] = "12345678"; //randomly gen a salt, TODO:

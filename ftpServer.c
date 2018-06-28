@@ -23,7 +23,7 @@
 #include "fileTransfer.h"
 #include "utils.h"
 
-#define SERVER_LISTEN_PORT "25002"
+#define SERVER_LISTEN_PORT "25001"
 #define FILE_SERVER_URL "localhost"
 #define VALID_GREETING "220 Hey\r\n"
 

@@ -65,10 +65,6 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 		ftpParserState_t *parserState, ftpClientState_t *clientState ) {
 
 	int received, dataLength;
-	Connection_t googleCon;
-	headerInfo_t hInfo;
-
-	char encryptionStarted;
 
 	switch ( parserState->type ) {
 	case REQUEST_QUIT:
@@ -173,8 +169,8 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 
 		vfs_parsePath( clientState->ctx, &vfsParserState, parserState->paramBuffer,
 				strlen(parserState->paramBuffer) );
-		if (vfsParserState.isExistingObject && vfsParserState.isDir) {
-			clientState->ctx->cwd.id = vfsParserState.fileObj.id;
+		if (vfsParserState.isExistingObject && vfsParserState.fileObj.isDir) {
+			vfs_cwd( clientState->ctx, &vfsParserState.fileObj ); 
 			sendFtpResponse(clientState,
 					"250 Directory successfully changed.\r\n"); //success
 		} else {
@@ -197,6 +193,8 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 		char decryptedDataBuffer[ DECRYPTED_BUFFER_LEN + AES_BLOCK_SIZE ];
 		CryptoState_t encryptionState;
 		int tempOutputSize;
+		Connection_t googleCon;
+		headerInfo_t hInfo;
 
 		char strBuf1[ STRING_BUFFER_LEN ], strBuf2[ STRING_BUFFER_LEN ];
 		GoogleUploadState_t fileState;
@@ -256,6 +254,8 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 		CryptoState_t decryptionState;
 		vfsPathParserState_t vfsParserState;
 		int tempOutputSize;
+		Connection_t googleCon;
+		headerInfo_t hInfo;
 
 		//FIXME: make sure we have a connection open
 		//send a get request to the and then continue the download
@@ -275,7 +275,7 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 				&googleParserState, 
 				getAccessTokenHeader( accessTokenState ) );
 		sendFtpResponse(clientState, "150 about to send file\r\n");
-		encryptionStarted = 0;
+		int encryptionStarted = 0;
 		while ( 1 ) {
 			received = updateFileDownload( &googleCon, &hInfo,
 					&googleParserState, encryptedDataBuffer,
@@ -341,7 +341,7 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 	case REQUEST_CDUP:
 	{
 		vfsObject_t parent;
-		if( !vfs_getDirParent( clientState->ctx, &clientState->ctx->cwd, &parent ) ) {
+		if( vfs_getDirParent( clientState->ctx, &clientState->ctx->cwd, &parent ) ) {
 			sendFtpResponse(clientState, "550 Failed to change directory.\r\n");
 			break;
 		}

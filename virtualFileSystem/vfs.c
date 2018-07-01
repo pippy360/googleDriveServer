@@ -88,13 +88,17 @@ int vfs_getDirParent( vfsContext_t *ctx, const vfsObject_t *dir,
 		vfsObject_t *parent) {
 
 	if ( dir->id == ROOT_FOLDER_ID )
-		return -1;
+		return 0;
 
 	parent->id = dir->id;
 	parent->parentId = __vfs_getDirParent( ctx->dbContext, dir->parentId );
 	parent->isDir = 1;
 
 	return 0;
+}
+
+void vfs_cwd( vfsContext_t *ctx, const vfsObject_t *dir ) {
+	ctx->cwd = *dir;
 }
 
 void buildDatabaseIfRequired(  vfsContext_t *ctx ) {

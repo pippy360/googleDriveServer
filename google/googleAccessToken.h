@@ -1,3 +1,5 @@
+#ifndef GOOGLEACCESSTOKEN_H
+#define GOOGLEACCESSTOKEN_H
 
 typedef struct {
 	char 	isAccessTokenLoaded;//boolean
@@ -19,3 +21,8 @@ int gat_init_googleAccessToken(AccessTokenState_t *stateStruct);
 
 void gat_getAccessToken(AccessTokenState_t *stateStruct);
 
+int getAccessTokenWithRefreshToken(AccessTokenState_t *stateStruct);
+
+int getNewTokensWithLink(AccessTokenState_t *stateStruct);
+
+#endif /* GOOGLEACCESSTOKEN_H */

@@ -1,3 +1,4 @@
+#include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,8 +8,28 @@
 #include "net/connection.h"
 #include "commonDefines.h"
 #include "google/googleAccessToken.h"
+#include "httpProcessing/commonHTTP.h"
+#include "httpProcessing/realtimePacketParser.h"
 
-char* strstrn(char* const haystack, const char* needle, const int haystackSize) {
+
+
+char* strstrn_nonConst(char* const haystack, const char* needle, const int haystackSize) {
+	if (haystackSize < strlen(needle))
+		return NULL;
+
+	int i;
+	for (i = 0; i < (haystackSize - (strlen(needle) - 1)); i++) {
+		int j;
+		for (j = 0; j < strlen(needle); j++)
+			if (needle[j] != haystack[i + j])
+				break;
+		if (j == strlen(needle))
+			return haystack + i;
+	}
+	return NULL;
+}
+
+const char* strstrn(const char* const haystack, const char* needle, const int haystackSize) {
 	if (haystackSize < strlen(needle))
 		return NULL;
 
@@ -28,11 +49,11 @@ char* strstrn(char* const haystack, const char* needle, const int haystackSize) 
 //just like utils_parseUrl but it gives you the protocol in type protocol_t
 //returns 0 if valid url, -1 otherwise
 //TODO: should work with lower case too and there shouldn't be so much hardcoded stuff
-int utils_parseUrl_proto(char *inputUrl, protocol_t *type, char **domain,
-		int *domainLength, char **fileUrl, int *fileUrlLength) {
+int utils_parseUrl_proto(const char *inputUrl,  protocol_t *type, const char **domain,
+		int *domainLength, const char **fileUrl, int *fileUrlLength) {
 
 	int protoSize, protocolLength, returnCode;
-	char *protocolStr;
+	const char *protocolStr;
 	returnCode = utils_parseUrl(inputUrl, &protocolStr, &protocolLength, domain,
 			domainLength, fileUrl, fileUrlLength);
 	if (returnCode == 0) {
@@ -57,11 +78,12 @@ int utils_parseUrl_proto(char *inputUrl, protocol_t *type, char **domain,
 //fileUrl can be 0 in length
 //fileUrl is everything after ".com"
 //inputUrl must be a null terminated string
-int utils_parseUrl(char *inputUrl, char **protocol, int *protocolLength,
-		char **domain, int *domainLength, char **fileUrl, int *fileUrlLength) {
+int utils_parseUrl(const char *inputUrl, const char **protocol, int *protocolLength,
+		const char **domain, int *domainLength, const char **fileUrl, int *fileUrlLength) {
 	int remaining;
 	int urlLength = strlen(inputUrl);
-	char *dotPtr, *protoEndPtr, *fuPtr;
+	char *dotPtr, *fuPtr;
+	const char *protoEndPtr;
 
 	//get protocol
 	//go till '://'
@@ -127,7 +149,7 @@ void utils_setHInfoFromUrl(char *inputUrl, headerInfo_t *hInfo,
 }
 
 //FIXME: CONST THIS STUFF !
-void getConnectionStructByUrl(char *inputUrl, Connection_t *con) {
+void getConnectionStructByUrl(const char *inputUrl, Connection_t *con) {
 	protocol_t type;
 	char *fileUrl, *domain;
 	int fileUrlLength, domainLength;
@@ -142,7 +164,7 @@ void getConnectionStructByUrl(char *inputUrl, Connection_t *con) {
 }
 
 //returns an active tcp connection to the url 
-void utils_connectByUrl(char *inputUrl, Connection_t *con) {
+void utils_connectByUrl(const char *inputUrl, Connection_t *con) {
 	protocol_t type;
 	char *fileUrl, *domain;
 	char domainBuffer[MAX_DOMAIN_SIZE];
@@ -263,13 +285,13 @@ int utils_chunkAndSend(Connection_t *clientCon, char *dataBuffer,
 }
 
 //FIXME: DIRTY HACKS EVERYWHERE !
-char* shitty_get_json_value(char* inputName, char* jsonData, int jsonDataSize) {
+char* shitty_get_json_value(const char* inputName, char* jsonData, int jsonDataSize) {
 	//find the area, get the value
 	char needle[MAX_STRING_SIZE];
 	sprintf(needle, FORMAT, inputName);
 	char* ptr;
 
-	if ((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL) {
+	if ((ptr = strstrn_nonConst(jsonData, needle, jsonDataSize)) == NULL) {//fixme: dirty hack here with strstrn_nonConst
 		sprintf(needle, FORMAT2, inputName);
 		if ((ptr = strstrn(jsonData, needle, jsonDataSize)) == NULL) {
 			return NULL;

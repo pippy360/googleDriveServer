@@ -168,7 +168,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 			break;
 		}
 	}
-	finishEncryptedFileDownload();
+	finishEncryptedFileDownload(&encState);
 
 	//chunk the finished stuff
 

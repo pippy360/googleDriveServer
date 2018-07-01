@@ -1,3 +1,6 @@
+#ifndef COMMONHTTP_H
+#define COMMONHTTP_H
+
 #define HTTP_VERSION "HTTP/1.1"
 
 typedef enum {
@@ -42,3 +45,4 @@ typedef struct {
 	char *hostBuffer;//used for the host header
 } headerInfo_t;
 
+#endif /* COMMONHTTP_H */

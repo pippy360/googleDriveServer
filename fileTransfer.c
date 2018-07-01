@@ -21,6 +21,35 @@
 #include "crypto.h"
 #include "fileTransfer.h"
 
+
+//returns the amount that needs to be trimmed off the top
+//amountOfFileDecrypted must be kept up to date
+int trimTop(long clientRangeEnd, long decryptedDataFileStart,
+		long amountOfFileDecrypted, int bufferLength) {
+	//the RangeEnd is inclusive so you must -1 here
+	if ((decryptedDataFileStart + amountOfFileDecrypted - 1) > clientRangeEnd) {
+		//then trim
+		return ((decryptedDataFileStart + amountOfFileDecrypted - 1)
+				- clientRangeEnd);
+	}
+	return 0;
+}
+
+
+//returns the amount that needs to be trimmed off the bottom
+int trimBottom(long clientRangeStart, long decryptedDataFileStart,
+		long amountOfFileDecrypted, int bufferLength) {
+
+	int temp;
+	if ((decryptedDataFileStart + amountOfFileDecrypted - bufferLength)
+			< clientRangeStart) {
+		return bufferLength
+				- (decryptedDataFileStart + amountOfFileDecrypted
+						- clientRangeStart);
+	}
+	return 0;
+}
+
 int startEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 		char *inputUrl, char isRangedRequest, char isEndRangeSet,
 		long startRange, long endRange, Connection_t *con,
@@ -164,41 +193,6 @@ int updateEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 		//	(*outputBufferLength), outputBuffer);
 
 	return *outputBufferLength;
-}
-
-//returns the amount that needs to be trimmed off the top
-//amountOfFileDecrypted must be kept up to date
-int trimTop(long clientRangeEnd, long decryptedDataFileStart,
-		long amountOfFileDecrypted, int bufferLength) {
-	//the RangeEnd is inclusive so you must -1 here
-	if ((decryptedDataFileStart + amountOfFileDecrypted - 1) > clientRangeEnd) {
-		//then trim
-		return ((decryptedDataFileStart + amountOfFileDecrypted - 1)
-				- clientRangeEnd);
-	}
-	return 0;
-}
-
-//returns the amount that needs to be trimmed off the bottom
-int trimBottom(long clientRangeStart, long decryptedDataFileStart,
-		long amountOfFileDecrypted, int bufferLength) {
-
-	//printf("trim bottom called\n");
-	int temp;
-	//printf("if test calc: %lu clientRange: %lu\n",
-		//	decryptedDataFileStart + amountOfFileDecrypted - bufferLength,
-			//clientRangeStart);
-	//printf(
-		//	"bufferLength: %d\nencryptedRangeStart: %lu\namountOfFileDecrypted: %lu\n",
-			//bufferLength, decryptedDataFileStart, amountOfFileDecrypted);
-	if ((decryptedDataFileStart + amountOfFileDecrypted - bufferLength)
-			< clientRangeStart) {
-//		printf("needs trimming!\n");
-		return bufferLength
-				- (decryptedDataFileStart + amountOfFileDecrypted
-						- clientRangeStart);
-	}
-	return 0;
 }
 
 void finishEncryptedFileDownload(CryptoFileDownloadState_t *encState) {

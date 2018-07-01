@@ -21,7 +21,6 @@ typedef struct {
         //@isFilePath If this is true it DOESN'T mean it's an existing file,
         //only that it's a file path (like "/something.txt as opposed to a directory path like /something/
         char isFilePath;
-        char isDir;//FIXME: REPLACE WITH ENUMS (objectType)
         char isValidPath;//FIXME: this is never used anwhere, what the fuck?
         int error;
 	vfsObject_t fileObj;
@@ -70,6 +69,8 @@ int vfs_deleteObjectWithPath( vfsContext_t *ctx, const char *path );
 int vfs_getDirParent( vfsContext_t *ctx, const vfsObject_t *dir, 
         vfsObject_t *parent);
 
-void buildDatabaseIfRequired(  vfsContext_t *ctx );
+void vfs_cwd( vfsContext_t *ctx, const vfsObject_t *dir );
+
+void buildDatabaseIfRequired( vfsContext_t *ctx );
 
 #endif /* VFS_H */

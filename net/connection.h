@@ -1,3 +1,8 @@
+#ifndef CONNECTION_H
+#define CONNECTION_H
+
+#include "networking.h"
+
 //connection.h is dependent on network.h
 typedef struct {
 	TCP_PROTOCOL_T type;//TCP_PROTOCOL_T from networking.h
@@ -19,3 +24,6 @@ int net_recv(Connection_t *con, char *packetBuf, int maxBufferSize);
 
 //converts a file decriptor to a connection
 void net_fileDescriptorToConnection(const int fd, Connection_t *con);
+
+
+#endif /* CONNECTION_H */

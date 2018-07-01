@@ -1,10 +1,5 @@
-
-
-
-
-
-
-
+#ifndef REALTIMEPACKETPARSER
+#define REALTIMEPACKETPARSER
 
 typedef enum {
 	getHTTPStatusLine,//next state -> finishHeaderValue
@@ -53,3 +48,6 @@ int process_data(char *inputData, int dataLength, parserState_t* state, char *ou
 void set_new_parser_state_struct(parserState_t *parserState);
 
 void set_new_header_info(headerInfo_t *hInfo);
+
+
+#endif /* REALTIMEPACKETPARSER */

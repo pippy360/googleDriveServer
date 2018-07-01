@@ -1,3 +1,6 @@
+#ifndef NETWORKING_H
+#define NETWORKING_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -47,3 +50,6 @@ int sslConnect (const char* host, const char* port, sslConnection *c);
 
 // Disconnect & free connection struct
 void sslDisconnect (sslConnection *c);
+
+
+#endif /* NETWORKING_H */

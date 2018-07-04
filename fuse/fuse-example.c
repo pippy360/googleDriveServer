@@ -6,12 +6,14 @@
 #include "../virtualFileSystem/hiredis/hiredis.h"
 #include "../virtualFileSystem/vfs.h"
 
-#include "google/googleAccessToken.h"
-#include "google/googleUpload.h"
+#include "../google/googleAccessToken.h"
+#include "../google/googleUpload.h"
 
-#include "crypto.h"
-#include "fileTransfer.h"
-#include "utils.h"
+#include "../crypto.h"
+#include "../fileTransfer.h"
+#include "../utils.h"
+
+#include "../httpProcessing/realtimePacketParser.h"
 
 static const char *filepath = "/file";
 static const char *filecontent = "I'm the content of the only file available there\n";
@@ -36,7 +38,7 @@ static int getattr_callback(const char *path, struct stat *stbuf) {
 	} else {
 		stbuf->st_mode = S_IFREG | 0777;
 		stbuf->st_nlink = 1;
-		stbuf->st_size = vfs_getFileSize( c, parserState->fileObj );
+		stbuf->st_size = vfs_getFileSize( c, &parserState.fileObj );
 		return 0;
 	}
 

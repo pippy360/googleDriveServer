@@ -1,8 +1,0 @@
-make public
-fix httpServer to load files based on id
-fill in known issues
-write a setup script (which sets up the refresh token, the folder for google drive and the redis VFS stuff)
-fix all the headers
-add more stuff to the ftp
-
-encrypt it all

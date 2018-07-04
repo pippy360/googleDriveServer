@@ -1,3 +1,7 @@
+#ifndef FILETRANSFER_H
+#define FILETRANSFER_H
+
+
 typedef struct {
 	//the amount of the encrypted file downloaded
 	//(doesn't include things like http headers,
@@ -38,4 +42,4 @@ int updateEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 void finishEncryptedFileDownload(CryptoFileDownloadState_t *encState);
 
 
-
+#endif /* FILETRANSFER_H */

@@ -192,7 +192,6 @@ long vfs_getFileSizeById( redisContext *context, long id ) {
 	if (!reply->str) {
 		goto fetch_value_failed;
 	}
-	printf("we asked for the size of id: %lu and got: %s\n", id, reply->str);
 	long size = strtol(reply->str + 1, NULL, 10);//FIXME: the +1 is here because we have the "'s, get rid of that
 	return size;
 
@@ -235,7 +234,7 @@ void __vfs_setDirParent( redisContext *context, long dirId, long newParent ) {
 	freeReplyObject( reply );
 }
 
-void __vfs_ls( redisContext *context, long dirId ) {
+void __vfs_ls_print( redisContext *context, long dirId ) {
 	int i = 0;
 	long id;
 	redisReply *reply;

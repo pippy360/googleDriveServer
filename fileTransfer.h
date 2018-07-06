@@ -1,6 +1,8 @@
 #ifndef FILETRANSFER_H
 #define FILETRANSFER_H
 
+#include "httpProcessing/commonHTTP.h"
+#include "httpProcessing/realtimePacketParser.h"
 
 typedef struct {
 	//the amount of the encrypted file downloaded

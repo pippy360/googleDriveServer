@@ -40,18 +40,18 @@ void init_vfsPathParserState( vfsPathParserState_t *parserState );
 int vfs_parsePath( vfsContext_t *ctx, vfsPathParserState_t *parserState,
 		const char *fullPath, int fullPathLength );
 
-int vfs_ls( vfsContext_t *ctx, const vfsObject_t *fileObj, char *outputBuf, 
+int vfs_ls( vfsContext_t *ctx, const vfsObject_t *file, char *outputBuf, 
 		int maxBuffSize, int *numRetVals );
 
-void vfs_getDirPath( vfsContext_t *ctx, vfsObject_t *fileObj,
+void vfs_getDirPath( vfsContext_t *ctx, vfsObject_t *file,
                 char *outputBuffer, int outputBufferLength );
 
 void vfs_getCWDPath( vfsContext_t *ctx, char *outputBuffer, 
 		int outputBufferLength );
 
-long vfs_getFileSize( vfsContext_t *ctx, const vfsObject_t *fileObj );
+long vfs_getFileSize( vfsContext_t *ctx, const vfsObject_t *file );
 
-char *vfs_listUnixStyle( vfsContext_t *ctx,  const vfsObject_t *fileObj );
+char *vfs_listUnixStyle( vfsContext_t *ctx,  const vfsObject_t *file );
 
 int vfs_mkdir( vfsContext_t *ctx, const vfsObject_t *containingFolder, 
         const char *name);

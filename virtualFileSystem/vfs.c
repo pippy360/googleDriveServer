@@ -29,16 +29,16 @@ int vfs_parsePath( vfsContext_t *ctx, vfsPathParserState_t *parserState,
 		fullPathLength, ctx->cwd.id );
 }
 
-int vfs_ls( vfsContext_t *ctx, const vfsObject_t *fileObj, char *outputBuf, 
+int vfs_ls( vfsContext_t *ctx, const vfsObject_t *file, char *outputBuf, 
 		int maxBuffSize, int *numRetVals ) {
 
-	return __vfs_listDirToBuffer( ctx->dbContext, fileObj->id, outputBuf, 
+	return __vfs_listDirToBuffer( ctx->dbContext, file->id, outputBuf, 
 			maxBuffSize, numRetVals );
 }
 
-void vfs_getDirPath( vfsContext_t *ctx, vfsObject_t *fileObj, 
+void vfs_getDirPath( vfsContext_t *ctx, vfsObject_t *file, 
 		char *outputBuffer, int outputBufferLength ) {
-	vfs_getDirPathFromId( ctx->dbContext, fileObj->id,
+	vfs_getDirPathFromId( ctx->dbContext, file->id,
                 outputBuffer, outputBufferLength );
 }
 
@@ -48,12 +48,13 @@ void vfs_getCWDPath( vfsContext_t *ctx, char *outputBuffer,
 			outputBuffer, outputBufferLength );
 }
 
-long vfs_getFileSize( vfsContext_t *ctx, const vfsObject_t *fileObj ) {
-	return vfs_getFileSizeById( ctx->dbContext, fileObj->id );
+long vfs_getFileSize( vfsContext_t *ctx, const vfsObject_t *file ) {
+	printf( "vfs_getFileSize called. File id: %lu\n", file->id );
+	return vfs_getFileSizeById( ctx->dbContext, file->id );
 }
 
-char *vfs_listUnixStyle( vfsContext_t *ctx, const vfsObject_t *fileObj ) {
-	return __vfs_listUnixStyle( ctx->dbContext, fileObj->id );
+char *vfs_listUnixStyle( vfsContext_t *ctx, const vfsObject_t *file ) {
+	return __vfs_listUnixStyle( ctx->dbContext, file->id );
 }
 
 int vfs_mkdir( vfsContext_t *ctx, const vfsObject_t *containingFolder, 
@@ -69,6 +70,7 @@ long vfs_createFile( vfsContext_t *ctx, const vfsObject_t *parent, const char *n
 
 int vfs_getFileWebUrl( vfsContext_t *ctx, const vfsObject_t *file, char *outputNameBuffer,
 		int outputNameBufferLength ) {
+	printf( "vfs_getFileWebUrl called. File id: %lu\n", file->id );
 	return __vfs_getFileWebUrl( ctx->dbContext, file->id, outputNameBuffer,
 		outputNameBufferLength );
 }
@@ -86,7 +88,7 @@ int vfs_deleteObjectWithPath( vfsContext_t *ctx, const char *path ) {
 //on root
 int vfs_getDirParent( vfsContext_t *ctx, const vfsObject_t *dir, 
 		vfsObject_t *parent) {
-
+	printf( "vfs_getDirParent called. Dir id: %lu\n", dir->id );
 	if ( dir->id == ROOT_FOLDER_ID )
 		return 0;
 

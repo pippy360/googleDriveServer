@@ -26,7 +26,7 @@ AccessTokenState_t accessTokenState;
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
 	
-	printf("2the path they asked for: %s\n", path);
+	printf("getattr_callback: %s\n", path);
 
 	memset( stbuf, 0, sizeof( struct stat ) );
 
@@ -51,7 +51,7 @@ static int getattr_callback(const char *path, struct stat *stbuf) {
 static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 		off_t offset, struct fuse_file_info *fi) {
   
-	printf("the path they asked for: %s\n", path);
+	printf("readdir_callback: %s\n", path);
 
 	char fuseLsbuf[20000];
 	int numRetVals = 0;
@@ -65,8 +65,9 @@ static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 	int i;
 	char *ptr = fuseLsbuf;
 	for ( i = 0; i < numRetVals; i++ ) {
+		printf( "\t- %s\n", ptr );
 		filler( buf, ptr, NULL, 0 );
-		ptr += strlen( ptr );
+		ptr += strlen( ptr ) + 1;
 	}
 
 	return 0;
@@ -79,7 +80,7 @@ static int open_callback(const char *path, struct fuse_file_info *fi) {
 static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 		struct fuse_file_info *fi) {
 
-	printf("3the path they asked for: %s\n", path);
+	printf("read_callback: %s\n", path);
 
 	//we will under report the size of the buffers to functions when using them as input buffers
 	//so that we always meet the size+AES_BLOCK_SIZE requirements of the output buffer for the encrypt/decrypt functions

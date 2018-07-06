@@ -100,16 +100,11 @@ int updateEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 	int encryptedPacketLength = 0;
 	int dataLength;
 
-	//printf("about to handle the start stuff\n");
 	/*if this is the first time update has been called then call startDecryption*/
 	if (encState->encryptedDataDownloaded == 0) {
 		if (encState->encryptedRangeStart < AES_BLOCK_SIZE) {
-			//printf("the start range was 0, here it is: %lu\n",
-				//	encState->encryptedRangeStart);
 			startDecryption(&(encState->cryptoState), "phone", NULL);
 		} else {
-//			printf("the start range was NOT 0, here it is: %lu\n",
-	//				encState->encryptedRangeStart);
 			/*get the IV*/
 			while (encState->encryptedDataDownloaded < AES_BLOCK_SIZE) {
 				result = updateFileDownload(con, outputHInfo, outputParserState,
@@ -132,14 +127,10 @@ int updateEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 					encryptedPacketLength - AES_BLOCK_SIZE, outputBuffer,
 					outputBufferLength);
 			encState->amountOfFileDecrypted += *outputBufferLength;
-		//	printf(
-			//		"so we just decrypted the data we got with the IV, lets look at it\n");
-			//printf("here: --%.*s--\n", *outputBufferLength, outputBuffer);
 		}
 	} else {
 		//printf("not started\n");
 	}
-//	printf("finished with the start stuff\n");
 
 	/*make sure we have some decrypted data to return*/
 	while (*outputBufferLength == 0) {
@@ -226,7 +217,6 @@ int startFileDownload(char *inputUrl, char isRangedRequest, char isEndRangeSet,
 
 	utils_connectByUrl(inputUrl, con);
 	net_send(con, packetBuffer, strlen(packetBuffer));
-	printf("data sent to google --%s--\n\n", packetBuffer);
 
 	return 0;
 }
@@ -245,10 +235,6 @@ int updateFileDownload(Connection_t *con, headerInfo_t *outputHInfo,
 
 	/* load the next packet and parse it*/
 	received = net_recv(con, packetBuffer, MAX_PACKET_SIZE);
-
-	if (!outputParserState->headerFullyParsed)
-		printf("updateFileDownload called, this is the data --%s--\n",
-				packetBuffer);
 
 	process_data(packetBuffer, received, outputParserState, outputBuffer,
 			outputBufferMaxLength, outputBufferLength, packetEnd_s,

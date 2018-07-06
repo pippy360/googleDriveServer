@@ -364,6 +364,7 @@ int __vfs_listDirToBuffer( redisContext *context, long dirId, char *fuseLsbuf, i
 				continue;
 			}
 			rc = sprintf(ptr, "%s", name);
+			printf("adding folder: %s with length %d\n", name, rc);
 			ptr += rc + 1;
 			*numRetVals += 1;
 		}
@@ -383,6 +384,7 @@ int __vfs_listDirToBuffer( redisContext *context, long dirId, char *fuseLsbuf, i
 				continue;
 			}
 			rc = sprintf(ptr, "%s", name);
+			printf("adding file: %s with length %d\n", name, rc);
 			ptr += rc + 1;
 			*numRetVals += 1;
 		}

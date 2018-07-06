@@ -33,19 +33,18 @@ static int getattr_callback(const char *path, struct stat *stbuf) {
 	vfsPathParserState_t parserState;
 	init_vfsPathParserState( &parserState );
  	vfs_parsePath( c, &parserState, path, strlen(path) );
+	if ( !parserState.isExistingObject )
+		return -ENOENT;
 
 	if ( parserState.fileObj.isDir ) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
-		return 0;
 	} else {
 		stbuf->st_mode = S_IFREG | 0777;
 		stbuf->st_nlink = 1;
 		stbuf->st_size = vfs_getFileSize( c, &parserState.fileObj );
-		return 0;
 	}
-
-	return -ENOENT;
+	return 0;
 }
 
 static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
@@ -99,7 +98,7 @@ static int read_callback(const char *path, char *buf, size_t size, off_t offset,
  	vfs_parsePath( c, &vfsParserState, path, strlen(path) );
 	vfs_getFileWebUrl( c, &vfsParserState.fileObj, strBuf1, 2000 );
 
-	if (  vfsParserState.isExistingObject && vfsParserState.fileObj.isDir ) {
+	if (  vfsParserState.isExistingObject && !vfsParserState.fileObj.isDir ) {
 		long len = vfs_getFileSize( c, &vfsParserState.fileObj );
 		if (offset >= len) {
 			return 0;	
@@ -120,26 +119,27 @@ static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 				encryptionStarted = 1;
 			}
 			if ( received == 0 ) {
-				//finishDecryption(&decryptionState, tempBuffer, 0, tempBuffer2, &tempBuffer2OutputSize);
-				//send(clientState->data_fd, tempBuffer2, tempBuffer2OutputSize, 0);
-				break;
+				finishDecryption( &decryptionState, NULL, 0, decryptedDataBuffer, &tempOutputSize );
+				if ( dataCopied + tempOutputSize > size ) {
+					memcpy( buf + dataCopied, decryptedDataBuffer, (size - dataCopied) );
+					return size;
+				} else {
+					memcpy( buf + dataCopied, decryptedDataBuffer, tempOutputSize);
+					dataCopied += tempOutputSize;
+				}
+				return dataCopied;
 			}
 			updateDecryption( &decryptionState, encryptedDataBuffer, dataLength,
 					decryptedDataBuffer, &tempOutputSize );
-			if( tempOutputSize>0 ){
-				if ( dataCopied + tempOutputSize > size ) {
-					memcpy( buf, decryptedDataBuffer, (size - dataCopied) );
-				} else {
-					memcpy( buf, decryptedDataBuffer, tempOutputSize);
-				}
+			if ( dataCopied + tempOutputSize > size ) {
+				memcpy( buf + dataCopied, decryptedDataBuffer, (size - dataCopied) );
+				return size;
+			} else {
+				memcpy( buf + dataCopied, decryptedDataBuffer, tempOutputSize);
+				dataCopied += tempOutputSize;
 			}
-		}
-		finishDecryption( &decryptionState, NULL, 0,
-				decryptedDataBuffer, &tempOutputSize );
-
-		return size;
+		}//while 1
 	}
-
 	return -ENOENT;
 }
 

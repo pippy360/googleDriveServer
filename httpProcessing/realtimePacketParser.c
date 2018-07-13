@@ -177,6 +177,8 @@ void process_byte(char byte, parserState_t* parserState,
 		case packetEnd_s:
 			printf("hm.....hit packet end\n");
 			break;
+		case BAD_PACKET:
+			printf("ERROR BAD PACKET\n");
 	}
 }
 
@@ -203,7 +205,6 @@ int validateHttpVersion(char *buffer, char **exitPosition){
 //fixme: this is such a crappy way of storing all the request types, fuck C for making this a pain in the ass
 //TODO:ERROR CHECKING
 int process_status_line(char *buffer, parserState_t* parserState, headerInfo_t* hInfo){
-	int result = 0;
 	char *ptr = buffer;
 	//check the first few chars to see what type we have
 	if( strncmp(buffer, "HTTP/", 4) == 0 ){
@@ -265,8 +266,6 @@ int process_status_line(char *buffer, parserState_t* parserState, headerInfo_t* 
 //if it's a header we're interested in, process it, otherwise just ignore
 //returns -1 if invalid header, 0 otherwise 
 int process_header(char *name, char *value, parserState_t* parserState, headerInfo_t* hInfo){
-	int result = 0;
-	
 	if(strcmp("Transfer-Encoding",name) == 0 && strcmp(" chunked",value) == 0){
 		//FIXME: ERROR HERE, HTTP SPEC DOESN'T SAY HOW MUCH WHITESPACE
 		//FIXME: IF THERE'S A TRANSFER ENCODING WITHOUT CHUNK CAUSE ERROR
@@ -283,7 +282,6 @@ int process_header(char *name, char *value, parserState_t* parserState, headerIn
 		
 		printf("it's content length : %lu\n", parserState->remainingLength);
 	}else if(strcmp("Range",name) == 0){
-		//"Range: bytes=106717810-114836737\r\n"\
 		//TODO: error handling
 		hInfo->isRange = 1;
 
@@ -347,86 +345,7 @@ int process_data(char *inputData, int dataLength, parserState_t* parserState, ch
 
 		parserState->currentPacketPtr++;
 	}
-	//0 out the offset
+	//FIXME 0 out the offset
+	//FIXME: This function can only ever return 0
+	return 0; 
 }
-
-
-//#define packet1 "GET /bobs/Bobs.Burgers.S02E04.HDTV.x264-LOL.mp4 HTTP/1.1\r\n"\
-//	"Host: tomnomnom.me\r\n"\
-//	"Connection: keep-alive\r\n"\
-//	"Accept-Encoding: identity;q=1, *;q=0\r\n"\
-//	"User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36\r\n"\
-//	"Accept: */*\r\n"\
-//	"Referer: http://tomnomnom.me/bobs/Bobs.Burgers.S02E04.HDTV.x264-LOL.mp4\r\n"\
-//	"Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4\r\n"\
-//	"Range: bytes=106717810-114836737\r\n"\
-//	"If-Range: \"6d84502-5066f184c4756\"\r\n\r\n"
-//
-//#define packet2 "HTTP/1.1 206 Partial Content\r\n"\
-//	"Server: nginx/1.4.6 (Ubuntu)\r\n"\
-//	"Date: Sun, 14 Dec 2014 16:30:36 GMT\r\n"\
-//	"Content-Type: video/mp4\r\n"\
-//	"Content-Length: 0\r\n"\
-//	"Connection: keep-alive\r\n"\
-//	"Last-Modified: Mon, 27 Oct 2014 22:31:42 GMT\r\n"\
-//	"ETag: \"6d84502-5066f184c4756\"\r\n"\
-//	"Accept-Ranges: bytes\r\n"\
-//	"Content-Range: bytes 106717810-114836737/114836738\r\n\r\n"
-//
-//
-//#define packet3 "GET /bobs/Bobs.Burgers.S02E04.HDTV.x264-LOL.mp4 HTTP/1.1\r\n"\
-//				"\r\n"
-//
-//
-//int main(){
-//
-//	char buffer[100000];
-//	int outputDataLength;
-//	//ok go
-//	parserState_t* parserState = get_start_state_struct();
-//	headerInfo_t* hInfo = get_start_header_info();
-//
-//	process_data(packet2, strlen(packet2), parserState, buffer, 100000, &outputDataLength, packetEnd_s, hInfo);
-//	
-//	//printf("getContentRangeStart: %lu\n", 	hInfo->getContentRangeStart);
-//	//printf("getContentRangeEnd: %lu\n", 	hInfo->getContentRangeEnd);
-//	//printf("sentContentRangeStart: %lu\n", 	hInfo->sentContentRangeStart);
-//	//printf("sentContentRangeEnd: %lu\n", 	hInfo->sentContentRangeEnd);
-//	//printf("sentContentRangeFull: %lu\n", 	hInfo->sentContentRangeFull);
-//	//printf("data length %d\n", outputDataLength);
-//	//printf("contentLength: %lu\n", 		hInfo->contentLength);
-//	//printf("transferType: %d\n", 			hInfo->transferType);
-//	//printf("requestType: %d\n", 			hInfo->requestType);
-//	//printf("isRequest: %d\n", 			hInfo->isRequest);
-//	//printf("statusCode: %d\n", 			hInfo->statusCode);
-//	//printf("statusStringBuffer: %s\n", 	hInfo->statusStringBuffer);
-//	//printf("urlBuffer: %s\n", 			hInfo->urlBuffer);
-//	
-//
-//	createHTTPHeader(buffer, 100000, hInfo, "this is an extra: header\r\n");
-//
-//	printf("----%s---\n", buffer );
-//
-//	return 0;
-//}
-
-//HTTP/1.1 200 OK
-//Server: nginx/1.4.6 (Ubuntu)
-//Date: Sun, 14 Dec 2014 16:30:25 GMT
-//Content-Type: video/mp4
-//Content-Length: 114836738
-//Connection: keep-alive
-//Last-Modified: Mon, 27 Oct 2014 22:31:42 GMT
-//ETag: "6d84502-5066f184c4756"
-//Accept-Ranges: bytes
-
-
-//GET /bobs/Bobs.Burgers.S02E04.HDTV.x264-LOL.mp4 HTTP/1.1
-//Host: tomnomnom.me
-//Connection: keep-alive
-//Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
-//User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36
-//Referer: http://tomnomnom.me/bobs/
-//Accept-Encoding: gzip,deflate,sdch
-//Accept-Language: en-US,en;q=0.8,nl;q=0.6,ru;q=0.4
-

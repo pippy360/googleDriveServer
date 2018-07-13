@@ -1,3 +1,3 @@
 
-void createHTTPHeader(char *output, int maxOutputLen, headerInfo_t *hInfo, char *extraHeaders);
+int createHTTPHeader(char *output, int maxOutputLen, headerInfo_t *hInfo, const char *extraHeaders);
 

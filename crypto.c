@@ -6,12 +6,17 @@
 #include "crypto.h"
 
 #define IV_LENGTH 16 //FIXME: double check
+#define SALT "12345678"
 
 void init_opensll() {
 	/* Initialise the library */
 	ERR_load_crypto_strings();
 	OpenSSL_add_all_algorithms();
-	OPENSSL_config(NULL);
+	if (CONF_modules_load_file(NULL, NULL, 0) <= 0) {
+		fprintf(stderr, "FATAL: error loading configuration file\n");
+		ERR_print_errors_fp(stderr);
+		exit(1);
+	}
 }
 
 //password MUST BE '\0' terminated
@@ -23,10 +28,9 @@ void init_opensll() {
 int startEncryption(CryptoState_t *state, const char *password) {
 
 	/* get the key, iv and salt*/
-	char salt[] = "12345678"; //randomly gen a salt, TODO:
-	memcpy(state->salt, salt, 8);
-	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), salt, password,
-			strlen(password), 4, state->key, state->iv);
+	memcpy(state->salt, SALT, strlen(SALT));
+	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), state->salt, 
+		(const unsigned char *) password, strlen(password), 4, state->key, state->iv);
 
 	if (!(state->ctx = EVP_CIPHER_CTX_new()))
 		return -1;
@@ -45,7 +49,8 @@ int startEncryption(CryptoState_t *state, const char *password) {
 int updateEncryption(CryptoState_t *state, const char *inputBuffer,
 		const int inputBufferSize, char *outputBuffer, int *outputDataSize) {
 
-	if (EVP_EncryptUpdate(state->ctx, outputBuffer, outputDataSize, inputBuffer,
+	if (EVP_EncryptUpdate(state->ctx, (unsigned char *) outputBuffer, 
+			outputDataSize, (unsigned char *) inputBuffer, 
 			inputBufferSize) != 1) {
 		return -1;
 	}
@@ -61,14 +66,16 @@ int finishEncryption(CryptoState_t *state, const char *inputBuffer,
 	int dataSentSoFar = 0, tempint;
 	//update one last time
 	if (inputBufferSize > 0) {
-		if (EVP_EncryptUpdate(state->ctx, outputBuffer, &dataSentSoFar,
-				inputBuffer, inputBufferSize) != 1) {
+		if (EVP_EncryptUpdate(state->ctx, (unsigned char *) outputBuffer, 
+				&dataSentSoFar, (unsigned char *) inputBuffer, 
+				inputBufferSize) != 1) {
 			printf("error\n");
 			return -1;
 		}
 	}
 
-	if (EVP_EncryptFinal_ex(state->ctx, outputBuffer + dataSentSoFar, &tempint)
+	unsigned char * currPos = (unsigned char *) outputBuffer + dataSentSoFar;
+	if (EVP_EncryptFinal_ex(state->ctx, currPos, &tempint)
 			!= 1)
 		return -1;
 
@@ -83,13 +90,11 @@ int finishEncryption(CryptoState_t *state, const char *inputBuffer,
 int startDecryption(CryptoState_t *state, const char *password, const char *iv) {
 
 	/* get the key, iv and salt*/
-	char salt[] = "12345678"; //randomly gen a salt, TODO:
-	memcpy(state->salt, salt, 8);
-	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), salt, password,
-			strlen(password), 4, state->key, state->iv);
+	memcpy(state->salt, SALT, strlen(SALT));
+	EVP_BytesToKey(EVP_aes_128_cbc(), EVP_sha1(), state->salt, 
+		(const unsigned char *) password, strlen(password), 4, state->key, state->iv);
 
 	/* copy the salt and iv */
-	memcpy(state->salt, salt, 8);
 	if (iv != NULL) {
 		memcpy(state->iv, iv, IV_LENGTH);
 	}
@@ -98,8 +103,8 @@ int startDecryption(CryptoState_t *state, const char *password, const char *iv) 
 	if (!(state->ctx = EVP_CIPHER_CTX_new()))
 		return -1;
 
-	if (EVP_DecryptInit_ex(state->ctx, EVP_aes_128_cbc(), NULL, state->key,
-			state->iv) != 1)
+	if (EVP_DecryptInit_ex(state->ctx, EVP_aes_128_cbc(), NULL, 
+			state->key, state->iv) != 1)
 		return -1;
 
 	//printf("Key: %s iv: %s\n", state->key, state->iv);
@@ -111,8 +116,8 @@ int startDecryption(CryptoState_t *state, const char *password, const char *iv) 
 int updateDecryption(CryptoState_t *state, const char *inputBuffer,
 		const int inputBufferSize, char *outputBuffer, int *outputDataSize) {
 
-	if (EVP_DecryptUpdate(state->ctx, outputBuffer, outputDataSize, inputBuffer,
-			inputBufferSize) != 1)
+	if (EVP_DecryptUpdate(state->ctx, (unsigned char *) outputBuffer, 
+			outputDataSize, (unsigned char *) inputBuffer, inputBufferSize) != 1)
 		return -1;
 
 	return 0;
@@ -127,12 +132,13 @@ int finishDecryption(CryptoState_t *state, const char *inputBuffer,
 	int dataSentSoFar = 0, tempint;
 	//check if we have any data waiting to be decrypted
 	if (inputBufferSize > 0) {
-		if (EVP_DecryptUpdate(state->ctx, outputBuffer, &dataSentSoFar,
-				inputBuffer, inputBufferSize) != 1)
+		if (EVP_DecryptUpdate(state->ctx, (unsigned char *) outputBuffer, 
+				&dataSentSoFar, (unsigned char *) inputBuffer, inputBufferSize) != 1)
 			return -1;
 	}
 
-	if (EVP_DecryptFinal_ex(state->ctx, outputBuffer, &tempint) != 1) {
+	if (EVP_DecryptFinal_ex(state->ctx, (unsigned char *) outputBuffer, 
+			&tempint) != 1) {
 		printf("error when calling final decrypt\n");
 		return -1;
 	}

@@ -45,7 +45,7 @@ void net_freeConnection(Connection_t *input){
 }
 
 
-int net_connect(Connection_t *con, char *domain){
+int net_connect(Connection_t *con, char *domain) {
 	if (con->type == TCP_DIRECT){
 		con->socketFD = setUpTcpConnection(domain, "80");
 	}else if(con->type == TCP_SSL){
@@ -53,15 +53,17 @@ int net_connect(Connection_t *con, char *domain){
 			perror("sslConnect");
 	}
 	//todo, return value !
+	return 0;
 }
 
-int net_close(Connection_t *con){
-	if (con->type == TCP_DIRECT){
+int net_close(Connection_t *con) {
+	if (con->type == TCP_DIRECT) {
 		//todo
-	}else if(con->type == TCP_SSL){
+	}else if(con->type == TCP_SSL) {
 		//todo
 		//call ssl dissconnectandfree
 	}
+	return 0;
 }
 
 int net_send(Connection_t *con, char *packetBuf, int dataSize){
@@ -82,6 +84,7 @@ int net_send(Connection_t *con, char *packetBuf, int dataSize){
 		printf("ERROR: BAD connection.type\n");
 		return -1;
 	}
+	return 0;
 }
 
 //int net_send_all(Connection_t *con, char *packetBuf, int dataSize){
@@ -102,5 +105,6 @@ int net_recv(Connection_t *con, char *packetBuf, int maxBufferSize){
 	}else if(con->type == TCP_SSL){
 		return SSL_read(con->sslConnection.sslHandle, packetBuf, maxBufferSize);
 	}
+	return -1;
 }
 

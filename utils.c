@@ -10,6 +10,7 @@
 #include "google/googleAccessToken.h"
 #include "httpProcessing/commonHTTP.h"
 #include "httpProcessing/realtimePacketParser.h"
+#include "httpProcessing/createHTTPHeader.h"
 
 
 
@@ -81,8 +82,7 @@ int utils_parseUrl_proto(const char *inputUrl,  protocol_t *type, const char **d
 int utils_parseUrl(const char *inputUrl, const char **protocol, int *protocolLength,
 		const char **domain, int *domainLength, const char **fileUrl, int *fileUrlLength) {
 	int remaining;
-	int urlLength = strlen(inputUrl);
-	char *dotPtr, *fuPtr;
+	const char *dotPtr;
 	const char *protoEndPtr;
 
 	//get protocol
@@ -130,11 +130,11 @@ void utils_getAccessTokenHeader() {
 }
 
 //creates a hIfno get request for the the url
-void utils_setHInfoFromUrl(char *inputUrl, headerInfo_t *hInfo,
-		const httpRequestTypes_t requestType, char *extraHeaders) {
+void utils_setHInfoFromUrl(const char *inputUrl, headerInfo_t *hInfo,
+		const httpRequestTypes_t requestType, const char *extraHeaders) {
 
 	protocol_t type;
-	char *fileUrl, *domain;
+	const char *fileUrl, *domain;
 	int fileUrlLength, domainLength;
 	utils_parseUrl_proto(inputUrl, &type, &domain, &domainLength, &fileUrl,
 			&fileUrlLength);
@@ -151,7 +151,7 @@ void utils_setHInfoFromUrl(char *inputUrl, headerInfo_t *hInfo,
 //FIXME: CONST THIS STUFF !
 void getConnectionStructByUrl(const char *inputUrl, Connection_t *con) {
 	protocol_t type;
-	char *fileUrl, *domain;
+	const char *fileUrl, *domain;
 	int fileUrlLength, domainLength;
 
 	utils_parseUrl_proto(inputUrl, &type, &domain, &domainLength, &fileUrl,
@@ -166,7 +166,7 @@ void getConnectionStructByUrl(const char *inputUrl, Connection_t *con) {
 //returns an active tcp connection to the url 
 void utils_connectByUrl(const char *inputUrl, Connection_t *con) {
 	protocol_t type;
-	char *fileUrl, *domain;
+	const char *fileUrl, *domain;
 	char domainBuffer[MAX_DOMAIN_SIZE];
 	int fileUrlLength, domainLength;
 
@@ -289,7 +289,7 @@ char* shitty_get_json_value(const char* inputName, char* jsonData, int jsonDataS
 	//find the area, get the value
 	char needle[MAX_STRING_SIZE];
 	sprintf(needle, FORMAT, inputName);
-	char* ptr;
+	const char* ptr;
 
 	if ((ptr = strstrn_nonConst(jsonData, needle, jsonDataSize)) == NULL) {//fixme: dirty hack here with strstrn_nonConst
 		sprintf(needle, FORMAT2, inputName);
@@ -313,7 +313,7 @@ char* shitty_get_json_value(const char* inputName, char* jsonData, int jsonDataS
 		ptr++;
 	}
 
-	char *endPtr;
+	const char *endPtr;
 	if (isString) {
 		for (endPtr = ptr + 1; *endPtr != '\"'; endPtr++)
 			;

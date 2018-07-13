@@ -20,6 +20,9 @@
 #define DECRYPTED_BUFFER_LEN 2000
 #define STRING_BUFFER_LEN 2000
 
+#define MAX_PACKET_SIZE 99999
+
+
 vfsContext_t ctx;//FIXME: don't use a global 
 vfsContext_t *c = &ctx;
 AccessTokenState_t accessTokenState;
@@ -79,67 +82,53 @@ static int open_callback(const char *path, struct fuse_file_info *fi) {
 static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 		struct fuse_file_info *fi) {
 
-	printf("read_callback: %s\n", path);
+	printf("read_callback: %s offset: %lu\n", path, offset);
 
 	//we will under report the size of the buffers to functions when using them as input buffers
 	//so that we always meet the size+AES_BLOCK_SIZE requirements of the output buffer for the encrypt/decrypt functions
 	//see openssl docs for more info on ecrypted buffer/decrypted buffers size requirements
-	char encryptedDataBuffer[ ENCRYPTED_BUFFER_LEN + AES_BLOCK_SIZE ];
-	char decryptedDataBuffer[ DECRYPTED_BUFFER_LEN + AES_BLOCK_SIZE ];
-	char strBuf1[ STRING_BUFFER_LEN ]; 
-	parserState_t googleParserState;
-	CryptoState_t decryptionState;
+	char webUrlBuf[ STRING_BUFFER_LEN ]; 
 	vfsPathParserState_t vfsParserState;
-	int tempOutputSize;
-	Connection_t googleCon;
-	headerInfo_t hInfo;
+	char dataBuffer[ MAX_PACKET_SIZE ];//FIXME: hardcoded value
 
 	init_vfsPathParserState( &vfsParserState );
  	vfs_parsePath( c, &vfsParserState, path, strlen(path) );
-	vfs_getFileWebUrl( c, &vfsParserState.fileObj, strBuf1, 2000 );
+	vfs_getFileWebUrl( c, &vfsParserState.fileObj, webUrlBuf, 2000 );
 
-	if (  vfsParserState.isExistingObject && !vfsParserState.fileObj.isDir ) {
+	if ( vfsParserState.isExistingObject && !vfsParserState.fileObj.isDir ) {
 		long len = vfs_getFileSize( c, &vfsParserState.fileObj );
 		if (offset >= len) {
-			return 0;	
+			return 0;
 		}
 
-		startFileDownload( strBuf1, 0, 0, 0, 0, &googleCon, &hInfo,
-			&googleParserState, 
-			getAccessTokenHeader( &accessTokenState ) );
-		long dataCopied = 0;
-		int encryptionStarted = 0;
-		while ( 1 ) {
-			int dataLength;
-			int received = updateFileDownload( &googleCon, &hInfo,
-					&googleParserState, encryptedDataBuffer,
-					ENCRYPTED_BUFFER_LEN, &dataLength, "" );
-			if ( !encryptionStarted ) {
-				startDecryption( &(decryptionState), "phone", NULL );
-				encryptionStarted = 1;
-			}
-			if ( received == 0 ) {
-				finishDecryption( &decryptionState, NULL, 0, decryptedDataBuffer, &tempOutputSize );
-				if ( dataCopied + tempOutputSize > size ) {
-					memcpy( buf + dataCopied, decryptedDataBuffer, (size - dataCopied) );
-					return size;
-				} else {
-					memcpy( buf + dataCopied, decryptedDataBuffer, tempOutputSize);
-					dataCopied += tempOutputSize;
-				}
-				return dataCopied;
-			}
-			updateDecryption( &decryptionState, encryptedDataBuffer, dataLength,
-					decryptedDataBuffer, &tempOutputSize );
-			if ( dataCopied + tempOutputSize > size ) {
-				memcpy( buf + dataCopied, decryptedDataBuffer, (size - dataCopied) );
+		Connection_t con;
+		headerInfo_t outputHInfo;
+		CryptoFileDownloadState_t encState;
+		parserState_t outputParserState;
+		int outputBufferLength;
+		int dataCopied = 0;
+
+		startEncryptedFileDownload(&encState,
+				webUrlBuf, 1 /*isRangedRequest*/, 1 /*isEndRangeSet*/,
+				offset, offset+size, &con,
+				&outputHInfo, &outputParserState,
+				getAccessTokenHeader( &accessTokenState ) );
+
+		while (updateEncryptedFileDownload(&encState, &con, &outputHInfo,
+				&outputParserState, dataBuffer, MAX_PACKET_SIZE,
+				&outputBufferLength, getAccessTokenHeader( &accessTokenState ) ) != 0) {		
+
+			if ( dataCopied + outputBufferLength >= size ) {
+				memcpy( buf + dataCopied, dataBuffer, (size - dataCopied) );
 				return size;
 			} else {
-				memcpy( buf + dataCopied, decryptedDataBuffer, tempOutputSize);
-				dataCopied += tempOutputSize;
+				memcpy( buf + dataCopied, dataBuffer, outputBufferLength);
+				dataCopied += outputBufferLength;
 			}
-		}//while 1
+		}
 	}
+	//handle exit early
+
 	return -ENOENT;
 }
 
@@ -156,6 +145,7 @@ int main(int argc, char *argv[])
 		printf("erororrororor\n");
 		exit(-1);
 	}
+
 	gat_init_googleAccessToken(&accessTokenState);
 
 	return fuse_main(argc, argv, &fuse_example_operations, NULL);

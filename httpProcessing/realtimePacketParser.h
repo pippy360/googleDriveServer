@@ -5,12 +5,10 @@ typedef enum {
 	getHTTPStatusLine,//next state -> finishHeaderValue
 	finishedHTTPStatusLine,
 	getHeaderName,
-	finishedHeaderName,//expecting ':' 
 	getHeaderValue,
 	finishedHeaderValue,//TODO:EXPLAIN
 	finishedHeaderValue_2,//TODO:EXPLAIN
 	getChunkLength,
-	finishedChunkLength,//expecting '\r\n'
 	getChunkData,
 	finishedChunkData,//expecting '\r\n' followed by new chunk or zero chunk
 	getContentLengthData,

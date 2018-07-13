@@ -241,8 +241,7 @@ int getNewTokensWithLink(AccessTokenState_t *stateStruct) {
 
 	printf("Visit this link and paste the code in...:\n"
 			"https://accounts.google.com/o/oauth2/auth?access_type=offline"
-			"&client_id="
-			CLIENT_ID
+			"&client_id=" CLIENT_ID
 			"&redirect_uri=urn%%3Aietf%%3Awg%%3Aoauth%%3A2.0%%3Aoob"
 			"&response_type=code"
 			"&scope=https%%3A%%2F%%2Fwww.googleapis.com%%2Fauth%%2Fdrive\n");

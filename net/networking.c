@@ -35,11 +35,12 @@ void *get_in_addr(struct sockaddr *sa) {
 
 int getPort(int fd) {
     struct sockaddr_in sa;
+    
     int sa_len;
     sa_len = sizeof(sa);
     /* Ask getsockname to fill in this socket's local */
     /* address. */
-    if (getsockname(fd, &sa, &sa_len) == -1) {
+    if (getsockname(fd, (struct sockaddr *) &sa, (socklen_t *) &sa_len) == -1) {
         perror("getsockname() failed");
         return -1;
     }
@@ -116,7 +117,7 @@ returns a valid file descriptor, or -1 if error
 //TODO: error checking
 int setUpTcpConnection(const char* hostname, const char* port) {
 
-    int sockfd, numbytes;
+    int sockfd;
     struct addrinfo hints, *servinfo, *p;
     int rv;
     char s[INET6_ADDRSTRLEN];

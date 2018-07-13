@@ -36,4 +36,7 @@ void utils_connectByUrl(const char *inputUrl, Connection_t *con);
 int utils_chunkAndSend(Connection_t *clientCon, char *dataBuffer,
 		int dataBufferLen);
 
+void utils_setHInfoFromUrl(const char *inputUrl, headerInfo_t *hInfo,
+		const httpRequestTypes_t requestType, const char *extraHeaders);
+
 #endif /* UTILS_H */

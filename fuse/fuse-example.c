@@ -26,6 +26,7 @@
 vfsContext_t ctx;//FIXME: don't use a global 
 vfsContext_t *c = &ctx;
 AccessTokenState_t accessTokenState;
+DriverState_t downloadDriver;
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
 	
@@ -147,6 +148,7 @@ int main(int argc, char *argv[])
 	}
 
 	gat_init_googleAccessToken(&accessTokenState);
+
 
 	return fuse_main(argc, argv, &fuse_example_operations, NULL);
 }

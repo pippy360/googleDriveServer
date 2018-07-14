@@ -24,7 +24,7 @@ typedef struct {
         char isValidPath;//FIXME: this is never used anwhere, what the fuck?
         int error;
 	vfsObject_t fileObj;
-} vfsPathParserState_t;
+} vfsPathHTTPParserState_t;
 
 typedef struct {
         vfsObject_t cwd;//id of the file/folder the path points to
@@ -35,9 +35,9 @@ int vfsContext_init( vfsContext_t *ctx );
 
 int vfsContext_free( vfsContext_t *ctx );
 
-void init_vfsPathParserState( vfsPathParserState_t *parserState );
+void init_vfsPathParserState( vfsPathHTTPParserState_t *parserState );
 
-int vfs_parsePath( vfsContext_t *ctx, vfsPathParserState_t *parserState,
+int vfs_parsePath( vfsContext_t *ctx, vfsPathHTTPParserState_t *parserState,
 		const char *fullPath, int fullPathLength );
 
 int vfs_ls( vfsContext_t *ctx, const vfsObject_t *file, char *outputBuf, 

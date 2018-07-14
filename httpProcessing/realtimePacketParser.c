@@ -11,8 +11,8 @@
 #define MAX_BUFFER 6000//FIXME: do something to prevent bufferoverflows
 
 //FIXME: THE BUFFERS SHOULDN'T BE MALLOC'D HERE
-void set_new_parser_state_struct(parserState_t *parserState){
-	memset(parserState, 0, sizeof(parserState_t));
+void set_new_parser_state_struct(HTTPParserState_t *parserState){
+	memset(parserState, 0, sizeof(HTTPParserState_t));
 	parserState->currentState 		 = getHTTPStatusLine;
 	parserState->packetDataType 	 = default_empty_p;
 
@@ -28,8 +28,8 @@ void set_new_parser_state_struct(parserState_t *parserState){
 	parserState->headerFullyParsed	 = 0;
 }
 
-void set_new_header_info(headerInfo_t *httpStats){
-	memset(httpStats, 0, sizeof(headerInfo_t));
+void set_new_header_info(HTTPHeaderState_t *httpStats){
+	memset(httpStats, 0, sizeof(HTTPHeaderState_t));
 
 	httpStats->transferType 		 = default_empty;
 	httpStats->statusStringBuffer 	 = malloc(MAX_BUFFER+1);
@@ -41,13 +41,13 @@ void set_new_header_info(headerInfo_t *httpStats){
 	httpStats->getEndRangeSet		 = 0;
 }
 
-void setState(parserState_t *parserState, state_t nextState){
+void setState(HTTPParserState_t *parserState, state_t nextState){
 	parserState->currentTokenPos = 0;
 	parserState->currentState = nextState;
 }
 
 //0 == finished getting a valid token, 1 == still going through it, -1 == nope, failed
-int token_check(parserState_t *parserState, char *outputBuffer, char *token){
+int token_check(HTTPParserState_t *parserState, char *outputBuffer, char *token){
 	int result;
 	if( parserState->currentPacketPtr[0] == token[ parserState->currentTokenPos ] ){
 		if ( parserState->currentTokenPos == strlen( token ) - 1 )
@@ -63,7 +63,7 @@ int token_check(parserState_t *parserState, char *outputBuffer, char *token){
 }
 
 //this can only get hardcoded headers, to get more headers use a getHeader function on the fully downloaded header
-void process_byte(char byte, parserState_t* parserState, 
+void process_byte(char byte, HTTPParserState_t* parserState, 
 				char *outputData, int outputDataMaxLength, int *outputDataLength){
 
 	int retVal, length;
@@ -204,7 +204,7 @@ int validateHttpVersion(char *buffer, char **exitPosition){
 
 //fixme: this is such a crappy way of storing all the request types, fuck C for making this a pain in the ass
 //TODO:ERROR CHECKING
-int process_status_line(char *buffer, parserState_t* parserState, headerInfo_t* hInfo){
+int process_status_line(char *buffer, HTTPParserState_t* parserState, HTTPHeaderState_t* hInfo){
 	char *ptr = buffer;
 	//check the first few chars to see what type we have
 	if( strncmp(buffer, "HTTP/", 4) == 0 ){
@@ -265,7 +265,7 @@ int process_status_line(char *buffer, parserState_t* parserState, headerInfo_t* 
 
 //if it's a header we're interested in, process it, otherwise just ignore
 //returns -1 if invalid header, 0 otherwise 
-int process_header(char *name, char *value, parserState_t* parserState, headerInfo_t* hInfo){
+int process_header(char *name, char *value, HTTPParserState_t* parserState, HTTPHeaderState_t* hInfo){
 	if(strcmp("Transfer-Encoding",name) == 0 && strcmp(" chunked",value) == 0){
 		//FIXME: ERROR HERE, HTTP SPEC DOESN'T SAY HOW MUCH WHITESPACE
 		//FIXME: IF THERE'S A TRANSFER ENCODING WITHOUT CHUNK CAUSE ERROR
@@ -317,8 +317,8 @@ int process_header(char *name, char *value, parserState_t* parserState, headerIn
 //call this when ever we get a new packet
 //TODO: ADD A FUNCTION TO EXIT ON STATE
 //TODO: OFFSET REPLACE
-int process_data(char *inputData, int dataLength, parserState_t* parserState, char *outputData,
-				 int outputDataMaxLength, int *outputDataLength, state_t exitState, headerInfo_t* hInfo){
+int process_data(char *inputData, int dataLength, HTTPParserState_t* parserState, char *outputData,
+				 int outputDataMaxLength, int *outputDataLength, state_t exitState, HTTPHeaderState_t* hInfo){
 	state_t prevState;
 	*outputDataLength = 0;
 	parserState->currentPacketPtr = inputData;

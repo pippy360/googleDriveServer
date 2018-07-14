@@ -27,7 +27,7 @@ int googleUpload_init(Connection_t *con, AccessTokenState_t *accessTokenState,
 		"}\n"
 		"--foo_bar_baz\n"
 		"Content-Type: %s\n\n";
-	headerInfo_t hInfo;
+	HTTPHeaderState_t hInfo;
 	set_new_header_info(&hInfo);
 	hInfo.transferType = TRANSFER_CHUNKED;
 	//Authorization: Bearer your_auth_token
@@ -73,7 +73,7 @@ int googleUpload_update(Connection_t *con, char *dataBuffer, int dataLength) {
 int googleUpload_end(Connection_t *con, GoogleUploadState_t *fileState) {
 	char endData[] = "\n--foo_bar_baz--";
 	char outputData[MAX_PACKET_SIZE];
-	headerInfo_t hInfo;
+	HTTPHeaderState_t hInfo;
 	int received;
 	int outputDataLength = utils_chunkData(endData, strlen(endData),
 			outputData);

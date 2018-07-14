@@ -151,7 +151,7 @@ int getAccessTokenWithRefreshToken(AccessTokenState_t *stateStruct) {
 		"&client_secret=" CLIENT_SECRET
 		"&refresh_token=%s"
 		"&grant_type=refresh_token";
-	headerInfo_t hInfo;
+	HTTPHeaderState_t hInfo;
 	Connection_t con;
 
 	set_new_header_info(&hInfo);
@@ -197,7 +197,7 @@ int getAccessTokenWithPastedCode(const char *codeStr,
 		"&client_secret=" CLIENT_SECRET
 		"&scope=&grant_type=authorization_code";
 	char strt[MAX_PACKET_SIZE];
-	headerInfo_t hInfo;
+	HTTPHeaderState_t hInfo;
 	Connection_t con;
 
 	set_new_header_info(&hInfo);

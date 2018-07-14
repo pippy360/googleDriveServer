@@ -130,7 +130,7 @@ void utils_getAccessTokenHeader() {
 }
 
 //creates a hIfno get request for the the url
-void utils_setHInfoFromUrl(const char *inputUrl, headerInfo_t *hInfo,
+void utils_setHInfoFromUrl(const char *inputUrl, HTTPHeaderState_t *hInfo,
 		const httpRequestTypes_t requestType, const char *extraHeaders) {
 
 	protocol_t type;
@@ -182,7 +182,7 @@ void utils_connectByUrl(const char *inputUrl, Connection_t *con) {
 //This function allows the content length to already be set,
 //if the content length is not set then the packet must not have any data (other than the header)
 int utils_createHTTPHeaderFromUrl(char *inputUrl, char *output,
-		int maxOutputLen, headerInfo_t *hInfo,
+		int maxOutputLen, HTTPHeaderState_t *hInfo,
 		const httpRequestTypes_t requestType, char *extraHeaders) {
 
 	utils_setHInfoFromUrl(inputUrl, hInfo, requestType, extraHeaders);
@@ -192,13 +192,13 @@ int utils_createHTTPHeaderFromUrl(char *inputUrl, char *output,
 //gets the whole next http packet
 //FIXME: handle cases where the outputBuffer isn't big enough
 //returns the amount of data written to outputData
-int utils_recvNextHttpPacket(Connection_t *con, headerInfo_t *outputHInfo,
+int utils_recvNextHttpPacket(Connection_t *con, HTTPHeaderState_t *outputHInfo,
 		char *outputBuffer, const int outputBufferMaxLength) {
 
 	char *tempPtr = outputBuffer;
 	char packetBuffer[MAX_PACKET_SIZE];
 	int received, outputDataLength;
-	parserState_t parserState;
+	HTTPParserState_t parserState;
 
 	set_new_header_info(outputHInfo);
 	set_new_parser_state_struct(&parserState);
@@ -215,10 +215,10 @@ int utils_recvNextHttpPacket(Connection_t *con, headerInfo_t *outputHInfo,
 
 //returns the amount of data downloaded (excluding the header)
 int utils_downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength,
-		char *inputUrl, headerInfo_t *hInfo, char *extraHeaders) {
+		char *inputUrl, HTTPHeaderState_t *hInfo, char *extraHeaders) {
 
-	headerInfo_t requestHeaderInfo;
-	parserState_t parserState;
+	HTTPHeaderState_t requestHeaderInfo;
+	HTTPParserState_t parserState;
 	Connection_t con;
 	char packetBuffer[MAX_PACKET_SIZE];
 

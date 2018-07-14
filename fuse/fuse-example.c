@@ -6,6 +6,8 @@
 #include "../virtualFileSystem/hiredis/hiredis.h"
 #include "../virtualFileSystem/vfs.h"
 
+#include "../downloadDriver.h"
+
 #include "../google/googleAccessToken.h"
 #include "../google/googleUpload.h"
 
@@ -26,7 +28,7 @@
 vfsContext_t ctx;//FIXME: don't use a global 
 vfsContext_t *c = &ctx;
 AccessTokenState_t accessTokenState;
-DriverState_t downloadDriver;
+DriverState_t downloadDrive;
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
 	
@@ -34,7 +36,7 @@ static int getattr_callback(const char *path, struct stat *stbuf) {
 
 	memset( stbuf, 0, sizeof( struct stat ) );
 
-	vfsPathParserState_t parserState;
+	vfsPathHTTPParserState_t parserState;
 	init_vfsPathParserState( &parserState );
  	vfs_parsePath( c, &parserState, path, strlen(path) );
 	if ( !parserState.isExistingObject )
@@ -59,7 +61,7 @@ static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 	char fuseLsbuf[20000];
 	int numRetVals = 0;
 
-	vfsPathParserState_t parserState;
+	vfsPathHTTPParserState_t parserState;
 	vfs_parsePath( c, &parserState, path, strlen( path ) );
 	vfs_ls( c, &parserState.fileObj, fuseLsbuf, 9999, &numRetVals );
 
@@ -82,53 +84,8 @@ static int open_callback(const char *path, struct fuse_file_info *fi) {
 
 static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 		struct fuse_file_info *fi) {
-
+	
 	printf("read_callback: %s offset: %lu\n", path, offset);
-
-	//we will under report the size of the buffers to functions when using them as input buffers
-	//so that we always meet the size+AES_BLOCK_SIZE requirements of the output buffer for the encrypt/decrypt functions
-	//see openssl docs for more info on ecrypted buffer/decrypted buffers size requirements
-	char webUrlBuf[ STRING_BUFFER_LEN ]; 
-	vfsPathParserState_t vfsParserState;
-	char dataBuffer[ MAX_PACKET_SIZE ];//FIXME: hardcoded value
-
-	init_vfsPathParserState( &vfsParserState );
- 	vfs_parsePath( c, &vfsParserState, path, strlen(path) );
-	vfs_getFileWebUrl( c, &vfsParserState.fileObj, webUrlBuf, 2000 );
-
-	if ( vfsParserState.isExistingObject && !vfsParserState.fileObj.isDir ) {
-		long len = vfs_getFileSize( c, &vfsParserState.fileObj );
-		if (offset >= len) {
-			return 0;
-		}
-
-		Connection_t con;
-		headerInfo_t outputHInfo;
-		CryptoFileDownloadState_t encState;
-		parserState_t outputParserState;
-		int outputBufferLength;
-		int dataCopied = 0;
-
-		startEncryptedFileDownload(&encState,
-				webUrlBuf, 1 /*isRangedRequest*/, 1 /*isEndRangeSet*/,
-				offset, offset+size, &con,
-				&outputHInfo, &outputParserState,
-				getAccessTokenHeader( &accessTokenState ) );
-
-		while (updateEncryptedFileDownload(&encState, &con, &outputHInfo,
-				&outputParserState, dataBuffer, MAX_PACKET_SIZE,
-				&outputBufferLength, getAccessTokenHeader( &accessTokenState ) ) != 0) {		
-
-			if ( dataCopied + outputBufferLength >= size ) {
-				memcpy( buf + dataCopied, dataBuffer, (size - dataCopied) );
-				return size;
-			} else {
-				memcpy( buf + dataCopied, dataBuffer, outputBufferLength);
-				dataCopied += outputBufferLength;
-			}
-		}
-	}
-	//handle exit early
 
 	return -ENOENT;
 }

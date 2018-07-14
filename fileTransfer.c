@@ -59,7 +59,7 @@ int trimBottom(long clientRangeStart, long decryptedDataFileStart,
 //FIXME: this isn't taken into account in the other parts of the code, you might end up sending 0 chunks early
 int __startFileDownload(const char *inputUrl, char isRangedRequest, char isEndRangeSet,
 		long startRange, long endRange, Connection_t *con,
-		headerInfo_t *outputHInfo, parserState_t *outputParserState,
+		HTTPHeaderState_t *outputHInfo, HTTPParserState_t *outputParserState,
 		const char *extraHeaders) {
 
 	char packetBuffer[MAX_PACKET_SIZE];    //reused quite a bit
@@ -84,8 +84,9 @@ int __startFileDownload(const char *inputUrl, char isRangedRequest, char isEndRa
 }
 
 //returns the amount of data downloaded INCLUDING HEADER
-int __updateFileDownload( Connection_t *con, headerInfo_t *outputHInfo,
-		parserState_t *outputParserState, char *outputBuffer,
+//FIXME: move this function to the common code between downloadDrivers
+int __updateFileDownload( Connection_t *con, HTTPHeaderState_t *outputHInfo,
+		HTTPParserState_t *outputParserState, char *outputBuffer,
 		int outputBufferMaxLength, int *outputBufferLength, 
 		const char *extraHeaders ) {
 
@@ -111,11 +112,12 @@ int __finishFileDownload() {
 }
 
 //@encState takes in a new CryptoFileDownloadState_t which will be cleared
-int startEncryptedFileDownload(CryptoFileDownloadState_t *encState,
+int startEncryptedFileDownload( CryptoFileDownloadState_t *encState,
 		const char *inputUrl, char isRangedRequest, char isEndRangeSet,
 		long startRange, long endRange, Connection_t *con,
-		headerInfo_t *outputHInfo, parserState_t *outputParserState,
-		const char *extraHeaders) {
+		HTTPHeaderState_t *outputHInfo, HTTPParserState_t *outputParserState,
+		const char *extraHeaders, FileTransferDriver_ops_t *ops, 
+		FileDownloadState_t *DownloadState ) {
 
 	/*calculate the encrypted data we need to request to get the requested decrypted data*/
 	long encFileStart, encFileEnd;
@@ -152,9 +154,10 @@ int startEncryptedFileDownload(CryptoFileDownloadState_t *encState,
 //returns the amount of data in the outputBuffer
 //this will ONLY return 0 if the connection has been close AND it cannot return any data
 //FIXME:  THERE'S NO NEED TO RETURN THE OUTPUTBUFFERLENGTH, IT'S ONLY CONFUSING
-int updateEncryptedFileDownload( CryptoFileDownloadState_t *encState,
-		Connection_t *con, headerInfo_t *outputHInfo,
-		parserState_t *outputParserState, char *outputBuffer,
+int updateEncryptedFileDownload( FileDownloadState_t *downloadState, 
+		FileTransferDriver_ops_t *ops, CryptoFileDownloadState_t *encState,
+		Connection_t *con, HTTPHeaderState_t *outputHInfo,
+		HTTPParserState_t *outputParserState, char *outputBuffer,
 		int outputBufferMaxLength, int *outputBufferLength, 
 		const char *extraHeaders ) {
 
@@ -198,10 +201,8 @@ int updateEncryptedFileDownload( CryptoFileDownloadState_t *encState,
 
 	/*make sure we have some decrypted data to return*/
 	while (*outputBufferLength == 0) {
-		//if it fails updateDOWN
-		result = updateFileDownload(con, outputHInfo, outputParserState,
-				encryptedPacketBuffer, MAX_PACKET_SIZE, &encryptedPacketLength,
-				extraHeaders);
+		result = ops->downloadUpdate( downloadState, encryptedPacketBuffer, 
+			MAX_PACKET_SIZE, &encryptedPacketLength);
 		encState->encryptedDataDownloaded += encryptedPacketLength;
 		if (result == 0) {
 			/*file server closed the connection*/
@@ -250,47 +251,44 @@ int finishEncryptedFileDownload(CryptoFileDownloadState_t *encState) {
 	return __finishFileDownload();
 }
 
-int startEncryptedFileUpload( CryptoFileDownloadState_t *encState,
-		const char *inputUrl, char isRangedRequest, char isEndRangeSet,
+int startEncryptedFileUpload( FileUploadState_t *uploadState, 
+		FileTransferDriver_ops_t *ops, const char *inputUrl, 
+		char isRangedRequest, char isEndRangeSet,
 		long startRange, long endRange, Connection_t *con,
-		headerInfo_t *outputHInfo, parserState_t *outputParserState,
+		HTTPHeaderState_t *outputHInfo, HTTPParserState_t *outputParserState,
 		const char *extraHeaders ) {
 
 	//we will under report the size of the buffers to functions when using them as input buffers
 	//so that we always meet the size+AES_BLOCK_SIZE requirements of the output buffer for the encrypt/decrypt functions
 	//see openssl docs for more info on ecrypted buffer/decrypted buffers size requirements
-	CryptoState_t encryptionState;
-	int tempOutputSize;
-	Connection_t googleCon;
-	headerInfo_t hInfo;
 
 	char filenameJson[ STRING_BUFFER_LEN ];
 	//get the file name
 	printf( "trying to store file %s\n", "FIXME: ADD FILE NAME HERE" );
 	sprintf( filenameJson, "\"title\": \"%s\"", "nuffin.bin" );
-	googleUpload_init( &googleCon, accessTokenState, filenameJson, 
-		"image/png" );
+
+	ops->uploadInit( uploadState );
 
 	//alright start reading in the file
-	startEncryption( &encryptionState, "phone" );
+	startEncryption( uploadState->encryptionState, "phone" );
 
 	return 0;//fixme only one return code
 }
 
 //returns the amount of data in the outputBuffer
 //this will ONLY return 0 if the connection has been close AND it cannot return any data
-//FIXME:  THERE'S NO NEED TO RETURN THE OUTPUTBUFFERLENGTH, IT'S ONLY CONFUSING
 int updateEncryptedFileUpload( CryptoFileDownloadState_t *encState,
-		Connection_t *con, headerInfo_t *outputHInfo,
-		parserState_t *outputParserState, char *outputBuffer,
-		int outputBufferMaxLength, int *outputBufferLength, 
-		const char *extraHeaders ) {
+		Connection_t *con, HTTPHeaderState_t *outputHInfo,
+		HTTPParserState_t *outputParserState, char *outputBuffer,
+		int outputBufferMaxLength, 
+		const char *extraHeaders, FileTransferDriver_ops_t *ops, 
+		FileUploadState_t *uploadState ) {
 
+/*
 	long received;
 	long storFileSize = 0;
 	char encryptedDataBuffer[ ENCRYPTED_BUFFER_LEN + AES_BLOCK_SIZE ];
 	char decryptedDataBuffer[ DECRYPTED_BUFFER_LEN + AES_BLOCK_SIZE ];
-
 	if ( ( received = recv( clientState->data_fd, decryptedDataBuffer,
 		DECRYPTED_BUFFER_LEN, 0 ) ) > 0) {
 
@@ -304,7 +302,7 @@ int updateEncryptedFileUpload( CryptoFileDownloadState_t *encState,
 		//call this one final time
 		finishEncryption( &encryptionState, decryptedDataBuffer, received,
 				encryptedDataBuffer, &tempOutputSize );
-		googleUpload_update( &googleCon, encryptedDataBuffer, tempOutputSize );
+		ops->uploadUpdate( &googleCon, encryptedDataBuffer, tempOutputSize );
 
 		GoogleUploadState_t fileState;
 		googleUpload_end( &googleCon, &fileState );
@@ -312,60 +310,69 @@ int updateEncryptedFileUpload( CryptoFileDownloadState_t *encState,
 				storFileSize, fileState.id, fileState.webUrl, fileState.apiUrl );
 		sendFtpResponse( clientState, "226 Transfer complete.\r\n" );
 	}
+	*/
 	return 0;//fixme only one return code
 }
 
-void finishEncryptedFileUpload( CryptoFileDownloadState_t *encState ) {
+int finishEncryptedFileUpload( CryptoFileDownloadState_t *encState ) {
 	//just clean up and stuff
 	return 0;//fixme only one return code
 }
 
 void getFileDownloadStateFromFileRead( const char *inputUrl, 
-		char isEncrypted, long offset, long size, FileDownload_t *downloadState ) {
+		char isEncrypted, long offset, long size, 
+		FileDownloadState_t *downloadState ) {
 
 	downloadState->isEncrypted = isEncrypted;
 	downloadState->rangeStart = offset;
 	downloadState->rangeEnd = offset + size;
-	downloadState->connection = con;
-	downloadState->encryptionState = CryptoFileDownloadState_t;
+	downloadState->encryptionState = NULL;//FIXME: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
 
-int startFileDownload( FileDownload_t *downloadState ) {
+char *getExtraHeaders() {
+	//downloadState->encryptionState = NULL;//FIXME: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	return NULL;
+}
 
+int startFileDownload( FileDownloadState_t *downloadState ) {
+
+	FileTransferDriver_ops_t *ops = downloadState->driverState->ops;
 	return startEncryptedFileDownload( downloadState->encryptionState,
 		downloadState->fileUrl, 1 /* isRangedRequest */, 1 /* isEndRangeSet */,
 		downloadState->rangeStart, downloadState->rangeEnd, downloadState->connection,
-		&downloadState->outputHInfo, &downloadState->parserState,
-		&downloadState->getExtraHeaders() );
+		&downloadState->headerState, &downloadState->parserState,
+		getExtraHeaders(), ops, downloadState );
 	return 0;//fixme only one return code
 }
 
 //returns the amount of data downloaded INCLUDING HEADER
-int updateFileDownload( FileDownload_t *downloadState, char *outputBuffer,
+//FIXME: move this function to the common code between downloadDrivers
+int updateFileDownload( FileDownloadState_t *downloadState, char *outputBuffer,
 		int outputBufferMaxLength, int *outputBufferLength ) {
 
-	return updateEncryptedFileDownload( downloadState->encryptionState,
-		downloadState->connection, &downloadState->outputHInfo, 
+	return updateEncryptedFileDownload( downloadState, downloadState->driverState->ops, downloadState->encryptionState,
+		downloadState->connection, &downloadState->headerState, 
 		&downloadState->parserState, outputBuffer,
 		outputBufferMaxLength, outputBufferLength, 
-		&downloadState->getExtraHeaders() );
+		getExtraHeaders() );
 }
 
-int finishFileDownload(FileDownload_t *downloadState) {
+int finishFileDownload(FileDownloadState_t *downloadState) {
 	return finishEncryptedFileDownload( downloadState->encryptionState );
 }
 
-int startFileUpload( FileUpload_t *uploadState ) {
+int startFileUpload( FileUploadState_t *uploadState ) {
 
-	return startEncryptedFileUpload( uploadState->encryptionState,
-		uploadState->fileUrl, 1 /* isRangedRequest */, 1 /* isEndRangeSet */,
+	return startEncryptedFileUpload( uploadState, downloadOps, 
+		uploadState->encryptionState, uploadState->fileUrl, 
+		1 /* isRangedRequest */, 1 /* isEndRangeSet */,
 		uploadState->rangeStart, uploadState->rangeEnd, uploadState->connection,
 		&uploadState->outputHInfo, &uploadState->parserState,
-		&uploadState->getExtraHeaders() );
+		getExtraHeaders() );
 }
 
 //returns the amount of data downloaded INCLUDING HEADER
-int updateFileUpload( FileDownload_t *uploadState, const char *inputBuffer,
+int updateFileUpload( FileDownloadState_t *uploadState, const char *inputBuffer,
 		int inputBufferMaxLength, int *inputBufferLength ) {
 
 	return updateEncryptedFileUpload( uploadState->encryptionState,
@@ -375,7 +382,7 @@ int updateFileUpload( FileDownload_t *uploadState, const char *inputBuffer,
 		&uploadState->getExtraHeaders() );
 }
 
-int finishFileUpload(FileDownload_t *uploadState) {
+int finishFileUpload(FileDownloadState_t *uploadState) {
 	//close the connection and clean up
 	return 0;
 }

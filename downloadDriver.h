@@ -1,30 +1,62 @@
 #ifndef DOWNLOADDRIVER_H
 #define DOWNLOADDRIVER_H
 
-typedef struct {
-	int (*prepareDriver)(int);
-	int (*startDownload)(int);
-	int (*updateDownload)(int);
-	//@finishDownload doesn't return any data only cleans up
-	int (*finishDownload)(int);
-	char *(*getExtraHeaders)();
-} DownloadDriver_ops_t;
+#include "net/connection.h"
+#include "crypto.h"
+#include "httpProcessing/commonHTTP.h"
+#include "httpProcessing/realtimePacketParser.h"
 
-typedef struct {
-	DownloadDriver_ops_t ops;
+struct DriverState_t;
+
+typedef struct FileTransferDriver_ops_t FileTransferDriver_ops_t;
+
+//This is state held from the init of the driver
+typedef struct DriverState_t {
+	FileTransferDriver_ops_t *ops;
 	void *priv;
-} DownloadDriver_t;
+} DriverState_t;
 
-typedef struct {
-	DownloadDriver_t driver;
+//This is the state held for one file download
+typedef struct FileDownloadState_t {
+	DriverState_t *driverState;
 	CryptoState_t *encryptionState;
-	Connection_t *con;
-} FileDownload_t;
+	Connection_t *connection;
+	HTTPHeaderState_t headerState;
+	HTTPParserState_t parserState;
+	int isEncrypted;
+	long rangeStart;
+	long rangeEnd;
+	char *fileUrl;
+	void *priv;
+} FileDownloadState_t;
 
-typedef struct {
-	DownloadDriver_t driver;
+//This is the state held for one file upload
+typedef struct FileUploadState_t {
+	DriverState_t *driverState;
 	CryptoState_t *encryptionState;
-	Connection_t *con;
-} FileUpload_t;
+	Connection_t *connection;
+	void *priv;
+} FileUploadState_t;
+
+
+typedef struct FileTransferDriver_ops_t {
+	//called once per driver init
+	int ( *prepDriverForFileTransfer )( DriverState_t* );
+
+	int ( *downloadInit )( FileDownloadState_t * );
+	//returns error code
+	int ( *downloadUpdate )( FileDownloadState_t *downloadState, char *outputBuffer,
+		int bufferMaxLength, int *amountOfDataWrittenToBuffer );
+	//@finishDownload doesn't return any data only cleans up
+	int ( *downloadFinish )( FileDownloadState_t * );
+
+	int ( *uploadInit )( FileUploadState_t * );
+	int ( *uploadUpdate )( FileUploadState_t *uploadState, const char *inputBuffer,
+		int dataLength );
+	//@finishUpload doesn't return any data only cleans up
+	int ( *finishUpload )( FileUploadState_t * );
+
+} FileTransferDriver_ops_t;
+
 
 #endif /* DOWNLOADDRIVER_H */

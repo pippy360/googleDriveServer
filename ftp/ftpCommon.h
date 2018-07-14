@@ -61,7 +61,7 @@ typedef struct {
 	ftpRequest_t type;
 	char *paramBuffer;
 	int paramBufferLength;
-} ftpParserState_t;
+} ftpHTTPParserState_t;
 
 typedef struct {
 	int command_fd;

@@ -53,7 +53,7 @@ void getDownloadUrlAndSize(AccessTokenState_t *tokenState, char *filename,
 
 	char inputUrl[2000], *accessToken;
 	char str[MAX_ACCEPTED_HTTP_PAYLOAD];
-	headerInfo_t headerInfo;
+	HTTPHeaderState_t headerInfo;
 
 	sprintf(inputUrl, "https://www.googleapis.com/drive/v2/files"
 			"?q=title='%s'&fields=items(downloadUrl,fileSize)", filename);
@@ -75,9 +75,9 @@ void getDownloadUrlAndSize(AccessTokenState_t *tokenState, char *filename,
 //pass in a Connectoin_t, and this will recv until you have the whole header
 //it will discard any packet data
 //returns 0 if success, non-0 otherwise
-int getHeader(Connection_t *con, parserState_t *parserStateBuf,
+int getHeader(Connection_t *con, HTTPParserState_t *parserStateBuf,
 		char *outputData, int outputDataMaxSize, int *outputDataLength,
-		headerInfo_t *headerInfoBuf) {
+		HTTPHeaderState_t *headerInfoBuf) {
 
 	set_new_parser_state_struct(parserStateBuf);
 	set_new_header_info(headerInfoBuf);
@@ -100,8 +100,8 @@ int getHeader(Connection_t *con, parserState_t *parserStateBuf,
 	return 0;
 }
 
-void createClientHeaderForDriveDownload(headerInfo_t *hInfoGoogle_response,
-		headerInfo_t *hInfoClientRecv, int fileSize, char *packetBuffer) {
+void createClientHeaderForDriveDownload(HTTPHeaderState_t *hInfoGoogle_response,
+		HTTPHeaderState_t *hInfoClientRecv, int fileSize, char *packetBuffer) {
 
 	hInfoGoogle_response->isRequest = 0;
 	hInfoGoogle_response->transferType = TRANSFER_CHUNKED;
@@ -117,14 +117,14 @@ void createClientHeaderForDriveDownload(headerInfo_t *hInfoGoogle_response,
 //FIXME: use a define for the blocksize variable
 //the header has already been parsed by this point, hence we need to pass in output data
 void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
-		parserState_t *parserState, headerInfo_t *hInfoClientRecv,
+		HTTPParserState_t *parserState, HTTPHeaderState_t *hInfoClientRecv,
 		char *outputData, int outputDataLength) {
 
 	int received, chunkSize, outputBufferLength;
 	long fileSize;
 	char *url, *sizeStr, *accessTokenHeaders;
-	headerInfo_t hInfoGoogle_response, hInfoClient_response;
-	parserState_t parserStateGoogle_response;
+	HTTPHeaderState_t hInfoGoogle_response, hInfoClient_response;
+	HTTPParserState_t parserStateGoogle_response;
 	Connection_t con;
 	CryptoFileDownloadState_t encState;
 	char packetBuffer[MAX_PACKET_SIZE], dataBuffer[MAX_PACKET_SIZE];
@@ -185,8 +185,8 @@ void handle_client(AccessTokenState_t *stateStruct, int client_fd) {
 
 	int outputDataLength;
 	char *outputDataBuffer = malloc(MAXDATASIZE + 1);
-	parserState_t parserStateClientRecv;
-	headerInfo_t hInfoClientRecv;
+	HTTPParserState_t parserStateClientRecv;
+	HTTPHeaderState_t hInfoClientRecv;
 	Connection_t httpCon;
 	net_fileDescriptorToConnection(client_fd, &httpCon);
 

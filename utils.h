@@ -14,7 +14,7 @@ int utils_parseUrl(const char *inputUrl, const char **protocol, int *protocolLen
 int utils_parseUrl_proto(const char *inputUrl, protocol_t *type, const char **domain,
 		int *domainLength, const char **fileUrl, int *fileUrlLength);
 
-int utils_recvNextHttpPacket(Connection_t *con, headerInfo_t *outputHInfo,
+int utils_recvNextHttpPacket(Connection_t *con, HTTPHeaderState_t *outputHInfo,
 		char *outputBuffer, const int outputBufferMaxLength);
 
 char *shitty_get_json_value(const char* inputName, char* jsonData, int jsonDataSize);
@@ -22,10 +22,10 @@ char *shitty_get_json_value(const char* inputName, char* jsonData, int jsonDataS
 char *getAccessTokenHeader(AccessTokenState_t *tokenState);
 
 int utils_downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength,
-		char *inputUrl, headerInfo_t *hInfo, char *extraHeaders);
+		char *inputUrl, HTTPHeaderState_t *hInfo, char *extraHeaders);
 
 int utils_createHTTPHeaderFromUrl(char *inputUrl, char *output,
-		int maxOutputLen, headerInfo_t *hInfo,
+		int maxOutputLen, HTTPHeaderState_t *hInfo,
 		const httpRequestTypes_t requestType, char *extraHeaders);
 
 int utils_chunkData(const void *inputData, const int inputDataLength,
@@ -36,7 +36,7 @@ void utils_connectByUrl(const char *inputUrl, Connection_t *con);
 int utils_chunkAndSend(Connection_t *clientCon, char *dataBuffer,
 		int dataBufferLen);
 
-void utils_setHInfoFromUrl(const char *inputUrl, headerInfo_t *hInfo,
+void utils_setHInfoFromUrl(const char *inputUrl, HTTPHeaderState_t *hInfo,
 		const httpRequestTypes_t requestType, const char *extraHeaders);
 
 #endif /* UTILS_H */

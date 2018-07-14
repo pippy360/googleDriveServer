@@ -62,7 +62,7 @@ void openDataConnection(ftpClientState_t *clientState) {
 }
 
 void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState, 
-		ftpParserState_t *parserState, ftpClientState_t *clientState ) {
+		ftpHTTPParserState_t *parserState, ftpClientState_t *clientState ) {
 
 	int received, dataLength;
 
@@ -132,7 +132,7 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 	case REQUEST_SIZE:
 	{
 		char strBuf1[ STRING_BUFFER_LEN ], strBuf2[ STRING_BUFFER_LEN ];
-		vfsPathParserState_t vfsParserState;
+		vfsPathHTTPParserState_t vfsParserState;
 		long fileSize;
 
 		vfs_parsePath( clientState->ctx, &vfsParserState, parserState->paramBuffer,
@@ -165,7 +165,7 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 	}
 	case REQUEST_CWD:
 	{
-		vfsPathParserState_t vfsParserState;
+		vfsPathHTTPParserState_t vfsParserState;
 
 		vfs_parsePath( clientState->ctx, &vfsParserState, parserState->paramBuffer,
 				strlen(parserState->paramBuffer) );
@@ -194,7 +194,7 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 		CryptoState_t encryptionState;
 		int tempOutputSize;
 		Connection_t googleCon;
-		headerInfo_t hInfo;
+		HTTPHeaderState_t hInfo;
 
 		char strBuf1[ STRING_BUFFER_LEN ], strBuf2[ STRING_BUFFER_LEN ];
 		GoogleUploadState_t fileState;
@@ -250,12 +250,12 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 		char encryptedDataBuffer[ ENCRYPTED_BUFFER_LEN + AES_BLOCK_SIZE ];
 		char decryptedDataBuffer[ DECRYPTED_BUFFER_LEN + AES_BLOCK_SIZE ];
 		char strBuf1[ STRING_BUFFER_LEN ], strBuf2[ STRING_BUFFER_LEN ];
-		parserState_t googleParserState;
+		HTTPParserState_t googleParserState;
 		CryptoState_t decryptionState;
-		vfsPathParserState_t vfsParserState;
+		vfsPathHTTPParserState_t vfsParserState;
 		int tempOutputSize;
 		Connection_t googleCon;
-		headerInfo_t hInfo;
+		HTTPHeaderState_t hInfo;
 
 		//FIXME: make sure we have a connection open
 		//send a get request to the and then continue the download
@@ -381,7 +381,7 @@ void handle_client(int client_fd, AccessTokenState_t *stateStruct) {
 	char buffer[MAX_PACKET_SIZE], pBuffer[MAX_PACKET_SIZE], usernameBuffer[100],
 			fileNameChangeBuffer[1000];
 	int sent, recieved;
-	ftpParserState_t parserState;
+	ftpHTTPParserState_t parserState;
 	ftpClientState_t clientState;
 	ftp_newParserState(&parserState, pBuffer, MAX_PACKET_SIZE);
 	ftpClientState_init(&clientState, client_fd, usernameBuffer, 100,

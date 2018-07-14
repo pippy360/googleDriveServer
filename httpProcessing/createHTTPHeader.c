@@ -36,7 +36,7 @@ char *toRequestStr(httpRequestTypes_t requestType){
 //it's important that this works even if the content length isn't set
 //FIXME: MAKE SURE THE BUFFER IS BIG ENOUGH
 //returns the amount of data written to *output
-int createHTTPHeader(char *output, const int maxOutputLen, const headerInfo_t *hInfo, const char *extraHeaders){
+int createHTTPHeader(char *output, const int maxOutputLen, const HTTPHeaderState_t *hInfo, const char *extraHeaders){
 
 	/* status line first */
 	if ( hInfo->isRequest ){

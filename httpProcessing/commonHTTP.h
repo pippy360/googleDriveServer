@@ -43,6 +43,6 @@ typedef struct {
 	char *statusStringBuffer;
 	char *urlBuffer;//
 	char *hostBuffer;//used for the host header
-} headerInfo_t;
+} HTTPHeaderState_t;
 
 #endif /* COMMONHTTP_H */

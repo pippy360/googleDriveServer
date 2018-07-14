@@ -38,14 +38,14 @@ typedef struct {
 	parserPacketDataType_t packetDataType;
 	char *statusLineBuffer;
 	int  headerFullyParsed;
-} parserState_t;
+} HTTPParserState_t;
 
-int process_data(char *inputData, int dataLength, parserState_t* state, char *outputData, 
-				int outputDataMaxLength, int *outputDataLength, state_t exitState, headerInfo_t *hInfo);
+int process_data(char *inputData, int dataLength, HTTPParserState_t* state, char *outputData, 
+				int outputDataMaxLength, int *outputDataLength, state_t exitState, HTTPHeaderState_t *hInfo);
 
-void set_new_parser_state_struct(parserState_t *parserState);
+void set_new_parser_state_struct(HTTPParserState_t *parserState);
 
-void set_new_header_info(headerInfo_t *hInfo);
+void set_new_header_info(HTTPHeaderState_t *hInfo);
 
 
 #endif /* REALTIMEPACKETPARSER */

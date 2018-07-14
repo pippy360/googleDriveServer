@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include "ftpCommon.h"
 
-void ftp_newParserState( ftpParserState_t *state, char *paramBuffer, 
+void ftp_newParserState( ftpHTTPParserState_t *state, char *paramBuffer, 
 		int paramBufferLength ) {
 
 	state->type = REQUEST_ERROR;
@@ -43,7 +43,7 @@ int getFtpCommand( char *packet, int packetLength, char *buffer, int bufferLengt
 
 //0 if success, non-0 otherwise
 //ptr points to the start of the param
-int getFtpParam( char *packet, int packetLength, char *ptr, ftpParserState_t *parserState ) {
+int getFtpParam( char *packet, int packetLength, char *ptr, ftpHTTPParserState_t *parserState ) {
 	//reset the values
 	if (*ptr == '\r'){
 		parserState->paramBuffer[0] = '\0';
@@ -69,7 +69,7 @@ int getFtpParam( char *packet, int packetLength, char *ptr, ftpParserState_t *pa
 
 //0 if success, non-0 otherwise
 //parses the request and the parameter
-int ftp_parsePacket( char *packet, int packetLength, ftpParserState_t *parserState, 
+int ftp_parsePacket( char *packet, int packetLength, ftpHTTPParserState_t *parserState, 
 		ftpClientState_t *clientState ) {
 
 	char buffer[MAX_PACKET_LENGTH], endChar, *endPos;

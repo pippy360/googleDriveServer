@@ -2,7 +2,7 @@
 
 #define MAX_FILENAME_SIZE 1000
 
-void vfs_debug_printParserState(vfsPathParserState_t *parserState) {
+void vfs_debug_printParserState(vfsPathHTTPParserState_t *parserState) {
 	printf("id's of oldpath %ld - %ld\n", parserState->fileObj.parentId,
 			parserState->fileObj.id);
 	printf("id                  %ld\n", parserState->fileObj.id);
@@ -13,7 +13,7 @@ void vfs_debug_printParserState(vfsPathParserState_t *parserState) {
 	printf("Existing Object:      %d\n", parserState->isExistingObject);
 }
 
-void init_vfsPathParserState(vfsPathParserState_t *parserState) {
+void init_vfsPathParserState(vfsPathHTTPParserState_t *parserState) {
 	parserState->error = 0;
 	parserState->isFilePath = 0;
 	parserState->isValidPath = 0;
@@ -27,7 +27,7 @@ void init_vfsPathParserState(vfsPathParserState_t *parserState) {
 
 //finds parserState->namePtr
 //returns 0 if success, non-0 otherwise
-int __vfs_serperatePathAndName(vfsPathParserState_t *parserState,
+int __vfs_serperatePathAndName(vfsPathHTTPParserState_t *parserState,
 		const char *fullFilePath, int fullFilePathLength) {
 
 	int i = 0;
@@ -51,7 +51,7 @@ int __vfs_serperatePathAndName(vfsPathParserState_t *parserState,
 //fills in the id and object type (isDir/isFile) in the parserState
 //returns 0 if success, non-0 otherwise
 //works for '.' and '..'
-int __vfs_findObjectInDir( redisContext *context, vfsPathParserState_t *parserState, 
+int __vfs_findObjectInDir( redisContext *context, vfsPathHTTPParserState_t *parserState, 
 		long dirId, const char *name, int nameLength ) {
 
 	long resultId;
@@ -91,7 +91,7 @@ long vfs_getDirIdFromPath(redisContext *context, long userCwd, const char *path,
 	const char *currPtr = path, *nameStart;
 	int result;
 	long currDir = userCwd;
-	vfsPathParserState_t parserState;
+	vfsPathHTTPParserState_t parserState;
 	init_vfsPathParserState(&parserState);
 
 	if (*currPtr == '/') {
@@ -121,8 +121,8 @@ long vfs_getDirIdFromPath(redisContext *context, long userCwd, const char *path,
 	return currDir;
 }
 
-//takes in an empty vfsPathParserState_t
-int __vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
+//takes in an empty vfsPathHTTPParserState_t
+int __vfs_parsePath(redisContext *context, vfsPathHTTPParserState_t *parserState,
 		const char *fullPath, int fullPathLength, long clientCwd) {
 
 	//FIXME: handle 0 strings
@@ -194,7 +194,7 @@ int __vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 }
 
 int vfs_getIdByPath(redisContext *context, char *path, long cwd ) {
-	vfsPathParserState_t parserState;
+	vfsPathHTTPParserState_t parserState;
 	if( __vfs_parsePath( context, &parserState, path, strlen(path), cwd ) ) {
 		return -1;
 	}
@@ -205,7 +205,7 @@ int vfs_getIdByPath(redisContext *context, char *path, long cwd ) {
 
 //returns 0 if success, non-0 otherwise
 int __vfs_deleteObjectWithPath(redisContext *context, const char *path, long cwd){
-	vfsPathParserState_t parserState;
+	vfsPathHTTPParserState_t parserState;
 	int rc = __vfs_parsePath(context, &parserState, path, strlen(path), cwd);
 	if (!rc) {
 		return rc;
@@ -229,7 +229,7 @@ int __vfs_deleteObjectWithPath(redisContext *context, const char *path, long cwd
 int __vfs_mv(redisContext *context, long cwd, const char *oldPath, 
 		const char *newPath) {
 
-	vfsPathParserState_t oldPathParserState, newPathParserState;
+	vfsPathHTTPParserState_t oldPathParserState, newPathParserState;
 	int rc;
 	rc = __vfs_parsePath(context, &oldPathParserState, oldPath,
 			strlen(oldPath), cwd);

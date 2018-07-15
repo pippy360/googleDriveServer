@@ -8,21 +8,21 @@ const FileTransferDriver_ops_t googleDriveFileTransfer_ops;
 
 int gdrive_prepDriverForFileTransfer( DriverState_t *driverState );
 
-int gdrive_downloadInit( FileDownloadState_t * );
+int gdrive_downloadInit( FileDownloadState_t *downloadState );
 
 int gdrive_downloadUpdate( FileDownloadState_t *downloadState, char *outputBuffer,
 	int bufferMaxLength, int *amountOfDataWrittenToBuffer );
 
-int gdrive_downloadFinish( FileDownloadState_t * );
+int gdrive_downloadFinish( FileDownloadState_t *downloadState );
 
-int gdrive_uploadInit( FileUploadState_t * );
+int gdrive_uploadInit( FileUploadState_t *uploadState );
 
 int gdrive_uploadUpdate( FileUploadState_t *uploadState, const char *inputBuffer,
 	int dataLength );
 
-int gdrive_finishUpload( FileUploadState_t * );
+int gdrive_finishUpload( FileUploadState_t *uploadState );
 
-
+/*
 typedef struct {
 
 	.prepDriverForFileTransfer = gdrive_prepDriverForFileTransfer;
@@ -40,6 +40,6 @@ typedef struct {
 	.finishUpload 	= gdrive_finishUpload;
 
 } googleDriveFileTransfer_ops;
-
+*/
 
 #endif /* GOOGLEDOWNLOADDRIVER_H */

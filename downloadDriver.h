@@ -35,6 +35,9 @@ typedef struct FileUploadState_t {
 	DriverState_t *driverState;
 	CryptoState_t *encryptionState;
 	Connection_t *connection;
+	HTTPHeaderState_t headerState;
+	HTTPParserState_t parserState;
+	char *fileUrl;
 	void *priv;
 } FileUploadState_t;
 

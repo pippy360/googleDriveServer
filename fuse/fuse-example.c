@@ -16,7 +16,7 @@
 #include "../utils.h"
 
 #include "../httpProcessing/realtimePacketParser.h"
-
+#include "../google/googleDownloadDriver.h"
 
 #define ENCRYPTED_BUFFER_LEN 2000
 #define DECRYPTED_BUFFER_LEN 2000
@@ -28,7 +28,7 @@
 vfsContext_t ctx;//FIXME: don't use a global 
 vfsContext_t *c = &ctx;
 AccessTokenState_t accessTokenState;
-DriverState_t downloadDrive;
+DriverState_t downloadDriver;
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
 	
@@ -36,7 +36,7 @@ static int getattr_callback(const char *path, struct stat *stbuf) {
 
 	memset( stbuf, 0, sizeof( struct stat ) );
 
-	vfsPathHTTPParserState_t parserState;
+	vfsPathParserState_t parserState;
 	init_vfsPathParserState( &parserState );
  	vfs_parsePath( c, &parserState, path, strlen(path) );
 	if ( !parserState.isExistingObject )
@@ -61,7 +61,7 @@ static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 	char fuseLsbuf[20000];
 	int numRetVals = 0;
 
-	vfsPathHTTPParserState_t parserState;
+	vfsPathParserState_t parserState;
 	vfs_parsePath( c, &parserState, path, strlen( path ) );
 	vfs_ls( c, &parserState.fileObj, fuseLsbuf, 9999, &numRetVals );
 
@@ -82,12 +82,64 @@ static int open_callback(const char *path, struct fuse_file_info *fi) {
   return 0;
 }
 
+void initDownloadStateFromFileRead( DriverState_t *driverState, 
+	FileDownloadState_t *downloadState, char *fileUrl, size_t size, 
+	off_t offset, int isFileEncrypted ) {
+
+		downloadState->driverState = driverState;
+		downloadState->isEncrypted = 1;
+		downloadState->rangeStart = offset;
+		downloadState->rangeEnd = offset + size;
+		downloadState->fileUrl = malloc( strlen( fileUrl ) );
+		memcpy( downloadState->fileUrl, fileUrl, strlen( fileUrl ) );
+}
+
 static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 		struct fuse_file_info *fi) {
 	
 	printf("read_callback: %s offset: %lu\n", path, offset);
 
-	return -ENOENT;
+	char urlBuffer[ 10000 ]; //FIXME: hardcoded value
+	vfsPathParserState_t vfsParserState;
+
+	init_vfsPathParserState( &vfsParserState );
+ 	vfs_parsePath( c, &vfsParserState, path, strlen(path) );
+	vfs_getFileWebUrl( c, &vfsParserState.fileObj, urlBuffer, 2000 );
+
+	if ( !vfsParserState.isExistingObject || vfsParserState.fileObj.isDir ) {
+		return -ENOENT;
+	}
+
+
+	long len = vfs_getFileSize( c, &vfsParserState.fileObj );
+	if (offset >= len) {
+		return 0;	
+	}
+
+	FileDownloadState_t downloadState;
+	int isFileEncrypted = 1;
+	initDownloadStateFromFileRead( &downloadDriver, &downloadState, urlBuffer, 
+			size, offset, isFileEncrypted );
+
+	startFileDownload( &downloadState );
+
+	long dataCopied = 0;
+	while ( dataCopied < size ) {
+		char downloadBuffer[ 10000 ];//FIXME: hardcoded values
+		int received = updateFileDownload( &downloadState, downloadBuffer,
+				10000 );//FIXME: hardcoded values
+		if ( received == 0 ) {
+			break;
+		}
+
+		int dataToCopy = (dataCopied + received > size)? 
+				(size - dataCopied) : received ;
+
+		memcpy( buf + dataCopied, downloadBuffer, dataToCopy);
+		dataCopied += dataToCopy;
+	}
+
+	return dataCopied;
 }
 
 static struct fuse_operations fuse_example_operations = {
@@ -104,8 +156,7 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	gat_init_googleAccessToken(&accessTokenState);
-
+	gdrive_prepDriverForFileTransfer( &downloadDriver );
 
 	return fuse_main(argc, argv, &fuse_example_operations, NULL);
 }

@@ -58,7 +58,7 @@ void getDownloadUrlAndSize(AccessTokenState_t *tokenState, char *filename,
 	sprintf(inputUrl, "https://www.googleapis.com/drive/v2/files"
 			"?q=title='%s'&fields=items(downloadUrl,fileSize)", filename);
 
-	accessToken = getAccessTokenHeader(tokenState);
+	accessToken = utils_shittyGetAccessTokenHeader(tokenState);
 	utils_downloadHTTPFileSimple(str, MAX_ACCEPTED_HTTP_PAYLOAD, inputUrl,
 			&headerInfo, accessToken);
 
@@ -135,7 +135,7 @@ void downloadDriveFile(AccessTokenState_t *tokenState, Connection_t *clientCon,
 	fileSize = strtol(sizeStr, NULL, 10);
 	printf("File found, size: %s, url: %s\n", sizeStr, url);
 
-	accessTokenHeaders = getAccessTokenHeader(tokenState);
+	accessTokenHeaders = utils_shittyGetAccessTokenHeader(tokenState);
 	printf("geting ready to start file download\n");
 	startEncryptedFileDownload(&encState, url, hInfoClientRecv->isRange,
 			hInfoClientRecv->getEndRangeSet,

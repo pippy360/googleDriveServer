@@ -24,10 +24,13 @@ typedef struct FileDownloadState_t {
 	HTTPHeaderState_t headerState;
 	HTTPParserState_t parserState;
 	int isEncrypted;
+	int isRangedRequest;
 	long rangeStart;
 	long rangeEnd;
+	int isEndRangeSet;
+	int encryptedFileStart;
+	int encryptedFileEnd;
 	char *fileUrl;
-	void *priv;
 } FileDownloadState_t;
 
 //This is the state held for one file upload
@@ -38,7 +41,6 @@ typedef struct FileUploadState_t {
 	HTTPHeaderState_t headerState;
 	HTTPParserState_t parserState;
 	char *fileUrl;
-	void *priv;
 } FileUploadState_t;
 
 

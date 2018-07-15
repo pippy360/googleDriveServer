@@ -19,7 +19,7 @@ int utils_recvNextHttpPacket(Connection_t *con, HTTPHeaderState_t *outputHInfo,
 
 char *shitty_get_json_value(const char* inputName, char* jsonData, int jsonDataSize);
 
-char *getAccessTokenHeader(AccessTokenState_t *tokenState);
+char *utils_shittyGetAccessTokenHeader(AccessTokenState_t *tokenState);
 
 int utils_downloadHTTPFileSimple(char *outputBuffer, const int outputMaxLength,
 		char *inputUrl, HTTPHeaderState_t *hInfo, char *extraHeaders);

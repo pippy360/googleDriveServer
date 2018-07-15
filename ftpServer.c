@@ -132,7 +132,7 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 	case REQUEST_SIZE:
 	{
 		char strBuf1[ STRING_BUFFER_LEN ], strBuf2[ STRING_BUFFER_LEN ];
-		vfsPathHTTPParserState_t vfsParserState;
+		vfsPathParserState_t vfsParserState;
 		long fileSize;
 
 		vfs_parsePath( clientState->ctx, &vfsParserState, parserState->paramBuffer,
@@ -165,7 +165,7 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 	}
 	case REQUEST_CWD:
 	{
-		vfsPathHTTPParserState_t vfsParserState;
+		vfsPathParserState_t vfsParserState;
 
 		vfs_parsePath( clientState->ctx, &vfsParserState, parserState->paramBuffer,
 				strlen(parserState->paramBuffer) );
@@ -252,7 +252,7 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 		char strBuf1[ STRING_BUFFER_LEN ], strBuf2[ STRING_BUFFER_LEN ];
 		HTTPParserState_t googleParserState;
 		CryptoState_t decryptionState;
-		vfsPathHTTPParserState_t vfsParserState;
+		vfsPathParserState_t vfsParserState;
 		int tempOutputSize;
 		Connection_t googleCon;
 		HTTPHeaderState_t hInfo;
@@ -273,7 +273,7 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 
 		startFileDownload( strBuf1, 0, 0, 0, 0, &googleCon, &hInfo,
 				&googleParserState, 
-				getAccessTokenHeader( accessTokenState ) );
+				utils_shittyGetAccessTokenHeader( accessTokenState ) );
 		sendFtpResponse(clientState, "150 about to send file\r\n");
 		int encryptionStarted = 0;
 		while ( 1 ) {

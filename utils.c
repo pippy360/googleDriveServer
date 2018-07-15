@@ -119,16 +119,6 @@ int utils_parseUrl(const char *inputUrl, const char **protocol, int *protocolLen
 	return 1;
 }
 
-void utils_getAccessTokenHeader() {
-//    getAccessToken();
-//    char headerStub[]  = "Authorization: Bearer ";
-//
-//    char* tokenHeader = malloc( strlen(headerStub) + strlen(accessToken) + 1 + 2 );
-//    sprintf( tokenHeader, "%s%s%s", headerStub, accessToken, "\r\n");
-//
-//    return tokenHeader;
-}
-
 //creates a hIfno get request for the the url
 void utils_setHInfoFromUrl(const char *inputUrl, HTTPHeaderState_t *hInfo,
 		const httpRequestTypes_t requestType, const char *extraHeaders) {
@@ -250,7 +240,7 @@ int isJsonChar(char inputChar) {
 	}
 }
 
-char *getAccessTokenHeader(AccessTokenState_t *tokenState) {
+char *utils_shittyGetAccessTokenHeader(AccessTokenState_t *tokenState) {
 	char headerStub[] = "Authorization: Bearer %s\r\n";
 	int size = strlen(headerStub) + strlen(tokenState->accessTokenStr);
 	char *tokenHeader = malloc(size);

@@ -72,7 +72,7 @@ int something(int argc, char const *argv[]) {
 			strlen("far_down_file.webm"));
 	printf("The id %ld\n", tempId1);
 
-	vfsPathHTTPParserState_t parserState, parserState2;
+	vfsPathParserState_t parserState, parserState2;
 	init_vfsPathParserState(&parserState);
 	vfs_findObjectInDir(c, &parserState, tempId3, "far_down_file.webm",
 			strlen("far_down_file.webm"));
@@ -149,7 +149,7 @@ int something(int argc, char const *argv[]) {
 	 printf("the mv is done\n");
 	 vfs_debug_printParserState(&parserState2);
 
-	 vfsPathHTTPParserState_t o, n;
+	 vfsPathParserState_t o, n;
 	 o = parserState;
 	 n = parserState2;
 	 if (o.isFile && !n.isExistingObject && 1)

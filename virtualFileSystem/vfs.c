@@ -22,7 +22,7 @@ int vfsContext_free( vfsContext_t *ctx ) {
 	return 0;
 }
 
-int vfs_parsePath( vfsContext_t *ctx, vfsPathHTTPParserState_t *parserState,
+int vfs_parsePath( vfsContext_t *ctx, vfsPathParserState_t *parserState,
 		const char *fullPath, int fullPathLength) {
 
 	return __vfs_parsePath( ctx->dbContext, parserState, fullPath, 

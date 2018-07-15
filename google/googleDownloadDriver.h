@@ -3,7 +3,7 @@
 
 #include "../downloadDriver.h"
 
-const FileTransferDriver_ops_t gdriveFileTransfer_ops;
+FileTransferDriver_ops_t gdriveFileTransfer_ops;
 
 int gdrive_prepDriverForFileTransfer( DriverState_t *driverState );
 

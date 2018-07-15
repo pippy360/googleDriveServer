@@ -2,10 +2,11 @@
 #include "googleAccessToken.h"
 #include "../utils.h"
 #include "../httpProcessing/createHTTPHeader.h"
+#include "../net/connection.h"
 
 #define MAX_PACKET_SIZE 100000
 
-const FileTransferDriver_ops_t gdriveFileTransfer_ops = {
+FileTransferDriver_ops_t gdriveFileTransfer_ops = {
 
 	.prepDriverForFileTransfer = gdrive_prepDriverForFileTransfer,
 
@@ -26,6 +27,7 @@ const FileTransferDriver_ops_t gdriveFileTransfer_ops = {
 int gdrive_prepDriverForFileTransfer( DriverState_t *driverState ) {
 	AccessTokenState_t *stateStruct = malloc( sizeof( AccessTokenState_t ) );
 	driverState->priv = (void *) stateStruct;
+	driverState->ops = &gdriveFileTransfer_ops;
 	return gat_init_googleAccessToken( stateStruct );
 }
 
@@ -56,6 +58,8 @@ int gdrive_downloadInit( FileDownloadState_t *downloadState ) {
 			extraHeaders );
 
 	//init connection
+	downloadState->connection = malloc( sizeof(Connection_t) );//FIXME: this probably isn't the right place for this
+	downloadState->encryptionState = malloc( sizeof(CryptoState_t) );//FIXME: this probably isn't the right place for this
 	utils_connectByUrl( downloadState->fileUrl, downloadState->connection );
 	//request the file from google
 	net_send( downloadState->connection, packetBuffer, strlen( packetBuffer ) );

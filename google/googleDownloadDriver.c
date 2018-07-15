@@ -1,4 +1,5 @@
 #include "googleDownloadDriver.h"
+#include "googleAccessToken.h"
 #include "../utils.h"
 #include "../httpProcessing/createHTTPHeader.h"
 
@@ -23,8 +24,9 @@ const FileTransferDriver_ops_t gdriveFileTransfer_ops = {
 };
 
 int gdrive_prepDriverForFileTransfer( DriverState_t *driverState ) {
-
-	return 0;
+	AccessTokenState_t *stateStruct = malloc( sizeof( AccessTokenState_t ) );
+	driverState->priv = (void *) stateStruct;
+	return gat_init_googleAccessToken( stateStruct );
 }
 
 //this will send the request to google to get the file 
@@ -40,7 +42,7 @@ int gdrive_downloadInit( FileDownloadState_t *downloadState ) {
 
 	//create the header
 	char *extraHeaders = utils_shittyGetAccessTokenHeader( 
-			(AccessTokenState_t *tokenState) downloadState->priv )
+			(AccessTokenState_t *) downloadState->driverState->priv );
 
 	utils_setHInfoFromUrl( downloadState->fileUrl, outputHInfo, 
 			REQUEST_GET, extraHeaders );
@@ -68,18 +70,19 @@ int gdrive_downloadUpdate( FileDownloadState_t *downloadState, char *outputBuffe
 	char packetBuffer[ MAX_PACKET_SIZE ];
 
 	//if the parser is already finished return 0
-	if ( outputParserState->currentState == packetEnd_s ) {
+	if ( downloadState->parserState.currentState == packetEnd_s ) {
 		return 0;
 	}
 
 	//load the next packet and parse it
-	received = net_recv( con, packetBuffer, MAX_PACKET_SIZE );
+	received = net_recv( downloadState->connection, packetBuffer, 
+			MAX_PACKET_SIZE );
 
 	//FIXME: handle errors
 	int amountOfDataWrittenToBuffer;
-	process_data( packetBuffer, received, outputParserState, outputBuffer,
-			outputBufferMaxLength, &amountOfDataWrittenToBuffer, packetEnd_s,
-			outputHInfo );
+	process_data( packetBuffer, received, &downloadState->parserState, outputBuffer,
+			bufferMaxLength, &amountOfDataWrittenToBuffer, packetEnd_s,
+			&downloadState->headerState );
 	return amountOfDataWrittenToBuffer;
 }
 

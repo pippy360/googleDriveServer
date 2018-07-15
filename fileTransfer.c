@@ -78,99 +78,111 @@ int startEncryptedFileDownload( FileDownloadState_t *downloadState ) {
 		//it doesn't matter what value encFileEnd has
 	}
 
-	downloadState->encryptedFileStart 	= encFileStart;
-	downloadState->encryptedFileEnd 	= encFileEnd;
+	downloadState->encryptedRangeStart 	= encFileStart;
+	downloadState->encryptedRangeEnd 	= encFileEnd;
+	downloadState->amountOfFileDecrypted = 0;
+	downloadState->encryptedDataDownloaded = 0;
+	downloadState->fileDownloadComplete = 0;
 
 	return downloadState->driverState->ops->downloadInit( downloadState );
 }
 
 //returns the amount of data in the outputBuffer
-
 int updateEncryptedFileDownload( FileDownloadState_t *downloadState, 
 		char *outputBuffer, int outputBufferMaxLength ) {
 
-	int result; //use to store the return of updateFileDownload
-	char encryptedPacketBuffer[MAX_PACKET_SIZE];
-	int encryptedPacketLength = 0;
-	int dataLength;
-	//if this is the first time update has been called then call startDecryption
-	if (encState->encryptedDataDownloaded == 0) {
-		if (encState->encryptedRangeStart < AES_BLOCK_SIZE) {
-			startDecryption(&(encState->cryptoState), "phone", NULL);
+	if( downloadState->fileDownloadComplete ) {
+		return 0;
+	}
+
+	//if this is the first time update has been called then first fetch 
+	//enough data so that we can start the decryption
+	int outputBufferLength;	
+	if (downloadState->encryptedDataDownloaded == 0) {
+		if (downloadState->encryptedRangeStart < AES_BLOCK_SIZE) {
+			startDecryption( downloadState->encryptionState, "phone", NULL );
 		} else {
+			int encryptedPacketLength = 0;
+			char encryptedPacketBuffer[MAX_PACKET_SIZE];
 			//get the IV
-			while (encState->encryptedDataDownloaded < AES_BLOCK_SIZE) {
-				result = __updateFileDownload(con, outputHInfo, outputParserState,
-						encryptedPacketBuffer
-								+ encState->encryptedDataDownloaded,
-						MAX_PACKET_SIZE - encState->encryptedDataDownloaded,
-						&encryptedPacketLength, extraHeaders);
+			while (downloadState->encryptedDataDownloaded < AES_BLOCK_SIZE) {
+				int result = downloadState->driverState->ops->downloadUpdate(
+						downloadState, 
+						encryptedPacketBuffer,
+						MAX_PACKET_SIZE );
+
 				if (result == 0) {
 					//file server closed the connection
-					return *outputBufferLength;
+					return 0;
 				}
-				encState->encryptedDataDownloaded += encryptedPacketLength;
+				downloadState->encryptedDataDownloaded += encryptedPacketLength;
 			}
-			startDecryption(&(encState->cryptoState), "phone",
-					encryptedPacketBuffer);
+			startDecryption( downloadState->encryptionState, "phone",
+					encryptedPacketBuffer );
 
 			//now decrypt any of the extra data we got when getting the IV and add it to the output buffer
-			updateDecryption(&(encState->cryptoState),
+			updateDecryption( downloadState->encryptionState,
 					encryptedPacketBuffer + AES_BLOCK_SIZE,
 					encryptedPacketLength - AES_BLOCK_SIZE, outputBuffer,
-					outputBufferLength);
-			encState->amountOfFileDecrypted += *outputBufferLength;
+					&outputBufferLength );
+			downloadState->amountOfFileDecrypted += outputBufferLength;
 		}
 	} else {
 		//printf("not started\n");
 	}
 
-	//make sure we have some decrypted data to return
-	while (*outputBufferLength == 0) {
-		result = ops->downloadUpdate( downloadState, encryptedPacketBuffer, 
-			MAX_PACKET_SIZE, &encryptedPacketLength);
-		encState->encryptedDataDownloaded += encryptedPacketLength;
-		if (result == 0) {
+	//now that the decryption is started keep fetching data until we have 
+	//enough to decrypt at least one byte of data
+	while (outputBufferLength == 0) {
+		char encryptedPacketBuffer[ MAX_PACKET_SIZE ];	
+		int result = downloadState->driverState->ops->downloadUpdate( 
+			downloadState, 
+			encryptedPacketBuffer, 
+			MAX_PACKET_SIZE );
+		downloadState->encryptedDataDownloaded += result;
+		if ( result == 0 ) {
 			//file server closed the connection
 			//check if we reached the end of the http packet
-			if(outputParserState->currentState == packetEnd_s && !encState->isDecryptionComplete){
+			if( downloadState->parserState.currentState == packetEnd_s ){
 				//then finish the encryption
-				encState->isDecryptionComplete = 1;
-				finishDecryption(&(encState->cryptoState), encryptedPacketBuffer,
-						encryptedPacketLength, outputBuffer,
-						&dataLength);
-				*outputBufferLength += dataLength;
-				return *outputBufferLength;
+				downloadState->fileDownloadComplete = 1;
+				int finalDataLength;
+				finishDecryption( downloadState->encryptionState, encryptedPacketBuffer,
+						result, outputBuffer,
+						&finalDataLength );
+				downloadState->amountOfFileDecrypted += finalDataLength;
+				outputBufferLength += finalDataLength;
+				return outputBufferLength;
 			}
 			return 0;
 		}
-		updateDecryption(&(encState->cryptoState), encryptedPacketBuffer,
-				encryptedPacketLength, outputBuffer + (*outputBufferLength),
-				&dataLength);
-		(*outputBufferLength) += dataLength; //dataLength can be 0, so we might have to loop again
-		encState->amountOfFileDecrypted += dataLength;
+		int dataLength;
+		updateDecryption( downloadState->encryptionState, encryptedPacketBuffer,
+				result, outputBuffer + outputBufferLength,
+				&dataLength );
+		outputBufferLength += dataLength; //dataLength can be 0, so we might have to loop again
+		downloadState->amountOfFileDecrypted += dataLength;
 	}
 
-	//write the trim function
-	//TODO: IMPROVE EXPLINATION
-	//remove extra data. We can have extra data because the data must decypted in chunks
+	//remove any extra data from encrypted chunks where we only wanted part 
+	//of the chunk 
 	long tempStart =
-			(encState->encryptedRangeStart == 0) ?
-					encState->encryptedRangeStart :
-					encState->encryptedRangeStart + 16;
+			(downloadState->encryptedRangeStart == 0) ?
+					downloadState->encryptedRangeStart :
+					downloadState->encryptedRangeStart + 16;//FIXME: magic number
 	int trimTopVal;
-	if(encState->isEndRangeSet){
-		trimTopVal = trimTop(encState->clientRangeEnd, tempStart,
-				encState->amountOfFileDecrypted, *outputBufferLength);
+	if(downloadState->isEndRangeSet){
+		trimTopVal = trimTop(downloadState->rangeEnd, tempStart,
+				downloadState->amountOfFileDecrypted, outputBufferLength);
 	}else{
 		trimTopVal = 0;
 	}
-	int trimBottomVal = trimBottom(encState->clientRangeStart, tempStart,
-			encState->amountOfFileDecrypted, *outputBufferLength);
-	(*outputBufferLength) -= trimBottomVal + trimTopVal;
-	memmove(outputBuffer, outputBuffer + trimBottomVal, *outputBufferLength);
+	int trimBottomVal = trimBottom(downloadState->rangeStart, tempStart,
+			downloadState->amountOfFileDecrypted, outputBufferLength);
+	outputBufferLength -= trimBottomVal + trimTopVal;
+	memmove(outputBuffer, outputBuffer + trimBottomVal, outputBufferLength);
 
-	return *outputBufferLength;
+	return outputBufferLength;
 }
 
 int finishEncryptedFileDownload() {

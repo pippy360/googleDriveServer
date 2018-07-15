@@ -28,8 +28,11 @@ typedef struct FileDownloadState_t {
 	long rangeStart;
 	long rangeEnd;
 	int isEndRangeSet;
-	int encryptedFileStart;
-	int encryptedFileEnd;
+	int encryptedRangeStart;
+	int encryptedRangeEnd;
+	long encryptedDataDownloaded;
+	long amountOfFileDecrypted;
+	int fileDownloadComplete;
 	char *fileUrl;
 } FileDownloadState_t;
 
@@ -51,7 +54,7 @@ typedef struct FileTransferDriver_ops_t {
 	int ( *downloadInit )( FileDownloadState_t * );
 	//returns error code
 	int ( *downloadUpdate )( FileDownloadState_t *downloadState, char *outputBuffer,
-		int bufferMaxLength, int *amountOfDataWrittenToBuffer );
+		int bufferMaxLength );
 	//@finishDownload doesn't return any data only cleans up
 	int ( *downloadFinish )( FileDownloadState_t * );
 

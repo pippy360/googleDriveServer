@@ -1,1 +1,1 @@
-sudo apt-get install gcc openssl libssl-dev libfuse-dev
+sudo apt-get install gcc openssl libssl-dev libfuse-dev redis-server

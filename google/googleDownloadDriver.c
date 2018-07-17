@@ -70,23 +70,28 @@ int gdrive_downloadInit( FileDownloadState_t *downloadState ) {
 int gdrive_downloadUpdate( FileDownloadState_t *downloadState, char *outputBuffer,
 	int bufferMaxLength ) {
 
-	int received;
-	char packetBuffer[ MAX_PACKET_SIZE ];
+	int amountOfDataWrittenToBuffer = 0;
+	while ( amountOfDataWrittenToBuffer == 0 ) {
 
-	//if the parser is already finished return 0
-	if ( downloadState->parserState.currentState == packetEnd_s ) {
-		return 0;
+		int received;
+		char packetBuffer[ MAX_PACKET_SIZE ];
+
+		//if the parser is already finished return 0
+		if ( downloadState->parserState.currentState == packetEnd_s ) {
+			return 0;
+		}
+
+		//load the next packet and parse it
+		received = net_recv( downloadState->connection, packetBuffer, 
+				MAX_PACKET_SIZE );
+
+		//FIXME: handle errors
+		int dataWritten;
+		process_data( packetBuffer, received, &downloadState->parserState, outputBuffer,
+				bufferMaxLength, &dataWritten, packetEnd_s,
+				&downloadState->headerState );
+		amountOfDataWrittenToBuffer += dataWritten;
 	}
-
-	//load the next packet and parse it
-	received = net_recv( downloadState->connection, packetBuffer, 
-			MAX_PACKET_SIZE );
-
-	//FIXME: handle errors
-	int amountOfDataWrittenToBuffer;
-	process_data( packetBuffer, received, &downloadState->parserState, outputBuffer,
-			bufferMaxLength, &amountOfDataWrittenToBuffer, packetEnd_s,
-			&downloadState->headerState );
 	return amountOfDataWrittenToBuffer;
 }
 

@@ -87,6 +87,7 @@ int startEncryptedFileDownload( FileDownloadState_t *downloadState ) {
 	return downloadState->driverState->ops->downloadInit( downloadState );
 }
 
+//FIXME: This code is complicated, test every case
 //returns the amount of data in the outputBuffer
 int updateEncryptedFileDownload( FileDownloadState_t *downloadState, 
 		char *outputBuffer, int outputBufferMaxLength ) {
@@ -97,7 +98,7 @@ int updateEncryptedFileDownload( FileDownloadState_t *downloadState,
 
 	//if this is the first time update has been called then first fetch 
 	//enough data so that we can start the decryption
-	int outputBufferLength;	
+	int outputBufferLength = 0;	
 	if (downloadState->encryptedDataDownloaded == 0) {
 		if (downloadState->encryptedRangeStart < AES_BLOCK_SIZE) {
 			startDecryption( downloadState->encryptionState, "phone", NULL );
@@ -108,13 +109,14 @@ int updateEncryptedFileDownload( FileDownloadState_t *downloadState,
 			while (downloadState->encryptedDataDownloaded < AES_BLOCK_SIZE) {
 				int result = downloadState->driverState->ops->downloadUpdate(
 						downloadState, 
-						encryptedPacketBuffer,
+						encryptedPacketBuffer + encryptedPacketLength,
 						MAX_PACKET_SIZE );
 
 				if (result == 0) {
 					//file server closed the connection
 					return 0;
 				}
+				encryptedPacketLength += result;
 				downloadState->encryptedDataDownloaded += encryptedPacketLength;
 			}
 			startDecryption( downloadState->encryptionState, "phone",
@@ -133,7 +135,7 @@ int updateEncryptedFileDownload( FileDownloadState_t *downloadState,
 
 	//now that the decryption is started keep fetching data until we have 
 	//enough to decrypt at least one byte of data
-	while (outputBufferLength == 0) {
+	if (outputBufferLength == 0) {
 		char encryptedPacketBuffer[ MAX_PACKET_SIZE ];	
 		int result = downloadState->driverState->ops->downloadUpdate( 
 			downloadState, 

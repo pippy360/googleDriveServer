@@ -1,0 +1,37 @@
+HTTP/1.1 200 OK
+X-GUploader-UploadID: AEnB2UpR7jRLQXK2UaLHEjy8Xz1v4ZFJasI_Tm5JjzjF6JqOnQZGC63pBehspx11iZQXc-KEtvH_9woHvkfg0ioUzE2xfNyMmQWZZnIn1puN7FGWvxc0X1Q
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: false
+Access-Control-Allow-Headers: Accept, Accept-Language, Authorization, Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Content-Length, Content-MD5, Content-Range, Content-Type, Date, GData-Version, google-cloud-resource-prefix, Host, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Origin, OriginToken, Pragma, Range, Slug, Transfer-Encoding, Want-Digest, x-chrome-connected, X-ClientDetails, X-Client-Version, X-Firebase-Locale, X-GData-Client, X-GData-Key, X-Goog-AdX-Buyer-Impersonation, X-Goog-Api-Client, X-Goog-AuthUser, X-Goog-PageId, X-Goog-Encode-Response-If-Executable, X-Goog-Correlation-Id, X-Goog-Request-Info, X-Goog-Request-Reason, X-Goog-Experiments, x-goog-iam-authority-selector, x-goog-iam-authorization-tokeHTTP/1.1 200 OK
+X-GUploader-UploadID: AEnB2UpR7jRLQXK2UaLHEjy8Xz1v4ZFJasI_Tm5JjzjF6JqOnQZGC63pBehspx11iZQXc-KEtvH_9woHvkfg0ioUzE2xfNyMmQWZZnIn1puN7FGWvxc0X1Q
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: false
+Access-Control-Allow-Headers: Accept, Accept-Language, Authorization, Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Content-Length, Content-MD5, Content-Range, Content-Type, Date, GData-Version, google-cloud-resource-prefix, Host, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Origin, OriginToken, Pragma, Range, Slug, Transfer-Encoding, Want-Digest, x-chrome-connected, X-ClientDetails, X-Client-Version, X-Firebase-Locale, X-GData-Client, X-GData-Key, X-Goog-AdX-Buyer-Impersonation, X-Goog-Api-Client, X-Goog-AuthUser, X-Goog-PageId, X-Goog-Encode-Response-If-Executable, X-Goog-Correlation-Id, X-Goog-Request-Info, X-Goog-Request-Reason, X-Goog-Experiments, x-goog-iam-authority-selector, x-goog-iam-authorization-token, X-Goog-Spatula, X-Goog-Upload-Command, X-Goog-Upload-Content-Disposition, X-Goog-Upload-Content-Length, X-Goog-Upload-Content-Type, X-Goog-Upload-File-Name, X-Goog-Upload-Offset, X-Goog-Upload-Protocol, X-Goog-Visitor-Id, X-HTTP-Method-Override, X-JavaScript-User-Agent, X-Pan-Versionid, X-Proxied-User-IP, X-Origin, X-Referer, X-Requested-With, X-Upload-Content-Length, X-Upload-Content-Type, X-Use-HTTP-Status-Code-Override, X-Ios-Bundle-Identifier, X-Android-Package, X-Ariane-Xsrf-Token, X-YouTube-VVT, X-YouTube-Page-CL, X-YouTube-Page-Timestamp, X-Goog-Meeting-Botguardid, X-Goog-Meeting-Debugid, X-Goog-Meeting-Token, X-Client-Data, X-Sfdc-Authorization, MIME-Version
+Access-Control-Allow-Methods: GET,OPTIONS
+Content-Type: image/png
+Content-Disposition: attachment;filename="nuffin.bin";filename*=UTF-8''nuffin.bin
+Date: Tue, 17 Jul 2018 05:44:34 GMT
+Expires: Tue, 17 Jul 2018 05:44:34 GMT
+Cache-Control: private, max-age=0
+X-Goog-Hash: crc32c=RyRYfw==
+Content-Length: 87168
+Serve$3 = 2070
+HTTP/1.1 200 OK
+X-GUploader-UploadID: AEnB2UpR7jRLQXK2UaLHEjy8Xz1v4ZFJasI_Tm5JjzjF6JqOnQZGC63pBehspx11iZQXc-KEtvH_9woHvkfg0ioUzE2xfNyMmQWZZnIn1puN7FGWvxc0X1Q
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: false
+Access-Control-Allow-Headers: Accept, Accept-Language, Authorization, Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Content-Length, Content-MD5, Content-Range, Content-Type, Date, GData-Version, google-cloud-resource-prefix, Host, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, Origin, OriginToken, Pragma, Range, Slug, Transfer-Encoding, Want-Digest, x-chrome-connected, X-ClientDetails, X-Client-Version, X-Firebase-Locale, X-GData-Client, X-GData-Key, X-Goog-AdX-Buyer-Impersonation, X-Goog-Api-Client, X-Goog-AuthUser, X-Goog-PageId, X-Goog-Encode-Response-If-Executable, X-Goog-Correlation-Id, X-Goog-Request-Info, X-Goog-Request-Reason, X-Goog-Experiments, x-goog-iam-authority-selector, x-goog-iam-authorization-token, X-Goog-Spatula, X-Goog-Upload-Command, X-Goog-Upload-Content-Disposition, X-Goog-Upload-Content-Length, X-Goog-Upload-Content-Type, X-Goog-Upload-File-Name, X-Goog-Upload-Offset, X-Goog-Upload-Protocol, X-Goog-Visitor-Id, X-HTTP-Method-Override, X-JavaScript-User-Agent, X-Pan-Versionid, X-Proxied-User-IP, X-Origin, X-Referer, X-Requested-With, X-Upload-Content-Length, X-Upload-Content-Type, X-Use-HTTP-Status-Code-Override, X-Ios-Bundle-Identifier, X-Android-Package, X-Ariane-Xsrf-Token, X-YouTube-VVT, X-YouTube-Page-CL, X-YouTube-Page-Timestamp, X-Goog-Meeting-Botguardid, X-Goog-Meeting-Debugid, X-Goog-Meeting-Token, X-Client-Data, X-Sfdc-Authorization, MIME-Version
+Access-Control-Allow-Methods: GET,OPTIONS
+Content-Type: image/png
+Content-Disposition: attachment;filename="nuffin.bin";filename*=UTF-8''nuffin.bin
+Date: Tue, 17 Jul 2018 05:44:34 GMT
+Expires: Tue, 17 Jul 2018 05:44:34 GMT
+Cache-Control: private, max-age=0
+X-Goog-Hash: crc32c=RyRYfw==
+Content-Length: 87168
+Server: UploadServer
+Alt-Svc: quic=":443"; ma=2592000; v="44,43,39,35"
+
+updateEncryptedFileDownload (downloadState=0x7fffffff8b70, outputBuffer=0x7fffffffb3a0 "", outputBufferMaxLength=10000) at ../fileTransfer.c:142
+Quit
+quit

@@ -83,22 +83,24 @@ static int open_callback(const char *path, struct fuse_file_info *fi) {
 }
 
 void initDownloadStateFromFileRead( DriverState_t *driverState, 
-	FileDownloadState_t *downloadState, char *fileUrl, size_t size, 
-	off_t offset, int isFileEncrypted ) {
+		FileDownloadState_t *downloadState, char *fileUrl, long fileSize, 
+		size_t downloadSize, 
+		off_t offset, int isFileEncrypted ) {
 
-		downloadState->driverState = driverState;
-		downloadState->isEncrypted = 1;
-		downloadState->rangeStart = offset;
-		downloadState->rangeEnd = offset + size;
-		downloadState->fileUrl = malloc( strlen( fileUrl ) );
-		memcpy( downloadState->fileUrl, fileUrl, strlen( fileUrl ) );
+	downloadState->isRangedRequest = 1;
+	downloadState->isEndRangeSet = 1;
+	downloadState->driverState = driverState;
+	downloadState->isEncrypted = 1;
+	downloadState->rangeStart = offset;
+	downloadState->rangeEnd = offset + downloadSize;
+	downloadState->fileSize = fileSize;
+	downloadState->fileUrl = malloc( strlen( fileUrl ) );
+	memcpy( downloadState->fileUrl, fileUrl, strlen( fileUrl ) );
 }
 
 static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 		struct fuse_file_info *fi) {
 	
-	printf("read_callback: %s offset: %lu\n", path, offset);
-
 	char urlBuffer[ 10000 ]; //FIXME: hardcoded value
 	vfsPathParserState_t vfsParserState;
 
@@ -119,8 +121,8 @@ static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 	FileDownloadState_t downloadState;
 	int isFileEncrypted = 1;
 	initDownloadStateFromFileRead( &downloadDriver, &downloadState, urlBuffer, 
-			size, offset, isFileEncrypted );
-
+			len, size, offset, isFileEncrypted );
+	
 	startFileDownload( &downloadState );
 
 	long dataCopied = 0;
@@ -129,16 +131,23 @@ static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 		int received = updateFileDownload( &downloadState, downloadBuffer,
 				10000 );//FIXME: hardcoded values
 		if ( received == 0 ) {
+			printf("received == 0 in top loop\n");
 			break;
 		}
-
 		int dataToCopy = (dataCopied + received > size)? 
 				(size - dataCopied) : received ;
 
 		memcpy( buf + dataCopied, downloadBuffer, dataToCopy);
 		dataCopied += dataToCopy;
 	}
-
+	printf("finished copy----\n rangestart %lu rangeend %lu, encstart %lu encend %lu \n", 
+			downloadState.rangeStart,
+			downloadState.rangeEnd,
+			downloadState.encryptedRangeStart,
+			downloadState.encryptedRangeEnd
+			 );
+	printf("finished copy----\nthe size of this buffer %d\nThey asked for %lu\n with offset offset %d\n", dataCopied, size, offset);
+//	printf("finished copy---%.*s----\nthe size of this buffer %d\nThey asked for %lu\n with offset offset %d\n", dataCopied, buf, dataCopied, size, offset);
 	return dataCopied;
 }
 

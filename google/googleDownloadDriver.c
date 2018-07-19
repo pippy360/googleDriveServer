@@ -49,17 +49,16 @@ int gdrive_downloadInit( FileDownloadState_t *downloadState ) {
 	utils_setHInfoFromUrl( downloadState->fileUrl, outputHInfo, 
 			REQUEST_GET, extraHeaders );
 	
+	//FIXME: generic code shouldn't be here
 	outputHInfo->isRange = downloadState->isRangedRequest;
-	outputHInfo->getContentRangeStart = downloadState->rangeStart;
-	outputHInfo->getContentRangeEnd = downloadState->rangeEnd;
+	outputHInfo->getContentRangeStart = downloadState->encryptedRangeStart;
+	outputHInfo->getContentRangeEnd = downloadState->encryptedRangeEnd;
 	outputHInfo->getEndRangeSet = downloadState->isEndRangeSet;
 
 	createHTTPHeader( packetBuffer, MAX_PACKET_SIZE, outputHInfo, 
 			extraHeaders );
 
 	//init connection
-	downloadState->connection = malloc( sizeof(Connection_t) );//FIXME: this probably isn't the right place for this
-	downloadState->encryptionState = malloc( sizeof(CryptoState_t) );//FIXME: this probably isn't the right place for this
 	utils_connectByUrl( downloadState->fileUrl, downloadState->connection );
 	//request the file from google
 	net_send( downloadState->connection, packetBuffer, strlen( packetBuffer ) );
@@ -81,14 +80,21 @@ int gdrive_downloadUpdate( FileDownloadState_t *downloadState, char *outputBuffe
 			return 0;
 		}
 
+		int maxPacketSize = ( bufferMaxLength - amountOfDataWrittenToBuffer < MAX_PACKET_SIZE )?
+			( bufferMaxLength - amountOfDataWrittenToBuffer ) : MAX_PACKET_SIZE;
 		//load the next packet and parse it
 		received = net_recv( downloadState->connection, packetBuffer, 
-				MAX_PACKET_SIZE );
-
+				maxPacketSize );
+		if ( received == 0 ){
+			return 0;
+		}
 		//FIXME: handle errors
 		int dataWritten;
-		process_data( packetBuffer, received, &downloadState->parserState, outputBuffer,
-				bufferMaxLength, &dataWritten, packetEnd_s,
+		process_data( packetBuffer, received, &downloadState->parserState, 
+				outputBuffer+amountOfDataWrittenToBuffer,
+				bufferMaxLength - amountOfDataWrittenToBuffer, 
+				&dataWritten, 
+				packetEnd_s,
 				&downloadState->headerState );
 		amountOfDataWrittenToBuffer += dataWritten;
 	}

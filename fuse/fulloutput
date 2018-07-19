@@ -1,0 +1,842 @@
+client: connecting to 209.85.203.84
+getattr_callback: /.Trash
+getattr_callback: /.Trash-1000
+getattr_callback: /.xdg-volume-info
+getattr_callback: /autorun.inf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /foldhere
+getattr_callback: /ew_folde
+getattr_callback: /big.txt
+vfs_getFileSize called. File id: 8 with size 6617123 
+getattr_callback: /bigtest.txt
+vfs_getFileSize called. File id: 7 with size 87156 
+getattr_callback: /Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+vfs_getFileSize called. File id: 6 with size 681889691 
+getattr_callback: /AristaGlobalProtectHQ.pcf
+vfs_getFileSize called. File id: 5 with size 879 
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /autorun.inf
+getattr_callback: /
+getattr_callback: /
+getattr_callback: /.Trash
+getattr_callback: /.Trash-1000
+readdir_callback: /
+adding folder: foldhere with length 8
+adding folder: ew_folde with length 8
+adding file: big.txt with length 7
+adding file: bigtest.txt with length 11
+adding file: Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv with length 72
+adding file: AristaGlobalProtectHQ.pcf with length 25
+	- foldhere
+	- ew_folde
+	- big.txt
+	- bigtest.txt
+	- Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+	- AristaGlobalProtectHQ.pcf
+getattr_callback: /foldhere
+getattr_callback: /.hidden
+getattr_callback: /
+getattr_callback: /ew_folde
+getattr_callback: /big.txt
+vfs_getFileSize called. File id: 8 with size 6617123 
+getattr_callback: /bigtest.txt
+vfs_getFileSize called. File id: 7 with size 87156 
+getattr_callback: /Mononoke.hime.[Princess.Mononoke].[DUAL.AUDIO]1997.HDTVRip.x264.YIFY.mkv
+vfs_getFileSize called. File id: 6 with size 681889691 
+getattr_callback: /AristaGlobalProtectHQ.pcf
+vfs_getFileSize called. File id: 5 with size 879 
+read_callback: /AristaGlobalProtectHQ.pcf offset: 0
+vfs_getFileWebUrl called. File id: 5
+vfs_getFileSize called. File id: 5 with size 879 
+client: connecting to 209.85.203.132
+we got the following result: 880
+we got the following dataout: 864
+we got the following outputBufferLength: 864
+3we got the following encryptedDataDownloaded: 880
+3we got the following pos: 880
+removing2: 0
+removing: 0
+we got the following result: 0
+result == 0 in bottom loop
+packet end hit
+before880
+after778399104
+received == 0 in top loop
+finished copy----
+ rangestart 0 rangeend 4096, encstart 0 encend 4096 
+finished copy----
+the size of this buffer 864
+They asked for 4096
+ with offset offset 0
+getattr_callback: /AristaGlobalProtectHQ.pcf
+vfs_getFileSize called. File id: 5 with size 879 
+readdir_callback: /ew_folde
+adding file: a_new_file.webm with length 15
+	- a_new_file.webm
+getattr_callback: /ew_folde/a_new_file.webm
+vfs_getFileSize called. File id: 2 with size 1000 
+getattr_callback: /ew_folde/.hidden
+readdir_callback: /foldhere
+adding file: something.jpg with length 13
+	- something.jpg
+getattr_callback: /foldhere/something.jpg
+vfs_getFileSize called. File id: 4 with size 1000 
+getattr_callback: /foldhere/.hidden
+getattr_callback: /bigtest.txt
+vfs_getFileSize called. File id: 7 with size 87156 
+getattr_callback: /
+read_callback: /bigtest.txt offset: 0
+vfs_getFileWebUrl called. File id: 7
+vfs_getFileSize called. File id: 7 with size 87156 
+client: connecting to 209.85.203.132
+we got the following result: 2000
+we got the following dataout: 1984
+we got the following outputBufferLength: 1984
+3we got the following encryptedDataDownloaded: 2000
+3we got the following pos: 2000
+removing2: 0
+removing: 0
+we got the following result: 98
+we got the following dataout: 112
+we got the following outputBufferLength: 2096
+3we got the following encryptedDataDownloaded: 2098
+3we got the following pos: 2098
+removing2: 0
+removing: 0
+we got the following result: 2000
+we got the following dataout: 2000
+we got the following outputBufferLength: 4096
+3we got the following encryptedDataDownloaded: 4098
+3we got the following pos: 4098
+removing2: 0
+removing: 0
+we got the following result: 98
+we got the following dataout: 96
+we got the following outputBufferLength: 4192
+3we got the following encryptedDataDownloaded: 4196
+3we got the following pos: 4196
+removing2: 0
+removing: 0
+we got the following result: 2000
+we got the following dataout: 2000
+we got the following outputBufferLength: 6192
+3we got the following encryptedDataDownloaded: 6196
+3we got the following pos: 6196
+removing2: 0
+removing: 0
+we got the following result: 98
+we got the following dataout: 96
+we got the following outputBufferLength: 6288
+3we got the following encryptedDataDownloaded: 6294
+3we got the following pos: 6294
+removing2: 0
+removing: 0
+we got the following result: 2000
+we got the following dataout: 2000
+we got the following outputBufferLength: 8288
+3we got the following encryptedDataDownloaded: 8294
+3we got the following pos: 8294
+removing2: 0
+removing: 0
+we got the following result: 98
+we got the following dataout: 96
+we got the following outputBufferLength: 8384
+3we got the following encryptedDataDownloaded: 8392
+3we got the following pos: 8392
+removing2: 0
+removing: 0
+we got the following result: 2000
+we got the following dataout: 2000
+we got the following outputBufferLength: 10384
+3we got the following encryptedDataDownloaded: 10392
+3we got the following pos: 10392
+removing2: 0
+removing: 0
+we got the following result: 98
+we got the following dataout: 96
+we got the following outputBufferLength: 10480
+3we got the following encryptedDataDownloaded: 10490
+3we got the following pos: 10490
+removing2: 0
+removing: 0
+we got the following result: 2000
+we got the following dataout: 2000
+we got the following outputBufferLength: 12480
+3we got the following encryptedDataDownloaded: 12490
+3we got the following pos: 12490
+removing2: 0
+removing: 0
+we got the following result: 98
+we got the following dataout: 96
+we got the following outputBufferLength: 12576
+3we got the following encryptedDataDownloaded: 12588
+3we got the following pos: 12588
+removing2: 0
+removing: 0
+we got the following result: 1461
+we got the following dataout: 1472
+we got the following outputBufferLength: 14048
+3we got the following encryptedDataDownloaded: 14049
+3we got the following pos: 14049
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 15424
+3we got the following encryptedDataDownloaded: 15436
+3we got the following pos: 15436
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 16816
+3we got the following encryptedDataDownloaded: 16823
+3we got the following pos: 16823
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 18208
+3we got the following encryptedDataDownloaded: 18210
+3we got the following pos: 18210
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 19584
+3we got the following encryptedDataDownloaded: 19597
+3we got the following pos: 19597
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 20976
+3we got the following encryptedDataDownloaded: 20984
+3we got the following pos: 20984
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 22368
+3we got the following encryptedDataDownloaded: 22371
+3we got the following pos: 22371
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 23744
+3we got the following encryptedDataDownloaded: 23758
+3we got the following pos: 23758
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 25136
+3we got the following encryptedDataDownloaded: 25145
+3we got the following pos: 25145
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 26528
+3we got the following encryptedDataDownloaded: 26532
+3we got the following pos: 26532
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 27904
+3we got the following encryptedDataDownloaded: 27919
+3we got the following pos: 27919
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 29296
+3we got the following encryptedDataDownloaded: 29306
+3we got the following pos: 29306
+removing2: 0
+removing: 0
+we got the following result: 1127
+we got the following dataout: 1136
+we got the following outputBufferLength: 30432
+3we got the following encryptedDataDownloaded: 30433
+3we got the following pos: 30433
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 31808
+3we got the following encryptedDataDownloaded: 31820
+3we got the following pos: 31820
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 33200
+3we got the following encryptedDataDownloaded: 33207
+3we got the following pos: 33207
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 34592
+3we got the following encryptedDataDownloaded: 34594
+3we got the following pos: 34594
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 35968
+3we got the following encryptedDataDownloaded: 35981
+3we got the following pos: 35981
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 37360
+3we got the following encryptedDataDownloaded: 37368
+3we got the following pos: 37368
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 38752
+3we got the following encryptedDataDownloaded: 38755
+3we got the following pos: 38755
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 40128
+3we got the following encryptedDataDownloaded: 40142
+3we got the following pos: 40142
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 41520
+3we got the following encryptedDataDownloaded: 41529
+3we got the following pos: 41529
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 42912
+3we got the following encryptedDataDownloaded: 42916
+3we got the following pos: 42916
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 44288
+3we got the following encryptedDataDownloaded: 44303
+3we got the following pos: 44303
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 45680
+3we got the following encryptedDataDownloaded: 45690
+3we got the following pos: 45690
+removing2: 0
+removing: 0
+we got the following result: 1127
+we got the following dataout: 1136
+we got the following outputBufferLength: 46816
+3we got the following encryptedDataDownloaded: 46817
+3we got the following pos: 46817
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 48192
+3we got the following encryptedDataDownloaded: 48204
+3we got the following pos: 48204
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 49584
+3we got the following encryptedDataDownloaded: 49591
+3we got the following pos: 49591
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 50976
+3we got the following encryptedDataDownloaded: 50978
+3we got the following pos: 50978
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 52352
+3we got the following encryptedDataDownloaded: 52365
+3we got the following pos: 52365
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 53744
+3we got the following encryptedDataDownloaded: 53752
+3we got the following pos: 53752
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 55136
+3we got the following encryptedDataDownloaded: 55139
+3we got the following pos: 55139
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 56512
+3we got the following encryptedDataDownloaded: 56526
+3we got the following pos: 56526
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 57904
+3we got the following encryptedDataDownloaded: 57913
+3we got the following pos: 57913
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 59296
+3we got the following encryptedDataDownloaded: 59300
+3we got the following pos: 59300
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 60672
+3we got the following encryptedDataDownloaded: 60687
+3we got the following pos: 60687
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 62064
+3we got the following encryptedDataDownloaded: 62074
+3we got the following pos: 62074
+removing2: 0
+removing: 0
+we got the following result: 1115
+we got the following dataout: 1120
+we got the following outputBufferLength: 63184
+3we got the following encryptedDataDownloaded: 63189
+3we got the following pos: 63189
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 64560
+3we got the following encryptedDataDownloaded: 64576
+3we got the following pos: 64576
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 65952
+3we got the following encryptedDataDownloaded: 65963
+3we got the following pos: 65963
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 67344
+3we got the following encryptedDataDownloaded: 67350
+3we got the following pos: 67350
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 68736
+3we got the following encryptedDataDownloaded: 68737
+3we got the following pos: 68737
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 70112
+3we got the following encryptedDataDownloaded: 70124
+3we got the following pos: 70124
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 71504
+3we got the following encryptedDataDownloaded: 71511
+3we got the following pos: 71511
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 72896
+3we got the following encryptedDataDownloaded: 72898
+3we got the following pos: 72898
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 74272
+3we got the following encryptedDataDownloaded: 74285
+3we got the following pos: 74285
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 75664
+3we got the following encryptedDataDownloaded: 75672
+3we got the following pos: 75672
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1392
+we got the following outputBufferLength: 77056
+3we got the following encryptedDataDownloaded: 77059
+3we got the following pos: 77059
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 78432
+3we got the following encryptedDataDownloaded: 78446
+3we got the following pos: 78446
+removing2: 0
+removing: 0
+we got the following result: 1127
+we got the following dataout: 1136
+we got the following outputBufferLength: 79568
+3we got the following encryptedDataDownloaded: 79573
+3we got the following pos: 79573
+removing2: 0
+removing: 0
+we got the following result: 1387
+we got the following dataout: 1376
+we got the following outputBufferLength: 80944
+3we got the f

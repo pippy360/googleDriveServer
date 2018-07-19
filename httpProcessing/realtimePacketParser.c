@@ -271,16 +271,12 @@ int process_header(char *name, char *value, HTTPParserState_t* parserState, HTTP
 		//FIXME: IF THERE'S A TRANSFER ENCODING WITHOUT CHUNK CAUSE ERROR
 		parserState->packetDataType = chunked_p;
 		hInfo->transferType			= TRANSFER_CHUNKED;
-
-		printf("it's chunked\n");
 	}else if(strcmp("Content-Length", name) == 0){
 		
 		parserState->packetDataType  = contentLength_p;
 		hInfo->transferType		  	 = TRANSFER_CONTENT_LENGTH;
 		hInfo->contentLength		 = strtol(value, NULL, 10);;
 		parserState->remainingLength = strtol(value, NULL, 10);
-		
-		printf("it's content length : %lu\n", parserState->remainingLength);
 	}else if(strcmp("Range",name) == 0){
 		//TODO: error handling
 		hInfo->isRange = 1;

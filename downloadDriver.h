@@ -25,14 +25,15 @@ typedef struct FileDownloadState_t {
 	HTTPParserState_t parserState;
 	int isEncrypted;
 	int isRangedRequest;
-	long rangeStart;
-	long rangeEnd;
+	unsigned long rangeStart;
+	unsigned long rangeEnd;
 	int isEndRangeSet;
-	int encryptedRangeStart;
-	int encryptedRangeEnd;
-	long encryptedDataDownloaded;
-	long amountOfFileDecrypted;
+	unsigned long encryptedRangeStart;
+	unsigned long encryptedRangeEnd;
+	unsigned long encryptedDataDownloaded;
+	unsigned long amountOfFileDecrypted;
 	int fileDownloadComplete;
+	long fileSize;
 	char *fileUrl;
 } FileDownloadState_t;
 

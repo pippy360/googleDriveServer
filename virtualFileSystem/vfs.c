@@ -49,8 +49,9 @@ void vfs_getCWDPath( vfsContext_t *ctx, char *outputBuffer,
 }
 
 long vfs_getFileSize( vfsContext_t *ctx, const vfsObject_t *file ) {
-	printf( "vfs_getFileSize called. File id: %lu\n", file->id );
-	return vfs_getFileSizeById( ctx->dbContext, file->id );
+	long ret =  vfs_getFileSizeById( ctx->dbContext, file->id );
+	printf( "vfs_getFileSize called. File id: %lu with size %lu \n", file->id, ret );
+	return ret;
 }
 
 char *vfs_listUnixStyle( vfsContext_t *ctx, const vfsObject_t *file ) {

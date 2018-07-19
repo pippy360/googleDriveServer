@@ -73,7 +73,11 @@ int startEncryptedFileDownload( FileDownloadState_t *downloadState ) {
 		encFileStart -= AES_BLOCK_SIZE;
 	}
 	if ( downloadState->isEndRangeSet ) {
-		encFileEnd = endRange + ( AES_BLOCK_SIZE - ( endRange % AES_BLOCK_SIZE ) );
+		if( endRange % AES_BLOCK_SIZE ) {//if not 16 byte aligned
+			encFileEnd = endRange + ( AES_BLOCK_SIZE - ( endRange % AES_BLOCK_SIZE ) );
+		} else {
+			encFileEnd = endRange;
+		}
 	} else {
 		//it doesn't matter what value encFileEnd has
 	}
@@ -83,6 +87,8 @@ int startEncryptedFileDownload( FileDownloadState_t *downloadState ) {
 	downloadState->amountOfFileDecrypted = 0;
 	downloadState->encryptedDataDownloaded = 0;
 	downloadState->fileDownloadComplete = 0;
+	downloadState->encryptionState = malloc( sizeof(CryptoState_t) );//FIXME: this probably isn't the right place for this
+	downloadState->connection = malloc( sizeof(Connection_t) );//FIXME: this probably isn't the right place for this
 
 	return downloadState->driverState->ops->downloadInit( downloadState );
 }
@@ -91,7 +97,7 @@ int startEncryptedFileDownload( FileDownloadState_t *downloadState ) {
 //returns the amount of data in the outputBuffer
 int updateEncryptedFileDownload( FileDownloadState_t *downloadState, 
 		char *outputBuffer, int outputBufferMaxLength ) {
-
+	printf("in:\t %lu\n", downloadState->encryptedDataDownloaded);
 	if( downloadState->fileDownloadComplete ) {
 		return 0;
 	}
@@ -113,6 +119,7 @@ int updateEncryptedFileDownload( FileDownloadState_t *downloadState,
 						MAX_PACKET_SIZE );
 
 				if (result == 0) {
+					printf("file server closed the connection right at the start");
 					//file server closed the connection
 					return 0;
 				}
@@ -127,6 +134,7 @@ int updateEncryptedFileDownload( FileDownloadState_t *downloadState,
 					encryptedPacketBuffer + AES_BLOCK_SIZE,
 					encryptedPacketLength - AES_BLOCK_SIZE, outputBuffer,
 					&outputBufferLength );
+
 			downloadState->amountOfFileDecrypted += outputBufferLength;
 		}
 	} else {
@@ -142,19 +150,44 @@ int updateEncryptedFileDownload( FileDownloadState_t *downloadState,
 			encryptedPacketBuffer, 
 			MAX_PACKET_SIZE );
 		downloadState->encryptedDataDownloaded += result;
+		printf("we got the following result: %d\n", result);
 		if ( result == 0 ) {
+			printf("result == 0 in bottom loop\n");
 			//file server closed the connection
 			//check if we reached the end of the http packet
 			if( downloadState->parserState.currentState == packetEnd_s ){
-				//then finish the encryption
-				downloadState->fileDownloadComplete = 1;
-				int finalDataLength;
-				finishDecryption( downloadState->encryptionState, encryptedPacketBuffer,
-						result, outputBuffer,
-						&finalDataLength );
-				downloadState->amountOfFileDecrypted += finalDataLength;
-				outputBufferLength += finalDataLength;
-				return outputBufferLength;
+				printf("packet end hit\n");
+				//check if we have reached the end of the file
+				//FIXME: confirm this size is correct
+				//FIXME: have these paddings as shared with the orginal padding code 
+				long fullfileSize = downloadState->fileSize;
+				int startPadding = AES_BLOCK_SIZE;
+				int endPadding = (( AES_BLOCK_SIZE - ( fullfileSize % AES_BLOCK_SIZE ) ) % AES_BLOCK_SIZE);
+				long endOfEncryptedFile = fullfileSize 
+						+ startPadding 
+						+ endPadding;
+				printf( "range + downloaded\t%lu\n" , downloadState->encryptedRangeStart + downloadState->encryptedDataDownloaded );
+				printf( "endOfEncryptedFile\t%lu\n" , endOfEncryptedFile );
+				if (downloadState->encryptedRangeStart + downloadState->encryptedDataDownloaded >= endOfEncryptedFile ) {
+					// FIXME: log error here
+					printf("ERROR: downloadState->encryptedRangeStart + "
+						"downloadState->encryptedDataDownloaded > endOfEncryptedFile\n");
+				}
+
+				if ( downloadState->encryptedRangeStart + downloadState->encryptedDataDownloaded == 
+							endOfEncryptedFile ) {
+
+					printf("and packet ended\n");
+					//then finish the encryption
+					downloadState->fileDownloadComplete = 1;
+					int finalDataLength;
+					finishDecryption( downloadState->encryptionState, encryptedPacketBuffer,
+							result, outputBuffer,
+							&finalDataLength );
+					downloadState->amountOfFileDecrypted += finalDataLength;
+					outputBufferLength += finalDataLength;
+					return outputBufferLength;
+				}
 			}
 			return 0;
 		}
@@ -183,7 +216,7 @@ int updateEncryptedFileDownload( FileDownloadState_t *downloadState,
 			downloadState->amountOfFileDecrypted, outputBufferLength);
 	outputBufferLength -= trimBottomVal + trimTopVal;
 	memmove(outputBuffer, outputBuffer + trimBottomVal, outputBufferLength);
-
+	printf("out:\t %lu\n", downloadState->encryptedDataDownloaded);
 	return outputBufferLength;
 }
 
@@ -253,18 +286,6 @@ int updateEncryptedFileUpload( FileUploadState_t *uploadState,
 int finishEncryptedFileUpload() {
 	//just clean up and stuff
 	return 0;//fixme only one return code
-}
-
-void getFileDownloadStateFromFileRead( const char *inputUrl, 
-		char isEncrypted, long offset, long size, 
-		FileDownloadState_t *downloadState ) {
-
-	downloadState->isRangedRequest = 1;
-	downloadState->isEncrypted = isEncrypted;
-	downloadState->rangeStart = offset;
-	downloadState->rangeEnd = offset + size;
-	downloadState->isEndRangeSet = 1;
-	downloadState->encryptionState = NULL;//FIXME: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
 
 int startFileDownload( FileDownloadState_t *downloadState ) {

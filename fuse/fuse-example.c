@@ -151,6 +151,11 @@ static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 	return dataCopied;
 }
 
+static int create(const char *path, mode_t mode, struct fuse_file_info *fi) {
+	printf("create file called with path %s\n", path);
+	return -1;
+}
+
 static struct fuse_operations fuse_example_operations = {
   .getattr = getattr_callback,
   .open = open_callback,

@@ -6,7 +6,7 @@
 #include "../virtualFileSystem/hiredis/hiredis.h"
 #include "../virtualFileSystem/vfs.h"
 
-#include "../downloadDriver.h"
+#include "../fileTransferDriver.h"
 
 #include "../google/googleAccessToken.h"
 #include "../google/googleUpload.h"
@@ -146,8 +146,8 @@ static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 			downloadState.encryptedRangeStart,
 			downloadState.encryptedRangeEnd
 			 );
-	printf("finished copy----\nthe size of this buffer %d\nThey asked for %lu\n with offset offset %d\n", dataCopied, size, offset);
-//	printf("finished copy---%.*s----\nthe size of this buffer %d\nThey asked for %lu\n with offset offset %d\n", dataCopied, buf, dataCopied, size, offset);
+	printf("finished copy----\nthe size of this buffer %lu\nThey asked for %lu\n with offset offset %lu\n", dataCopied, size, offset);
+//	printf("finished copy---%.*s----\nthe size of this buffer %lu\nThey asked for %lu\n with offset offset %d\n", dataCopied, buf, dataCopied, size, offset);
 	return dataCopied;
 }
 

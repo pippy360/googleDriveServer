@@ -3,7 +3,7 @@
 
 #include "httpProcessing/commonHTTP.h"
 #include "httpProcessing/realtimePacketParser.h"
-#include "downloadDriver.h"
+#include "fileTransferDriver.h"
 
 int startFileDownload( FileDownloadState_t *DownloadState );
 

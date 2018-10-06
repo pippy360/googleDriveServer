@@ -1,5 +1,5 @@
-#ifndef DOWNLOADDRIVER_H
-#define DOWNLOADDRIVER_H
+#ifndef FILETRANSFERDRIVER_H
+#define FILETRANSFERDRIVER_H
 
 #include "net/connection.h"
 #include "crypto.h"
@@ -68,4 +68,4 @@ typedef struct FileTransferDriver_ops_t {
 } FileTransferDriver_ops_t;
 
 
-#endif /* DOWNLOADDRIVER_H */
+#endif /* FILETRANSFERDRIVER_H */

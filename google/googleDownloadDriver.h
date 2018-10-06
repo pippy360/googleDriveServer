@@ -1,7 +1,7 @@
 #ifndef GOOGLEDOWNLOADDRIVER_H
 #define GOOGLEDOWNLOADDRIVER_H
 
-#include "../downloadDriver.h"
+#include "../fileTransferDriver.h"
 
 FileTransferDriver_ops_t gdriveFileTransfer_ops;
 

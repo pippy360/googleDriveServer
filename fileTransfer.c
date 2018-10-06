@@ -19,7 +19,7 @@
 #include "utils.h"
 #include "crypto.h"
 #include "fileTransfer.h"
-#include "downloadDriver.h"
+#include "fileTransferDriver.h"
 
 #define ENCRYPTED_BUFFER_LEN 10000
 #define DECRYPTED_BUFFER_LEN 10000

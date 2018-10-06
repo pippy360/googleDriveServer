@@ -1,7 +1,7 @@
 #ifndef TESTDOWNLOADDRIVER_H
 #define TESTDOWNLOADDRIVER_H
 
-#include "../downloadDriver.h"
+#include "../fileTransferDriver.h"
 
 const FileTransferDriver_ops_t testDownloadFileTransfer_ops;
 

@@ -24,6 +24,7 @@
 #define ENCRYPTED_BUFFER_LEN 10000
 #define DECRYPTED_BUFFER_LEN 10000
 #define STRING_BUFFER_LEN 10000
+#define DISABLE_ENCRYPTION 1
 
 //returns the amount that needs to be trimmed off the top
 //amountOfFileDecrypted must be kept up to date
@@ -101,6 +102,13 @@ int updateEncryptedFileDownload( FileDownloadState_t *downloadState,
 	if( downloadState->fileDownloadComplete ) {
 		return 0;
 	}
+
+#ifdef DISABLE_ENCRYPTION
+	return downloadState->driverState->ops->downloadUpdate(
+			downloadState, 
+			outputBuffer,
+			outputBufferMaxLength );
+#endif
 
 	//if this is the first time update has been called then first fetch 
 	//enough data so that we can start the decryption

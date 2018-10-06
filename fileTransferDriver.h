@@ -35,6 +35,8 @@ typedef struct FileDownloadState_t {
 	int fileDownloadComplete;
 	long fileSize;
 	char *fileUrl;
+	char *requestedFilePath;
+	void *priv_connection;
 } FileDownloadState_t;
 
 //This is the state held for one file upload
@@ -67,5 +69,20 @@ typedef struct FileTransferDriver_ops_t {
 
 } FileTransferDriver_ops_t;
 
+typedef struct PendingFileUpload_t PendingFileUpload_t;
+typedef struct PendingFileUpload_t {
+        long fileId;
+        long currentBytesUploaded;
+        PendingFileUpload_t *next;
+        void *priv_connection;
+} PendingFileUpload_t;
+
+PendingFileUpload_t *getUploadInProgress( long fileId );
+
+int removeUploadInProgress( long fileId );
+
+void init_PendingFileUpload( PendingFileUpload_t *pendingFileUpload, long fileId );
+
+void addUploadInProgress(PendingFileUpload_t *inFileUpload);
 
 #endif /* FILETRANSFERDRIVER_H */

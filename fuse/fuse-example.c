@@ -18,11 +18,15 @@
 #include "../httpProcessing/realtimePacketParser.h"
 #include "../google/googleDownloadDriver.h"
 
+#include "../testDownloadDriver.h"
+
 #define ENCRYPTED_BUFFER_LEN 2000
 #define DECRYPTED_BUFFER_LEN 2000
 #define STRING_BUFFER_LEN 2000
 
 #define MAX_PACKET_SIZE 99999
+
+#define USE_TEST_DRIVER 1
 
 
 vfsContext_t ctx;//FIXME: don't use a global 
@@ -85,7 +89,7 @@ static int open_callback(const char *path, struct fuse_file_info *fi) {
 void initDownloadStateFromFileRead( DriverState_t *driverState, 
 		FileDownloadState_t *downloadState, char *fileUrl, long fileSize, 
 		size_t downloadSize, 
-		off_t offset, int isFileEncrypted ) {
+		off_t offset, int isFileEncrypted, const char *path ) {
 
 	downloadState->isRangedRequest = 1;
 	downloadState->isEndRangeSet = 1;
@@ -94,8 +98,10 @@ void initDownloadStateFromFileRead( DriverState_t *driverState,
 	downloadState->rangeStart = offset;
 	downloadState->rangeEnd = offset + downloadSize;
 	downloadState->fileSize = fileSize;
-	downloadState->fileUrl = malloc( strlen( fileUrl ) );
-	memcpy( downloadState->fileUrl, fileUrl, strlen( fileUrl ) );
+	downloadState->fileUrl = malloc( strlen( fileUrl ) + 1 );
+	strcpy( downloadState->fileUrl, fileUrl );
+	downloadState->requestedFilePath = malloc( strlen( path ) + 1 );
+	strcpy( downloadState->requestedFilePath, path );
 }
 
 static int read_callback(const char *path, char *buf, size_t size, off_t offset,
@@ -121,7 +127,7 @@ static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 	FileDownloadState_t downloadState;
 	int isFileEncrypted = 1;
 	initDownloadStateFromFileRead( &downloadDriver, &downloadState, urlBuffer, 
-			len, size, offset, isFileEncrypted );
+			len, size, offset, isFileEncrypted, path );
 	
 	startFileDownload( &downloadState );
 
@@ -169,8 +175,10 @@ int main(int argc, char *argv[])
 		printf("erororrororor\n");
 		exit(-1);
 	}
-
+#ifdef USE_TEST_DRIVER
+	testDownload_prepDriverForFileTransfer( &downloadDriver );
+#else
 	gdrive_prepDriverForFileTransfer( &downloadDriver );
-
+#endif
 	return fuse_main(argc, argv, &fuse_example_operations, NULL);
 }

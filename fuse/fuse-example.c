@@ -42,9 +42,11 @@ static int getattr_callback(const char *path, struct stat *stbuf) {
 
 	vfsPathParserState_t parserState;
 	init_vfsPathParserState( &parserState );
- 	vfs_parsePath( c, &parserState, path, strlen(path) );
-	if ( !parserState.isExistingObject )
+ 	vfs_parsePath( c, &parserState, path );
+	if ( !parserState.isExistingObject ) {
+		printf( "getaddr file not found %s\n", path );
 		return -ENOENT;
+	}
 
 	if ( parserState.fileObj.isDir ) {
 		stbuf->st_mode = S_IFDIR | 0755;
@@ -66,7 +68,7 @@ static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 	int numRetVals = 0;
 
 	vfsPathParserState_t parserState;
-	vfs_parsePath( c, &parserState, path, strlen( path ) );
+	vfs_parsePath( c, &parserState, path );
 	vfs_ls( c, &parserState.fileObj, fuseLsbuf, 9999, &numRetVals );
 
 	filler( buf, ".", NULL, 0 );
@@ -83,7 +85,15 @@ static int readdir_callback(const char *path, void *buf, fuse_fill_dir_t filler,
 }
 
 static int open_callback(const char *path, struct fuse_file_info *fi) {
-  return 0;
+	printf("open_callback called\n");
+	int res;
+
+	res = open(path, fi->flags);
+	if (res == -1)
+		return -errno;
+
+	fi->fh = res;
+	return 0;
 }
 
 void initDownloadStateFromFileRead( DriverState_t *driverState, 
@@ -111,7 +121,7 @@ static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 	vfsPathParserState_t vfsParserState;
 
 	init_vfsPathParserState( &vfsParserState );
- 	vfs_parsePath( c, &vfsParserState, path, strlen(path) );
+ 	vfs_parsePath( c, &vfsParserState, path );
 	vfs_getFileWebUrl( c, &vfsParserState.fileObj, urlBuffer, 2000 );
 
 	if ( !vfsParserState.isExistingObject || vfsParserState.fileObj.isDir ) {
@@ -157,9 +167,49 @@ static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 	return dataCopied;
 }
 
-static int create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-	printf("create file called with path %s\n", path);
-	return -1;
+
+
+static int create_callback(const char *path, mode_t mode,
+	struct fuse_file_info *fi) {
+
+	int res;
+	char strbuf[10000] = "~/";
+	char *strbufptr = strcat(strbuf, path);
+
+	printf("create_callback file called with path %s true path %s\n", path, strbufptr);
+	if( !vfs_createNewEmptyFile( c, path ) )
+		return -1;
+
+	res = open(strbufptr, fi->flags, mode);
+	if (res == -1)
+		return -errno;
+
+	fi->fh = res;
+	return 0;
+}
+
+static int write_callback(const char *path, const char *buf, size_t size,
+	off_t offset, struct fuse_file_info *fi) {
+
+	int fd;
+	int res;
+
+	(void) fi;
+	char strbuf[10000] = "~/";
+	char *strbufptr = strcat(strbuf, path);
+	printf("write called with path %s realpath %s\n", path, strbufptr);
+	fd = open(strbufptr, O_WRONLY);
+	
+	if (fd == -1)
+		return -errno;
+
+	res = write(fd, buf, size);
+	if (res == -1)
+		res = -errno;
+
+	if(fi == NULL)
+		close(fd);
+	return res;
 }
 
 static struct fuse_operations fuse_example_operations = {
@@ -167,6 +217,8 @@ static struct fuse_operations fuse_example_operations = {
   .open = open_callback,
   .read = read_callback,
   .readdir = readdir_callback,
+  .create = create_callback,
+  .write = write_callback,
 };
 
 int main(int argc, char *argv[])

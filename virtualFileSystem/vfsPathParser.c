@@ -122,12 +122,14 @@ long vfs_getDirIdFromPath(redisContext *context, long userCwd, const char *path,
 }
 
 //takes in an empty vfsPathParserState_t
+//returns 0 if success, non-0 otherwise
 int __vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 		const char *fullPath, int fullPathLength, long clientCwd) {
 
 	//FIXME: handle 0 strings
 	if (fullPathLength <= 0) {
 		//stuff
+		printf("__vfs_parsePath 0 length string passed in\n");
 		return -1;
 	}
 
@@ -164,6 +166,7 @@ int __vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 	//the name could be ".."
 	if (__vfs_serperatePathAndName(parserState, fullPath, fixedPathLength) != 0) {
 		printf("ERROR: failed to get the last part of path, stuff after last '/'\n");
+		return -1;
 	}
 
 	if ((tempId = vfs_getDirIdFromPath(context, cwd, fullPath, fixedPathLength))
@@ -171,6 +174,10 @@ int __vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 		printf("ERROR: failed to get the get parent id\n");
 		return -1;
 	}
+
+	parserState->parentObj.id = tempId;
+	parserState->parentObj.isDir = 1;
+	parserState->parentObj.parentId = __vfs_getDirParent( context, tempId );
 
 	if (parserState->nameLength > 0) {
 		if (__vfs_findObjectInDir(context, parserState, tempId,
@@ -189,6 +196,7 @@ int __vfs_parsePath(redisContext *context, vfsPathParserState_t *parserState,
 		}
 	} else {
 		printf("ERROR: The name length was zero???\n");
+		return -1;
 	}
 	return 0;
 }

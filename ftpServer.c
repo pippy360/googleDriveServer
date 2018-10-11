@@ -170,7 +170,7 @@ void ftp_handleFtpRequest( AccessTokenState_t *accessTokenState,
 		vfs_parsePath( clientState->ctx, &vfsParserState, parserState->paramBuffer,
 				strlen(parserState->paramBuffer) );
 		if (vfsParserState.isExistingObject && vfsParserState.fileObj.isDir) {
-			vfs_cwd( clientState->ctx, &vfsParserState.fileObj ); 
+			vfs_set_cwd( clientState->ctx, &vfsParserState.fileObj ); 
 			sendFtpResponse(clientState,
 					"250 Directory successfully changed.\r\n"); //success
 		} else {

@@ -23,6 +23,13 @@ int vfsContext_free( vfsContext_t *ctx ) {
 }
 
 int vfs_parsePath( vfsContext_t *ctx, vfsPathParserState_t *parserState,
+		const char *fullPath ) {
+
+	return __vfs_parsePath( ctx->dbContext, parserState, fullPath, 
+		strlen( fullPath ), ctx->cwd.id );
+}
+
+int vfs_parsePathOfLength( vfsContext_t *ctx, vfsPathParserState_t *parserState,
 		const char *fullPath, int fullPathLength) {
 
 	return __vfs_parsePath( ctx->dbContext, parserState, fullPath, 
@@ -69,6 +76,36 @@ long vfs_createFile( vfsContext_t *ctx, const vfsObject_t *parent, const char *n
 		googleId, webUrl, apiUrl );
 }
 
+long vfs_createNewEmptyFile( vfsContext_t *ctx, const char *path ) {
+	
+	printf( "vfs asked to create a new file with path %s\n", path );
+
+	vfsPathParserState_t parserState;
+	int retVal = 0;
+	if( ( retVal = vfs_parsePath( ctx, &parserState, path ) ) ) {
+		printf("Failed to parse path retval: %d \n", retVal);
+		return retVal;
+	}
+
+	if( parserState.fileObj.parentId ) {//parent folder doesn't exist
+		printf("The parent the path points to doesn't exist\n");
+		return -1;
+	}
+
+	if( parserState.isExistingObject ) {//file already exists
+		printf("File already exists\n");
+		return -1;
+	}
+
+	long size = 0;
+	char *webUrl = "";
+	char *googleId = "";
+	char *apiUrl = "";
+	printf("adding file name: %s to parent of id %ld ", path + parserState.nameOffset, parserState.parentObj.id );
+	return vfs_createFile( ctx, &parserState.parentObj, path + parserState.nameOffset,
+		       size, googleId, webUrl, apiUrl );
+}
+
 int vfs_getFileWebUrl( vfsContext_t *ctx, const vfsObject_t *file, char *outputNameBuffer,
 		int outputNameBufferLength ) {
 	printf( "vfs_getFileWebUrl called. File id: %lu\n", file->id );
@@ -85,22 +122,23 @@ int vfs_deleteObjectWithPath( vfsContext_t *ctx, const char *path ) {
 		ctx->cwd.id );
 }
 
-//will return -1 if failure, for example if getDirParent is called
-//on root
-int vfs_getDirParent( vfsContext_t *ctx, const vfsObject_t *dir, 
-		vfsObject_t *parent) {
-	printf( "vfs_getDirParent called. Dir id: %lu\n", dir->id );
-	if ( dir->id == ROOT_FOLDER_ID )
+//will return -1 if failure, for example if getDirParent is called on root
+int vfs_getParent( vfsContext_t *ctx, const vfsObject_t *obj, vfsObject_t *parent) {
+	printf( "vfs_getDirParent called. Dir id: %ld\n", obj->id );
+	if ( obj->id == ROOT_FOLDER_ID )
 		return 0;
 
-	parent->id = dir->id;
-	parent->parentId = __vfs_getDirParent( ctx->dbContext, dir->parentId );
+	parent->id = obj->parentId;
 	parent->isDir = 1;
-
+	parent->parentId = __vfs_getDirParent( ctx->dbContext, obj->parentId );
+	if ( parent->parentId == -1 ) {
+		printf( "vfs_getParent failed to get parent Id for %ld\n", obj->parentId );
+		return -1;
+	}
 	return 0;
 }
 
-void vfs_cwd( vfsContext_t *ctx, const vfsObject_t *dir ) {
+void vfs_set_cwd( vfsContext_t *ctx, const vfsObject_t *dir ) {
 	ctx->cwd = *dir;
 }
 

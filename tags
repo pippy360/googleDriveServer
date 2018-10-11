@@ -1107,6 +1107,7 @@ BUF_F_BUF_MEM_NEW	include/openssl/buffer.h	116;"	d
 BUF_F_BUF_STRDUP	include/openssl/buffer.h	117;"	d
 BUF_F_BUF_STRNDUP	include/openssl/buffer.h	118;"	d
 BUF_MEM	include/openssl/ossl_typ.h	/^typedef struct buf_mem_st BUF_MEM;$/;"	t	typeref:struct:buf_mem_st
+BUF_SIZE	testDownloadDriver.c	10;"	d	file:
 BUFerr	include/openssl/err.h	208;"	d
 B_ASN1_BIT_STRING	include/openssl/asn1.h	153;"	d
 B_ASN1_BMPSTRING	include/openssl/asn1.h	154;"	d
@@ -1784,6 +1785,7 @@ DICT_HT_INITIAL_SIZE	virtualFileSystem/hiredis/dict.h	76;"	d
 DICT_NOTUSED	virtualFileSystem/hiredis/dict.h	43;"	d
 DICT_OK	virtualFileSystem/hiredis/dict.h	39;"	d
 DIRSTRING_TYPE	include/openssl/asn1.h	276;"	d
+DISABLE_ENCRYPTION	fileTransfer.c	27;"	d	file:
 DIST_POINT	include/openssl/ossl_typ.h	/^typedef struct DIST_POINT_st DIST_POINT;$/;"	t	typeref:struct:DIST_POINT_st
 DIST_POINT_NAME	include/openssl/x509v3.h	/^} DIST_POINT_NAME;$/;"	t	typeref:struct:DIST_POINT_NAME_st
 DIST_POINT_NAME_st	include/openssl/x509v3.h	/^typedef struct DIST_POINT_NAME_st {$/;"	s
@@ -7119,6 +7121,8 @@ PSK_MAX_PSK_LEN	include/openssl/ssl.h	1320;"	d
 PendingFileUpload_t	fileTransferDriver.h	/^typedef struct PendingFileUpload_t PendingFileUpload_t;$/;"	t	typeref:struct:PendingFileUpload_t
 PendingFileUpload_t	fileTransferDriver.h	/^typedef struct PendingFileUpload_t {$/;"	s
 PendingFileUpload_t	fileTransferDriver.h	/^} PendingFileUpload_t;$/;"	t	typeref:struct:PendingFileUpload_t
+Priv_fd_t	testDownloadDriver.c	/^typedef struct Priv_fd_t {$/;"	s	file:
+Priv_fd_t	testDownloadDriver.c	/^} Priv_fd_t;$/;"	t	typeref:struct:Priv_fd_t	file:
 RAND_F_RAND_GET_RAND_METHOD	include/openssl/rand.h	136;"	d
 RAND_F_RAND_INIT_FIPS	include/openssl/rand.h	137;"	d
 RAND_F_SSLEAY_RAND_BYTES	include/openssl/rand.h	138;"	d
@@ -11289,6 +11293,7 @@ __bio_h__attr__	include/openssl/bio.h	790;"	d
 __bio_h__attr__	include/openssl/bio.h	792;"	d
 __bio_h__attr__	include/openssl/bio.h	802;"	d
 __buildDatabaseIfRequired	virtualFileSystem/vfs_private.c	/^void __buildDatabaseIfRequired(redisContext *context) {$/;"	f
+__createFile	virtualFileSystem/vfs.c	/^long __createFile( vfsContext_t *ctx, const vfsObject_t *parent, const char *name, long size,$/;"	f
 __createFile	virtualFileSystem/vfs_private.c	/^void __createFile(redisContext *context, long id, const char *name, long size,$/;"	f
 __deleteDir	virtualFileSystem/vfs_private.c	/^void __deleteDir(redisContext *context, long dirId) {$/;"	f
 __deleteFile	virtualFileSystem/vfs_private.c	/^void __deleteFile(redisContext *context, long fileId) {$/;"	f
@@ -11738,7 +11743,6 @@ countDigits	virtualFileSystem/hiredis/hiredis.c	/^static uint32_t countDigits(ui
 counter	include/openssl/dh.h	/^    BIGNUM *counter;$/;"	m	struct:dh_st
 cpsuri	include/openssl/x509v3.h	/^        ASN1_IA5STRING *cpsuri;$/;"	m	union:POLICYQUALINFO_st::__anon44
 crealm	include/openssl/krb5_asn.h	/^    ASN1_GENERALSTRING *crealm;$/;"	m	struct:krb5_authenticator_st
-create	fuse/fuse-example.c	/^static int create(const char *path, mode_t mode, struct fuse_file_info *fi) {$/;"	f	file:
 create	include/openssl/bio.h	/^    int (*create) (BIO *);$/;"	m	struct:bio_method_st
 create	include/openssl/conf.h	/^    CONF *(*create) (CONF_METHOD *meth);$/;"	m	struct:conf_method_st
 createArray	virtualFileSystem/hiredis/read.h	/^    void *(*createArray)(const redisReadTask*, int);$/;"	m	struct:redisReplyObjectFunctions
@@ -11752,6 +11756,7 @@ createNilObject	virtualFileSystem/hiredis/hiredis.c	/^static void *createNilObje
 createReplyObject	virtualFileSystem/hiredis/hiredis.c	/^static redisReply *createReplyObject(int type) {$/;"	f	file:
 createString	virtualFileSystem/hiredis/read.h	/^    void *(*createString)(const redisReadTask*, char*, size_t);$/;"	m	struct:redisReplyObjectFunctions
 createStringObject	virtualFileSystem/hiredis/hiredis.c	/^static void *createStringObject(const redisReadTask *task, char *str, size_t len) {$/;"	f	file:
+create_callback	fuse/fuse-example.c	/^static int create_callback(const char *path, mode_t mode,$/;"	f	file:
 cred_cache	include/openssl/kssl.h	/^    char *cred_cache;           \/* C NULL (default) *\/$/;"	m	struct:kssl_ctx_st
 crit	include/openssl/x509.h	/^                               int crit, int lastpos);$/;"	v
 crit	include/openssl/x509v3.h	/^                    int crit, unsigned long flags);$/;"	v
@@ -12331,6 +12336,7 @@ fail	jsonParser/jsmn_test.c	9;"	d	file:
 fails	virtualFileSystem/hiredis/test.c	/^static int tests = 0, fails = 0;$/;"	v	file:
 failure_info	include/openssl/ts.h	/^    ASN1_BIT_STRING *failure_info;$/;"	m	struct:TS_status_info_st
 fatal_alert	include/openssl/ssl3.h	/^    int fatal_alert;$/;"	m	struct:ssl3_state_st
+fd	testDownloadDriver.c	/^	int fd;$/;"	m	struct:Priv_fd_t	file:
 fd	virtualFileSystem/hiredis/adapters/ae.h	/^    int fd;$/;"	m	struct:redisAeEvents
 fd	virtualFileSystem/hiredis/hiredis.h	/^    int fd;$/;"	m	struct:redisContext
 field_name	include/openssl/asn1t.h	/^    const char *field_name;     \/* Field name *\/$/;"	m	struct:ASN1_TEMPLATE_st
@@ -13500,6 +13506,7 @@ prim_print	include/openssl/asn1t.h	/^    ASN1_primitive_print *prim_print;$/;"	m
 printablestring	include/openssl/asn1.h	/^        ASN1_PRINTABLESTRING *printablestring;$/;"	m	union:asn1_type_st::__anon38
 priority	include/openssl/pqueue.h	/^    unsigned char priority[8];  \/* 64-bit value in big-endian encoding *\/$/;"	m	struct:_pitem
 priv	fileTransferDriver.h	/^	void *priv;$/;"	m	struct:DriverState_t
+priv_connection	fileTransferDriver.h	/^	void *priv_connection;$/;"	m	struct:FileDownloadState_t
 priv_connection	fileTransferDriver.h	/^        void *priv_connection;$/;"	m	struct:PendingFileUpload_t
 priv_key	include/openssl/dh.h	/^    BIGNUM *priv_key;           \/* x *\/$/;"	m	struct:dh_st
 priv_key	include/openssl/dsa.h	/^    BIGNUM *priv_key;           \/* x private key *\/$/;"	m	struct:dsa_st
@@ -13803,6 +13810,7 @@ request	include/openssl/ts.h	/^    TS_REQ *request;$/;"	m	struct:TS_resp_ctx
 requestExtensions	include/openssl/ocsp.h	/^    STACK_OF(X509_EXTENSION) *requestExtensions;$/;"	m	struct:ocsp_req_info_st
 requestList	include/openssl/ocsp.h	/^    STACK_OF(OCSP_ONEREQ) *requestList;$/;"	m	struct:ocsp_req_info_st
 requestType	httpProcessing/commonHTTP.h	/^	httpRequestTypes_t requestType;$/;"	m	struct:__anon8
+requestedFilePath	fileTransferDriver.h	/^	char *requestedFilePath;$/;"	m	struct:FileDownloadState_t
 requestorName	include/openssl/ocsp.h	/^    GENERAL_NAME *requestorName;$/;"	m	struct:ocsp_req_info_st
 requireExplicitPolicy	include/openssl/x509v3.h	/^    ASN1_INTEGER *requireExplicitPolicy;$/;"	m	struct:POLICY_CONSTRAINTS_st
 required_pkey_type	include/openssl/evp.h	/^    int required_pkey_type[5];  \/* EVP_PKEY_xxx *\/$/;"	m	struct:env_md_st
@@ -16545,8 +16553,6 @@ vfs_addDirToFolderList	virtualFileSystem/vfs_private.c	/^void vfs_addDirToFolder
 vfs_addFileToFileList	virtualFileSystem/vfs_private.c	/^void vfs_addFileToFileList(redisContext *context, long folderId, long fileId) {$/;"	f
 vfs_buildDatabase	virtualFileSystem/vfs_private.c	/^void vfs_buildDatabase(redisContext *context) {$/;"	f
 vfs_connect	virtualFileSystem/vfs_private.c	/^redisContext *vfs_connect() {$/;"	f
-vfs_createFile	virtualFileSystem/vfs.c	/^long vfs_createFile( vfsContext_t *ctx, const vfsObject_t *parent, const char *name, long size,$/;"	f
-vfs_cwd	virtualFileSystem/vfs.c	/^void vfs_cwd( vfsContext_t *ctx, const vfsObject_t *dir ) {$/;"	f
 vfs_debug_printParserState	virtualFileSystem/vfsPathParser.c	/^void vfs_debug_printParserState(vfsPathParserState_t *parserState) {$/;"	f
 vfs_delete	virtualFileSystem/vfs_private.c	/^void vfs_delete(redisContext *context, char *path) {$/;"	f
 vfs_deleteObjectWithPath	virtualFileSystem/vfs.c	/^int vfs_deleteObjectWithPath( vfsContext_t *ctx, const char *path ) {$/;"	f
@@ -16568,10 +16574,13 @@ vfs_ls	virtualFileSystem/vfs.c	/^int vfs_ls( vfsContext_t *ctx, const vfsObject_
 vfs_mkdir	virtualFileSystem/vfs.c	/^int vfs_mkdir( vfsContext_t *ctx, const vfsObject_t *containingFolder, $/;"	f
 vfs_mv	virtualFileSystem/vfs.c	/^int vfs_mv( vfsContext_t *ctx, const char *oldPath, const char *newPath ) {$/;"	f
 vfs_parsePath	virtualFileSystem/vfs.c	/^int vfs_parsePath( vfsContext_t *ctx, vfsPathParserState_t *parserState,$/;"	f
+vfs_parsePathOfLength	virtualFileSystem/vfs.c	/^int vfs_parsePathOfLength( vfsContext_t *ctx, vfsPathParserState_t *parserState,$/;"	f
 vfs_removeIdFromFileList	virtualFileSystem/vfs_private.c	/^void vfs_removeIdFromFileList(redisContext *context, long dirId, long removeId) {$/;"	f
 vfs_removeIdFromFolderList	virtualFileSystem/vfs_private.c	/^void vfs_removeIdFromFolderList(redisContext *context, long dirId, long removeId) {$/;"	f
 vfs_setFileName	virtualFileSystem/vfs_private.c	/^void vfs_setFileName(redisContext *context, long id, const char *nameBuffer,$/;"	f
+vfs_set_cwd	virtualFileSystem/vfs.c	/^void vfs_set_cwd( vfsContext_t *ctx, const vfsObject_t *dir ) {$/;"	f
 visiblestring	include/openssl/asn1.h	/^        ASN1_VISIBLESTRING *visiblestring;$/;"	m	union:asn1_type_st::__anon38
+vs_createNewEmptyFile	virtualFileSystem/vfs.c	/^long vs_createNewEmptyFile( vfsContext_t *ctx, char *path ) {$/;"	f
 w_epoch	include/openssl/dtls1.h	/^    unsigned short w_epoch;$/;"	m	struct:dtls1_state_st
 w_msg_hdr	include/openssl/dtls1.h	/^    struct hm_header_st w_msg_hdr;$/;"	m	struct:dtls1_state_st	typeref:struct:dtls1_state_st::hm_header_st
 wact_data	include/openssl/ssl2.h	/^    unsigned char *wact_data;$/;"	m	struct:ssl2_state_st
@@ -16598,6 +16607,7 @@ wpend_tot	include/openssl/ssl2.h	/^    int wpend_tot;$/;"	m	struct:ssl2_state_st
 wpend_tot	include/openssl/ssl3.h	/^    int wpend_tot;              \/* number bytes written *\/$/;"	m	struct:ssl3_state_st
 wpend_type	include/openssl/ssl3.h	/^    int wpend_type;$/;"	m	struct:ssl3_state_st
 wrec	include/openssl/ssl3.h	/^    SSL3_RECORD wrec;           \/* goes out from here *\/$/;"	m	struct:ssl3_state_st
+write_callback	fuse/fuse-example.c	/^static int write_callback(const char *path, const char *buf, size_t size,$/;"	f	file:
 write_hash	include/openssl/dtls1.h	/^    EVP_MD_CTX *write_hash;     \/* used for mac generation *\/$/;"	m	struct:dtls1_retransmit_state
 write_hash	include/openssl/ssl.h	/^    EVP_MD_CTX *write_hash;     \/* used for mac generation *\/$/;"	m	struct:ssl_st
 write_key	include/openssl/ssl2.h	/^    unsigned char *write_key;$/;"	m	struct:ssl2_state_st
